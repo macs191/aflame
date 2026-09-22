@@ -1,9 +1,8 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, NavLink } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
-// Pages
 import Home from '@/pages/Home';
 import LiveStreams from '@/pages/LiveStreams';
 import Movies from '@/pages/Movies';
@@ -15,67 +14,97 @@ import Subscribe from '@/pages/Subscribe';
 import Checkout from '@/pages/Checkout';
 import AdminDashboard from '@/pages/admin/Dashboard';
 
-// Components & Icons
-import { Tv, Film, Clapperboard, Mail, User, LogIn, Home as HomeIcon, Crown, ShieldCheck } from 'lucide-react';
+import {
+  Tv,
+  Film,
+  Clapperboard,
+  Mail,
+  User,
+  LogIn,
+  Home as HomeIcon,
+  Crown,
+  ShieldCheck,
+  Menu,
+  X,
+} from 'lucide-react';
+
+const navItems = [
+  { to: '/', label: 'الرئيسية', icon: HomeIcon, end: true },
+  { to: '/live', label: 'البث المباشر', icon: Tv },
+  { to: '/movies', label: 'الأفلام', icon: Film },
+  { to: '/series', label: 'المسلسلات', icon: Clapperboard },
+  { to: '/subscribe', label: 'الاشتراكات', icon: Crown },
+  { to: '/contact', label: 'اتصل بنا', icon: Mail },
+];
 
 const Header: React.FC = () => {
   const { user, profile } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = profile?.role === 'admin';
 
+  const closeMenu = () => setMenuOpen(false);
+  const navClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-1.5 transition-colors ${isActive ? 'text-gold-400' : 'text-gray-300 hover:text-gold-400'}`;
+
   return (
-    <header className="sticky top-0 z-40 bg-dark-900/80 backdrop-blur-md border-b border-gold-500/20 px-6 py-4">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 text-xl font-black text-gold-500 tracking-wide">
+    <header className="sticky top-0 z-40 bg-dark-900/90 backdrop-blur-md border-b border-gold-500/20 px-4 sm:px-6 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <Link to="/" onClick={closeMenu} className="flex items-center gap-2 text-xl font-black text-gold-500 tracking-wide shrink-0">
           <Tv className="w-7 h-7" />
           <span>aflame</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-gray-300">
-          <Link to="/" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
-            <HomeIcon className="w-4 h-4" /> الرئيسية
-          </Link>
-          <Link to="/live" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
-            <Tv className="w-4 h-4" /> البث المباشر
-          </Link>
-          <Link to="/movies" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
-            <Film className="w-4 h-4" /> الأفلام
-          </Link>
-          <Link to="/series" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
-            <Clapperboard className="w-4 h-4" /> المسلسلات
-          </Link>
-          <Link to="/subscribe" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
-            <Crown className="w-4 h-4" /> الاشتراكات
-          </Link>
-          <Link to="/contact" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
-            <Mail className="w-4 h-4" /> اتصل بنا
-          </Link>
+        <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold" aria-label="التنقل الرئيسي">
+          {navItems.map(({ to, label, icon: Icon, end }) => (
+            <NavLink key={to} to={to} end={end} className={navClass}>
+              <Icon className="w-4 h-4" /> {label}
+            </NavLink>
+          ))}
           {isAdmin && (
-            <Link to="/admin/channels" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
+            <NavLink to="/admin/channels" className={navClass}>
               <ShieldCheck className="w-4 h-4" /> الإدارة
-            </Link>
+            </NavLink>
           )}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {user ? (
-            <Link
-              to="/profile"
-              className="flex items-center gap-2 bg-dark-800 border border-gold-500/30 px-4 py-2 rounded-xl text-sm text-gold-400 hover:bg-gold-500/10 transition-all font-bold"
-            >
+            <Link to="/profile" className="flex items-center gap-2 bg-dark-800 border border-gold-500/30 px-3 sm:px-4 py-2 rounded-xl text-sm text-gold-400 hover:bg-gold-500/10 transition-all font-bold">
               <User className="w-4 h-4" />
               <span>{profile?.displayName?.split(' ')[0] || 'حسابي'}</span>
             </Link>
           ) : (
-            <Link
-              to="/login"
-              className="flex items-center gap-2 bg-gold-500 text-dark-900 px-4 py-2 rounded-xl text-sm font-extrabold hover:brightness-110 transition-all shadow-md shadow-gold-500/20"
-            >
+            <Link to="/login" className="flex items-center gap-2 bg-gold-500 text-dark-900 px-3 sm:px-4 py-2 rounded-xl text-sm font-extrabold hover:brightness-110 transition-all shadow-md shadow-gold-500/20">
               <LogIn className="w-4 h-4" />
               <span>تسجيل الدخول</span>
             </Link>
           )}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="lg:hidden p-2 rounded-lg text-gold-400 hover:bg-gold-500/10"
+            aria-label={menuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
       </div>
+
+      {menuOpen && (
+        <nav className="lg:hidden max-w-7xl mx-auto pt-4 mt-4 border-t border-gold-500/10 grid grid-cols-2 gap-2" aria-label="قائمة الهاتف">
+          {navItems.map(({ to, label, icon: Icon, end }) => (
+            <NavLink key={to} to={to} end={end} onClick={closeMenu} className={({ isActive }) => `${navClass({ isActive })} p-3 rounded-lg ${isActive ? 'bg-gold-500/10' : 'hover:bg-gold-500/5'}`}>
+              <Icon className="w-4 h-4" /> {label}
+            </NavLink>
+          ))}
+          {isAdmin && (
+            <NavLink to="/admin/channels" onClick={closeMenu} className={({ isActive }) => `${navClass({ isActive })} p-3 rounded-lg ${isActive ? 'bg-gold-500/10' : 'hover:bg-gold-500/5'}`}>
+              <ShieldCheck className="w-4 h-4" /> الإدارة
+            </NavLink>
+          )}
+        </nav>
+      )}
     </header>
   );
 };
@@ -92,54 +121,31 @@ const Footer: React.FC = () => (
   </footer>
 );
 
-export const App: React.FC = () => {
-  return (
-    <Router>
-      <AuthProvider>
-        <div className="min-h-screen bg-dark-900 text-white flex flex-col justify-between font-cairo">
-          <Header />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/live" element={<LiveStreams />} />
-              <Route path="/movies" element={<Movies />} />
-              <Route path="/series" element={<Series />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login mode="login" />} />
-              <Route path="/register" element={<Login mode="register" />} />
-              <Route path="/subscribe" element={<Subscribe />} />
-              <Route
-                path="/checkout"
-                element={
-                  <ProtectedRoute>
-                    <Checkout />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/*"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </AuthProvider>
-    </Router>
-  );
-};
+export const App: React.FC = () => (
+  <Router>
+    <AuthProvider>
+      <div className="min-h-screen bg-dark-900 text-white flex flex-col justify-between font-cairo">
+        <Header />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/live" element={<LiveStreams />} />
+            <Route path="/movies" element={<Movies />} />
+            <Route path="/series" element={<Series />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login mode="login" />} />
+            <Route path="/register" element={<Login mode="register" />} />
+            <Route path="/subscribe" element={<Subscribe />} />
+            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/admin/*" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </AuthProvider>
+  </Router>
+);
 
 export default App;
