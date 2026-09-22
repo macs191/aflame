@@ -1,32 +1,84 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function owner(userId) { return signedIn() && request.auth.uid == userId; }
-    function admin() {
-      return signedIn() &&
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isSubscriber() {
+      return isAdmin() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active'
+      );
+    }
+
     match /users/{userId} {
-      allow read: if owner(userId) || admin();
-      allow create: if owner(userId) && request.resource.data.uid == userId && request.resource.data.role == 'user';
-      allow update: if admin() || (owner(userId)
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.role == 'user';
+      allow update: if isAdmin() || (
+        isOwner(userId)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
         && request.resource.data.role == resource.data.role
-        && request.resource.data.createdAt == resource.data.createdAt);
-      allow delete: if admin();
-      match /history/{historyId} { allow read, write: if owner(userId); }
-      match /favorites/{favoriteId} { allow read, write: if owner(userId); }
+        && request.resource.data.createdAt == resource.data.createdAt
+      );
+      allow delete: if isAdmin();
+
+      match /history/{historyId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /favorites/{favoriteId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
-    match /channels/{id} { allow read: if admin() || (signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active'); allow write: if admin(); }
-    match /movies/{id} { allow read: if admin() || (signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active'); allow write: if admin(); }
-    match /series/{id} { allow read: if admin() || (signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active'); allow write: if admin(); match /episodes/{episodeId} { allow read: if admin() || (signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active'); allow write: if admin(); } }
-    match /categories/{id} { allow read: if signedIn(); allow write: if admin(); }
-    match /plans/{id} { allow read: if signedIn(); allow write: if admin(); }
-    match /contacts/{id} { allow create: if true; allow read, update, delete: if admin(); }
+    match /channels/{channelId} {
+      allow read: if isSubscriber();
+      allow write: if isAdmin();
+    }
+
+    match /movies/{movieId} {
+      allow read: if isSubscriber();
+      allow write: if isAdmin();
+    }
+
+    match /series/{seriesId} {
+      allow read: if isSubscriber();
+      allow write: if isAdmin();
+
+      match /episodes/{episodeId} {
+        allow read: if isSubscriber();
+        allow write: if isAdmin();
+      }
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /plans/{planId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /contacts/{contactId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }
