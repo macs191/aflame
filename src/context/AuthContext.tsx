@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User, 
-  onAuthStateChanged, 
-  signInWithPopup, 
-  signOut as firebaseSignOut 
+import {
+  User,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile as updateAuthProfile,
+  signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
 import { UserProfile } from '@/types';
 
@@ -14,10 +17,23 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const buildNewProfile = (currentUser: User): UserProfile => ({
+  uid: currentUser.uid,
+  email: currentUser.email || '',
+  displayName: currentUser.displayName || 'مستخدم جديد',
+  photoURL: currentUser.photoURL || '',
+  role: 'user',
+  subscriptionStatus: 'inactive',
+  createdAt: new Date().toISOString(),
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -34,16 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (userSnap.exists()) {
           setProfile(userSnap.data() as UserProfile);
         } else {
-          // Create initial user profile in Firestore
-          const newProfile: UserProfile = {
-            uid: currentUser.uid,
-            email: currentUser.email || '',
-            displayName: currentUser.displayName || 'مستخدم جديد',
-            photoURL: currentUser.photoURL || '',
-            role: 'user',
-            subscriptionStatus: 'inactive',
-            createdAt: new Date().toISOString(),
-          };
+          const newProfile = buildNewProfile(currentUser);
           await setDoc(userRef, newProfile);
           setProfile(newProfile);
         }
@@ -57,12 +64,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithGoogle = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error('خطأ في تسجيل الدخول عبر Google:', error);
-      throw error;
-    }
+    await signInWithPopup(auth, googleProvider);
+  };
+
+  const loginWithEmail = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const signUpWithEmail = async (email: string, password: string, displayName: string) => {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateAuthProfile(cred.user, { displayName });
+
+    const newProfile: UserProfile = {
+      ...buildNewProfile(cred.user),
+      displayName,
+    };
+    await setDoc(doc(db, 'users', cred.user.uid), newProfile);
+    setProfile(newProfile);
+  };
+
+  const updateUserProfile = async (data: Partial<UserProfile>) => {
+    if (!user) throw new Error('يجب تسجيل الدخول أولاً');
+    const userRef = doc(db, 'users', user.uid);
+    await updateDoc(userRef, data);
+    setProfile((prev) => (prev ? { ...prev, ...data } : prev));
   };
 
   const logout = async () => {
@@ -70,7 +95,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, loginWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        loading,
+        loginWithGoogle,
+        loginWithEmail,
+        signUpWithEmail,
+        updateUserProfile,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

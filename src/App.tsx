@@ -4,16 +4,19 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 // Pages
+import Home from '@/pages/Home';
 import LiveStreams from '@/pages/LiveStreams';
 import Movies from '@/pages/Movies';
 import Series from '@/pages/Series';
 import Contact from '@/pages/Contact';
 import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
+import Subscribe from '@/pages/Subscribe';
+import Checkout from '@/pages/Checkout';
 import AdminDashboard from '@/pages/admin/Dashboard';
 
 // Components & Icons
-import { Tv, Film, Clapperboard, Mail, User, LogIn } from 'lucide-react';
+import { Tv, Film, Clapperboard, Mail, User, LogIn, Home as HomeIcon, Crown } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { user, profile } = useAuth();
@@ -26,8 +29,11 @@ const Header: React.FC = () => {
           <span>aflame</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-300">
+        <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-gray-300">
           <Link to="/" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
+            <HomeIcon className="w-4 h-4" /> الرئيسية
+          </Link>
+          <Link to="/live" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
             <Tv className="w-4 h-4" /> البث المباشر
           </Link>
           <Link to="/movies" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
@@ -35,6 +41,9 @@ const Header: React.FC = () => {
           </Link>
           <Link to="/series" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
             <Clapperboard className="w-4 h-4" /> المسلسلات
+          </Link>
+          <Link to="/subscribe" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
+            <Crown className="w-4 h-4" /> الاشتراكات
           </Link>
           <Link to="/contact" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
             <Mail className="w-4 h-4" /> اتصل بنا
@@ -71,7 +80,7 @@ const Footer: React.FC = () => (
       <p>جميع الحقوق محفوظة © {new Date().getFullYear()} - منصة البث العربية aflame</p>
       <div className="flex items-center gap-6 text-gray-400">
         <Link to="/contact" className="hover:text-gold-400">الدعم الفني</Link>
-        <Link to="/profile" className="hover:text-gold-400">الاشتراكات</Link>
+        <Link to="/subscribe" className="hover:text-gold-400">الاشتراكات</Link>
       </div>
     </div>
   </footer>
@@ -85,11 +94,22 @@ export const App: React.FC = () => {
           <Header />
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<LiveStreams />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/live" element={<LiveStreams />} />
               <Route path="/movies" element={<Movies />} />
               <Route path="/series" element={<Series />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<Login mode="login" />} />
+              <Route path="/register" element={<Login mode="register" />} />
+              <Route path="/subscribe" element={<Subscribe />} />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <Checkout />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/profile"
                 element={
