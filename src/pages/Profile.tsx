@@ -1,9 +1,15 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { User, ShieldCheck, CreditCard, LogOut, Mail, Calendar } from 'lucide-react';
+import { getPlan } from '@/data/plans';
+import { User, ShieldCheck, CreditCard, LogOut, Mail, Calendar, Monitor, Sparkles } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { user, profile, logout } = useAuth();
+
+  const isAdmin = profile?.role === 'admin';
+  const isActive = profile?.subscriptionStatus === 'active' || isAdmin;
+  const plan = getPlan(profile?.planId);
 
   return (
     <div className="min-h-screen bg-dark-900 text-white p-6 md:p-10">
@@ -22,7 +28,7 @@ export const Profile: React.FC = () => {
                 {profile?.displayName?.charAt(0) || 'U'}
               </div>
             )}
-            {profile?.role === 'admin' && (
+            {isAdmin && (
               <span className="absolute -bottom-1 -right-1 bg-gold-500 text-dark-900 text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3" /> مسؤول
               </span>
@@ -55,24 +61,60 @@ export const Profile: React.FC = () => {
             </h3>
             <span
               className={`px-4 py-1.5 rounded-full text-xs font-bold ${
-                profile?.subscriptionStatus === 'active' || profile?.role === 'admin'
+                isActive
                   ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                   : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
               }`}
             >
-              {profile?.role === 'admin' ? 'اشتراك مسؤول غير محدود' : profile?.subscriptionStatus === 'active' ? 'اشتراك نشط' : 'غير مشترك'}
+              {isAdmin ? 'اشتراك مسؤول غير محدود' : profile?.subscriptionStatus === 'active' ? 'اشتراك نشط' : 'غير مشترك'}
             </span>
           </div>
 
-          <p className="text-gray-300 text-sm leading-relaxed">
-            تتيح لك العضوية المتميزة الوصول الكامل لجميع القنوات المباشرة، الأفلام، والمسلسلات بجودة عالية وبدون إعلانات.
-          </p>
+          {isActive && !isAdmin && plan ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-dark-800/60 rounded-xl p-4 border border-gold-500/10">
+                <div className="flex items-center gap-2 text-gold-400 text-sm font-bold mb-1">
+                  <Sparkles className="w-4 h-4" /> الباقة
+                </div>
+                <p className="text-white font-extrabold">{plan.nameAr}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {profile?.billingCycle === 'yearly' ? 'اشتراك سنوي' : 'اشتراك شهري'}
+                </p>
+              </div>
+              <div className="bg-dark-800/60 rounded-xl p-4 border border-gold-500/10">
+                <div className="flex items-center gap-2 text-gold-400 text-sm font-bold mb-1">
+                  <Monitor className="w-4 h-4" /> الجودة
+                </div>
+                <p className="text-white font-extrabold">{plan.quality}</p>
+                <p className="text-xs text-gray-500 mt-1">{plan.screens} شاشة متزامنة</p>
+              </div>
+              <div className="bg-dark-800/60 rounded-xl p-4 border border-gold-500/10">
+                <div className="flex items-center gap-2 text-gold-400 text-sm font-bold mb-1">
+                  <Calendar className="w-4 h-4" /> ينتهي في
+                </div>
+                <p className="text-white font-extrabold">
+                  {profile?.subscriptionExpiresAt
+                    ? new Date(profile.subscriptionExpiresAt).toLocaleDateString('ar-EG')
+                    : '—'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-300 text-sm leading-relaxed">
+              تتيح لك العضوية المتميزة الوصول الكامل لجميع القنوات المباشرة، الأفلام، والمسلسلات بجودة عالية وبدون إعلانات.
+            </p>
+          )}
 
-          <div className="pt-2">
-            <button className="px-8 py-3.5 bg-gradient-to-r from-gold-600 to-gold-500 text-dark-900 font-extrabold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-gold-500/10">
-              تجديد / ترقية الاشتراك
-            </button>
-          </div>
+          {!isAdmin && (
+            <div className="pt-2">
+              <Link
+                to="/subscribe"
+                className="inline-block px-8 py-3.5 bg-gradient-to-r from-gold-600 to-gold-500 text-dark-900 font-extrabold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-gold-500/10"
+              >
+                {isActive ? 'ترقية / تغيير الباقة' : 'اشترك الآن'}
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

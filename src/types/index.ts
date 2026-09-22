@@ -1,5 +1,7 @@
 export type UserRole = 'user' | 'admin';
 export type SubscriptionStatus = 'active' | 'inactive' | 'expired' | 'pending';
+export type PlanId = 'basic' | 'standard' | 'premium';
+export type BillingCycle = 'monthly' | 'yearly';
 
 export interface UserProfile {
   uid: string;
@@ -8,8 +10,22 @@ export interface UserProfile {
   photoURL?: string;
   role: UserRole;
   subscriptionStatus: SubscriptionStatus;
+  planId?: PlanId;
+  billingCycle?: BillingCycle;
   subscriptionExpiresAt?: string;
   createdAt: string;
+}
+
+export interface Plan {
+  id: PlanId;
+  nameAr: string;
+  taglineAr: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  quality: string;
+  screens: number;
+  featuresAr: string[];
+  highlighted?: boolean;
 }
 
 export type MediaType = 'live' | 'movie' | 'episode';
