@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Tv, Film, Clapperboard, Plus } from 'lucide-react';
+import { db } from '../../lib/firebase';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'channels' | 'movies' | 'series'>('channels');
