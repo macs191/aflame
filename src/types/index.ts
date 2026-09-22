@@ -1,0 +1,101 @@
+export type UserRole = 'user' | 'admin';
+export type SubscriptionStatus = 'active' | 'inactive' | 'expired' | 'pending';
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  role: UserRole;
+  subscriptionStatus: SubscriptionStatus;
+  subscriptionExpiresAt?: string;
+  createdAt: string;
+}
+
+export type MediaType = 'live' | 'movie' | 'episode';
+
+export interface Category {
+  id: string;
+  nameAr: string;
+  slug: string;
+}
+
+export interface StreamSource {
+  providerId: string; // Identifier for provider strategy (e.g., 'hls-direct', 'secure-proxy')
+  url: string;        // The .m3u8 or stream link
+  drmKey?: string;
+  quality?: '1080p' | '720p' | '480p' | 'auto';
+}
+
+export interface LiveChannel {
+  id: string;
+  titleAr: string;
+  descriptionAr: string;
+  logoUrl: string;
+  categoryId: string;
+  streamSources: StreamSource[];
+  isFeatured: boolean;
+  createdAt: string;
+}
+
+export interface Movie {
+  id: string;
+  titleAr: string;
+  descriptionAr: string;
+  posterUrl: string;
+  bannerUrl: string;
+  categoryId: string;
+  releaseYear: number;
+  durationMinutes: number;
+  rating: number;
+  streamSources: StreamSource[];
+  isFeatured: boolean;
+  createdAt: string;
+}
+
+export interface Episode {
+  id: string;
+  seriesId: string;
+  seasonNumber: number;
+  episodeNumber: number;
+  titleAr: string;
+  descriptionAr: string;
+  thumbnailUrl: string;
+  durationMinutes: number;
+  streamSources: StreamSource[];
+  createdAt: string;
+}
+
+export interface Series {
+  id: string;
+  titleAr: string;
+  descriptionAr: string;
+  posterUrl: string;
+  bannerUrl: string;
+  categoryId: string;
+  releaseYear: number;
+  totalSeasons: number;
+  rating: number;
+  isFeatured: boolean;
+  createdAt: string;
+}
+
+export interface WatchHistory {
+  id: string;
+  mediaId: string;
+  mediaType: MediaType;
+  titleAr: string;
+  posterUrl: string;
+  watchedDurationSeconds: number;
+  totalDurationSeconds: number;
+  lastWatchedAt: string;
+}
+
+export interface FavoriteItem {
+  id: string;
+  mediaId: string;
+  mediaType: MediaType;
+  titleAr: string;
+  posterUrl: string;
+  addedAt: string;
+}
