@@ -25,72 +25,110 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const buildNewProfile = (currentUser: User): UserProfile => ({
+const userDocument = (uid: string) => doc(db, 'users', uid);
+
+const createProfile = (currentUser: User, displayName?: string): UserProfile => ({
   uid: currentUser.uid,
   email: currentUser.email || '',
-  displayName: currentUser.displayName || 'مستخدم جديد',
+  displayName: displayName?.trim() || currentUser.displayName || 'مستخدم جديد',
   photoURL: currentUser.photoURL || '',
   role: 'user',
   subscriptionStatus: 'inactive',
   createdAt: new Date().toISOString(),
 });
 
+async function ensureProfile(currentUser: User, displayName?: string): Promise<UserProfile> {
+  const profileDocument = userDocument(currentUser.uid);
+  const snapshot = await getDoc(profileDocument);
+
+  if (snapshot.exists()) {
+    return snapshot.data() as UserProfile;
+  }
+
+  const profile = createProfile(currentUser, displayName);
+  await setDoc(profileDocument, profile);
+  return profile;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
+  useEffect((): (() => void) => {
+    let disposed = false;
 
-        if (userSnap.exists()) {
-          setProfile(userSnap.data() as UserProfile);
-        } else {
-          const newProfile = buildNewProfile(currentUser);
-          await setDoc(userRef, newProfile);
-          setProfile(newProfile);
-        }
-      } else {
+    const handleAuthStateChanged = (currentUser: User | null): void => {
+      void (async (): Promise<void> => {
+        if (disposed) return;
+
+        setUser(currentUser);
         setProfile(null);
-      }
-      setLoading(false);
-    });
+        setLoading(true);
 
-    return () => unsubscribe();
+        if (!currentUser) {
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const currentProfile = await ensureProfile(currentUser);
+          if (!disposed) {
+            setProfile(currentProfile);
+          }
+        } catch (error) {
+          console.error('Profile initialization error:', error);
+          if (!disposed) {
+            setProfile(null);
+          }
+        } finally {
+          if (!disposed) {
+            setLoading(false);
+          }
+        }
+      })();
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, handleAuthStateChanged);
+
+    return (): void => {
+      disposed = true;
+      unsubscribe();
+    };
   }, []);
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (): Promise<void> => {
     await signInWithPopup(auth, googleProvider);
   };
 
-  const loginWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+  const loginWithEmail = async (email: string, password: string): Promise<void> => {
+    await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
   };
 
-  const signUpWithEmail = async (email: string, password: string, displayName: string) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await updateAuthProfile(cred.user, { displayName });
+  const signUpWithEmail = async (email: string, password: string, displayName: string): Promise<void> => {
+    const name = displayName.trim() || 'مستخدم جديد';
+    const credential = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+    await updateAuthProfile(credential.user, { displayName: name });
 
-    const newProfile: UserProfile = {
-      ...buildNewProfile(cred.user),
-      displayName,
-    };
-    await setDoc(doc(db, 'users', cred.user.uid), newProfile);
+    const newProfile = createProfile(credential.user, name);
+    await setDoc(userDocument(credential.user.uid), newProfile);
     setProfile(newProfile);
   };
 
-  const updateUserProfile = async (data: Partial<UserProfile>) => {
+  const updateUserProfile = async (data: Partial<UserProfile>): Promise<void> => {
     if (!user) throw new Error('يجب تسجيل الدخول أولاً');
-    const userRef = doc(db, 'users', user.uid);
-    await updateDoc(userRef, data);
-    setProfile((prev) => (prev ? { ...prev, ...data } : prev));
+
+    const editable: Partial<UserProfile> = { ...data };
+    delete editable.uid;
+    delete editable.email;
+    delete editable.role;
+    delete editable.createdAt;
+
+    await updateDoc(userDocument(user.uid), editable);
+    setProfile((previous) => (previous ? { ...previous, ...editable } : previous));
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     await firebaseSignOut(auth);
   };
 
@@ -112,10 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
