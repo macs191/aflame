@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { onValue, ref, update as updateRealtime } from 'firebase/database';
 import { db, realtimeDb } from '@/lib/firebase';
 import { UserProfile, UserRole, SubscriptionStatus } from '@/types';
