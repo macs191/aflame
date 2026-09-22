@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Series as SeriesType, Episode } from '@/types';
 import { VideoPlayer } from '@/components/player/VideoPlayer';
@@ -38,14 +38,12 @@ export const Series: React.FC = () => {
     setActiveEpisode(null);
 
     try {
-      const q = query(collection(db, `series/${series.id}/episodes`));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(collection(db, `series/${series.id}/episodes`));
       const epList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Episode[];
 
-      // Sort episodes numerically
       epList.sort((a, b) => a.episodeNumber - b.episodeNumber);
       setEpisodes(epList);
       if (epList.length > 0) {
@@ -76,7 +74,6 @@ export const Series: React.FC = () => {
           <span className="text-sm text-gray-400">إجمالي المسلسلات: {seriesList.length}</span>
         </div>
 
-        {/* Series Detail & Episode Player Modal */}
         {selectedSeries && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 md:p-8 backdrop-blur-md overflow-y-auto">
             <div className="relative w-full max-w-6xl bg-dark-800 rounded-2xl p-6 border border-gold-500/30 space-y-6 my-auto">
@@ -90,7 +87,6 @@ export const Series: React.FC = () => {
                 <X className="w-6 h-6" />
               </button>
 
-              {/* Video Player */}
               {activeEpisode && activeEpisode.streamSources.length > 0 ? (
                 <div className="space-y-3">
                   <VideoPlayer
@@ -113,7 +109,6 @@ export const Series: React.FC = () => {
                 </div>
               )}
 
-              {/* Series Details & Episode Selector */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gold-500/10">
                 <div className="md:col-span-1 space-y-3">
                   <h2 className="text-2xl font-bold text-white">{selectedSeries.titleAr}</h2>
@@ -128,7 +123,6 @@ export const Series: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Episode List Grid */}
                 <div className="md:col-span-2 space-y-3">
                   <h4 className="text-lg font-bold text-gold-400 flex items-center gap-2">
                     <Tv className="w-5 h-5" /> قائمة الحلقات
@@ -153,7 +147,7 @@ export const Series: React.FC = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="py-8 text-center text-gray-400">لا توجد حلقات مضافة حالياً لهذا المسلسل.</div>
+                    <div className="py-8 text-center text-gray-400">لا توجد حلقات مضافة حالياً لهذا ا��مسلسل.</div>
                   )}
                 </div>
               </div>
@@ -161,7 +155,6 @@ export const Series: React.FC = () => {
           </div>
         )}
 
-        {/* Series Cards Grid */}
         {seriesList.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {seriesList.map((series) => (

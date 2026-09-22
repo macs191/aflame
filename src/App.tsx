@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 // Pages
 import LiveStreams from '@/pages/LiveStreams';
@@ -9,43 +10,22 @@ import Series from '@/pages/Series';
 import Contact from '@/pages/Contact';
 import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
+import AdminDashboard from '@/pages/admin/Dashboard';
 
 // Components & Icons
-import { Tv, Film, Clapperboard, Mail, User, ShieldCheck, LogIn } from 'lucide-react';
+import { Tv, Film, Clapperboard, Mail, User, LogIn } from 'lucide-react';
 
-// Protected Route Guard
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-dark-900 flex items-center justify-center text-gold-500">
-        جاري التحقق من الجلسة...
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-// Navbar Header Component
 const Header: React.FC = () => {
   const { user, profile } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 bg-dark-900/80 backdrop-blur-md border-b border-gold-500/20 px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-2 text-xl font-black text-gold-500 tracking-wide">
           <Tv className="w-7 h-7" />
           <span>aflame</span>
         </Link>
 
-        {/* Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-300">
           <Link to="/" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
             <Tv className="w-4 h-4" /> البث المباشر
@@ -61,7 +41,6 @@ const Header: React.FC = () => {
           </Link>
         </nav>
 
-        {/* User Actions */}
         <div className="flex items-center gap-4">
           {user ? (
             <Link
@@ -86,7 +65,6 @@ const Header: React.FC = () => {
   );
 };
 
-// Footer Component
 const Footer: React.FC = () => (
   <footer className="bg-dark-900 border-t border-gold-500/10 py-8 px-6 text-center text-xs text-gray-500">
     <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -117,6 +95,14 @@ export const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/*"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminDashboard />
                   </ProtectedRoute>
                 }
               />
