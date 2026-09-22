@@ -8,8 +8,9 @@ import {
   updateProfile as updateAuthProfile,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, googleProvider, db } from '@/lib/firebase';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { get, onValue, ref, set, update } from 'firebase/database';
+import { auth, googleProvider, db, realtimeDb } from '@/lib/firebase';
 import { UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -25,7 +26,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const buildProfile = (currentUser: User, displayName?: string): UserProfile => ({
+const createProfile = (currentUser: User, displayName?: string): UserProfile => ({
   uid: currentUser.uid,
   email: currentUser.email || '',
   displayName: displayName || currentUser.displayName || 'مستخدم جديد',
@@ -35,15 +36,15 @@ const buildProfile = (currentUser: User, displayName?: string): UserProfile => (
   createdAt: new Date().toISOString(),
 });
 
-async function loadOrCreateProfile(currentUser: User, preferredName?: string): Promise<UserProfile> {
-  const userRef = doc(db, 'users', currentUser.uid);
-  const snapshot = await getDoc(userRef);
-  if (snapshot.exists()) {
-    return snapshot.data() as UserProfile;
-  }
+const profileRef = (uid: string) => ref(realtimeDb, `users/${uid}`);
+const firestoreProfileRef = (uid: string) => doc(db, 'users', uid);
 
-  const profile = buildProfile(currentUser, preferredName);
-  await setDoc(userRef, { ...profile, createdAt: serverTimestamp() });
+async function ensureProfile(currentUser: User, displayName?: string): Promise<UserProfile> {
+  const snapshot = await get(profileRef(currentUser.uid));
+  if (snapshot.exists()) return snapshot.val() as UserProfile;
+  const profile = createProfile(currentUser, displayName);
+  await set(profileRef(currentUser.uid), profile);
+  await setDoc(firestoreProfileRef(currentUser.uid), profile);
   return profile;
 }
 
@@ -52,43 +53,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    return onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setLoading(true);
-      try {
-        setProfile(currentUser ? await loadOrCreateProfile(currentUser) : null);
-      } catch (error) {
-        console.error('تعذر تحميل ملف المستخدم:', error);
-        setProfile(null);
-      } finally {
+  useEffect(() => onAuthStateChanged(auth, async (currentUser) => {
+    setUser(currentUser);
+    setLoading(true);
+    if (!currentUser) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+    try {
+      await ensureProfile(currentUser);
+      const unsubscribe = onValue(profileRef(currentUser.uid), (snapshot) => {
+        setProfile(snapshot.exists() ? snapshot.val() as UserProfile : null);
         setLoading(false);
-      }
-    });
-  }, []);
+      }, (error) => {
+        console.error('Realtime Database profile error:', error);
+        setProfile(null);
+        setLoading(false);
+      });
+      return unsubscribe;
+    } catch (error) {
+      console.error('Profile initialization error:', error);
+      setProfile(null);
+      setLoading(false);
+    }
+  }), []);
 
   const loginWithGoogle = async () => { await signInWithPopup(auth, googleProvider); };
-  const loginWithEmail = async (email: string, password: string) => { await signInWithEmailAndPassword(auth, email.trim(), password); };
+  const loginWithEmail = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email.trim(), password);
+  };
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     const name = displayName.trim() || 'مستخدم جديد';
     const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
     await updateAuthProfile(credential.user, { displayName: name });
-    const newProfile = buildProfile(credential.user, name);
-    await setDoc(doc(db, 'users', credential.user.uid), newProfile);
-    setUser(credential.user);
-    setProfile(newProfile);
+    const profile = createProfile(credential.user, name);
+    await set(profileRef(credential.user.uid), profile);
+    await setDoc(firestoreProfileRef(credential.user.uid), profile);
+    setProfile(profile);
   };
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!user) throw new Error('يجب تسجيل الدخول أولاً');
-    const allowed: Partial<UserProfile> = { ...data };
-    delete allowed.uid;
-    delete allowed.email;
-    delete allowed.role;
-    delete allowed.createdAt;
-    await updateDoc(doc(db, 'users', user.uid), allowed);
-    setProfile((previous) => previous ? { ...previous, ...allowed } : previous);
+    const editable: Partial<UserProfile> = { ...data };
+    delete editable.uid;
+    delete editable.email;
+    delete editable.role;
+    delete editable.createdAt;
+    await update(profileRef(user.uid), editable);
+    await updateDoc(firestoreProfileRef(user.uid), editable);
   };
 
   const logout = async () => { await firebaseSignOut(auth); };
