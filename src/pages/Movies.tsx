@@ -1,0 +1,137 @@
+import React, { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Movie } from '@/types';
+import { VideoPlayer } from '@/components/player/VideoPlayer';
+import { Film, Star, Clock, Calendar, Loader2, Play, X } from 'lucide-react';
+
+export const Movies: React.FC = () => {
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'movies'));
+        const movieList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Movie[];
+        setMovies(movieList);
+      } catch (err) {
+        console.error('فشل في جلب الأفلام:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMovies();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center text-gold-500">
+        <Loader2 className="w-10 h-10 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-dark-900 text-white p-6 md:p-10">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex items-center justify-between border-b border-gold-500/20 pb-4">
+          <h1 className="text-3xl font-extrabold text-gold-500 flex items-center gap-3">
+            <Film className="w-8 h-8" /> مكتبة الأفلام
+          </h1>
+          <span className="text-sm text-gray-400">إجمالي الأفلام: {movies.length}</span>
+        </div>
+
+        {/* Modal Player when movie is selected */}
+        {selectedMovie && selectedMovie.streamSources.length > 0 && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 md:p-8 backdrop-blur-md">
+            <div className="relative w-full max-w-5xl bg-dark-800 rounded-2xl p-6 border border-gold-500/30 space-y-4">
+              <button
+                onClick={() => setSelectedMovie(null)}
+                className="absolute top-4 left-4 p-2 text-gray-400 hover:text-white bg-dark-900/80 rounded-full transition-colors z-10"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <VideoPlayer
+                source={selectedMovie.streamSources[0]}
+                posterUrl={selectedMovie.bannerUrl || selectedMovie.posterUrl}
+              />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gold-400">{selectedMovie.titleAr}</h2>
+                  <p className="text-gray-300 text-sm mt-1">{selectedMovie.descriptionAr}</p>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <span className="flex items-center gap-1 text-gold-500">
+                    <Star className="w-4 h-4 fill-gold-500" /> {selectedMovie.rating}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" /> {selectedMovie.durationMinutes} دقيقة
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Movies Grid */}
+        {movies.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {movies.map((movie) => (
+              <div
+                key={movie.id}
+                onClick={() => setSelectedMovie(movie)}
+                className="group cursor-pointer glass-card glass-card-hover rounded-2xl overflow-hidden flex flex-col transition-all duration-300"
+              >
+                <div className="relative aspect-[2/3] overflow-hidden bg-dark-800">
+                  <img
+                    src={movie.posterUrl}
+                    alt={movie.titleAr}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-transparent to-transparent opacity-80" />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                    <div className="p-4 bg-gold-500 text-dark-900 rounded-full shadow-lg shadow-gold-500/30">
+                      <Play className="w-8 h-8 fill-dark-900" />
+                    </div>
+                  </div>
+                  <div className="absolute top-3 right-3 bg-dark-900/80 backdrop-blur-md text-gold-400 text-xs font-bold px-2.5 py-1 rounded-lg border border-gold-500/20 flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-gold-400" /> {movie.rating}
+                  </div>
+                </div>
+
+                <div className="p-4 flex flex-col flex-1 justify-between">
+                  <h3 className="font-bold text-lg text-white group-hover:text-gold-400 transition-colors line-clamp-1">
+                    {movie.titleAr}
+                  </h3>
+                  <div className="flex items-center justify-between text-xs text-gray-400 mt-2">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" /> {movie.releaseYear}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" /> {movie.durationMinutes} د
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="glass-card p-12 text-center rounded-2xl text-gray-400">
+            لا توجد أفلام متاحة في المكتبة حالياً.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Movies;
