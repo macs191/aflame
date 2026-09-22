@@ -8,9 +8,8 @@ import {
   updateProfile as updateAuthProfile,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
-import { get, onValue, ref, set, update } from 'firebase/database';
-import { auth, googleProvider, db, realtimeDb } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { auth, googleProvider, db } from '@/lib/firebase';
 import { UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -26,26 +25,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const userDocument = (uid: string) => doc(db, 'users', uid);
+
 const createProfile = (currentUser: User, displayName?: string): UserProfile => ({
   uid: currentUser.uid,
   email: currentUser.email || '',
-  displayName: displayName || currentUser.displayName || 'مستخدم جديد',
+  displayName: displayName?.trim() || currentUser.displayName || 'مستخدم جديد',
   photoURL: currentUser.photoURL || '',
   role: 'user',
   subscriptionStatus: 'inactive',
   createdAt: new Date().toISOString(),
 });
 
-const profileRef = (uid: string) => ref(realtimeDb, `users/${uid}`);
-const firestoreProfileRef = (uid: string) => doc(db, 'users', uid);
-
 async function ensureProfile(currentUser: User, displayName?: string): Promise<UserProfile> {
-  const snapshot = await get(profileRef(currentUser.uid));
-  if (snapshot.exists()) return snapshot.val() as UserProfile;
+  const profileDocument = userDocument(currentUser.uid);
+  const snapshot = await getDoc(profileDocument);
+
+  if (snapshot.exists()) {
+    return snapshot.data() as UserProfile;
+  }
 
   const profile = createProfile(currentUser, displayName);
-  await set(profileRef(currentUser.uid), profile);
-  await setDoc(firestoreProfileRef(currentUser.uid), profile);
+  await setDoc(profileDocument, profile);
   return profile;
 }
 
@@ -55,15 +56,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsubscribeProfile: (() => void) | undefined;
+    let disposed = false;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       void (async () => {
+        if (disposed) return;
         setUser(currentUser);
         setProfile(null);
         setLoading(true);
-        unsubscribeProfile?.();
-        unsubscribeProfile = undefined;
 
         if (!currentUser) {
           setLoading(false);
@@ -71,48 +71,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         try {
-          await ensureProfile(currentUser);
-          unsubscribeProfile = onValue(
-            profileRef(currentUser.uid),
-            (snapshot) => {
-              setProfile(snapshot.exists() ? (snapshot.val() as UserProfile) : null);
-              setLoading(false);
-            },
-            (error) => {
-              console.error('Realtime Database profile error:', error);
-              setProfile(null);
-              setLoading(false);
-            },
-          );
+          const currentProfile = await ensureProfile(currentUser);
+          if (!disposed) setProfile(currentProfile);
         } catch (error) {
           console.error('Profile initialization error:', error);
-          setProfile(null);
-          setLoading(false);
+          if (!disposed) setProfile(null);
+        } finally {
+          if (!disposed) setLoading(false);
         }
       })();
     });
 
     return () => {
-      unsubscribeProfile?.();
-      unsubscribeAuth();
+      disposed = true;
+      unsubscribe();
     };
   }, []);
 
-  const loginWithGoogle = async () => { await signInWithPopup(auth, googleProvider); };
+  const loginWithGoogle = async () => {
+    await signInWithPopup(auth, googleProvider);
+  };
 
   const loginWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email.trim(), password);
+    await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     const name = displayName.trim() || 'مستخدم جديد';
-    const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    const credential = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
     await updateAuthProfile(credential.user, { displayName: name });
 
-    const profile = createProfile(credential.user, name);
-    await set(profileRef(credential.user.uid), profile);
-    await setDoc(firestoreProfileRef(credential.user.uid), profile);
-    setProfile(profile);
+    const newProfile = createProfile(credential.user, name);
+    await setDoc(userDocument(credential.user.uid), newProfile);
+    setProfile(newProfile);
   };
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
@@ -124,13 +115,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     delete editable.role;
     delete editable.createdAt;
 
-    await update(profileRef(user.uid), editable);
-    await updateDoc(firestoreProfileRef(user.uid), editable);
+    await updateDoc(userDocument(user.uid), editable);
+    setProfile((previous) => (previous ? { ...previous, ...editable } : previous));
   };
 
-  const logout = async () => { await firebaseSignOut(auth); };
+  const logout = async () => {
+    await firebaseSignOut(auth);
+  };
 
-  return <AuthContext.Provider value={{ user, profile, loading, loginWithGoogle, loginWithEmail, signUpWithEmail, updateUserProfile, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ user, profile, loading, loginWithGoogle, loginWithEmail, signUpWithEmail, updateUserProfile, logout }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
