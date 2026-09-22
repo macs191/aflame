@@ -4,6 +4,9 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    allowedHosts: true,
+  },
   resolve: {
     alias: {
       '@': path.resolve(process.cwd(), 'src'),
