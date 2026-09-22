@@ -16,10 +16,11 @@ import Checkout from '@/pages/Checkout';
 import AdminDashboard from '@/pages/admin/Dashboard';
 
 // Components & Icons
-import { Tv, Film, Clapperboard, Mail, User, LogIn, Home as HomeIcon, Crown } from 'lucide-react';
+import { Tv, Film, Clapperboard, Mail, User, LogIn, Home as HomeIcon, Crown, ShieldCheck } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { user, profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
 
   return (
     <header className="sticky top-0 z-40 bg-dark-900/80 backdrop-blur-md border-b border-gold-500/20 px-6 py-4">
@@ -48,6 +49,11 @@ const Header: React.FC = () => {
           <Link to="/contact" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
             <Mail className="w-4 h-4" /> اتصل بنا
           </Link>
+          {isAdmin && (
+            <Link to="/admin/channels" className="hover:text-gold-400 transition-colors flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4" /> الإدارة
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-4">
