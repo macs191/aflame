@@ -42,6 +42,7 @@ const firestoreProfileRef = (uid: string) => doc(db, 'users', uid);
 async function ensureProfile(currentUser: User, displayName?: string): Promise<UserProfile> {
   const snapshot = await get(profileRef(currentUser.uid));
   if (snapshot.exists()) return snapshot.val() as UserProfile;
+
   const profile = createProfile(currentUser, displayName);
   await set(profileRef(currentUser.uid), profile);
   await setDoc(firestoreProfileRef(currentUser.uid), profile);
@@ -53,33 +54,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => onAuthStateChanged(auth, async (currentUser) => {
-    setUser(currentUser);
-    setLoading(true);
-    if (!currentUser) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-    try {
-      await ensureProfile(currentUser);
-      const unsubscribe = onValue(profileRef(currentUser.uid), (snapshot) => {
-        setProfile(snapshot.exists() ? snapshot.val() as UserProfile : null);
-        setLoading(false);
-      }, (error) => {
-        console.error('Realtime Database profile error:', error);
+  useEffect(() => {
+    let unsubscribeProfile: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      void (async () => {
+        setUser(currentUser);
         setProfile(null);
-        setLoading(false);
-      });
-      return unsubscribe;
-    } catch (error) {
-      console.error('Profile initialization error:', error);
-      setProfile(null);
-      setLoading(false);
-    }
-  }), []);
+        setLoading(true);
+        unsubscribeProfile?.();
+        unsubscribeProfile = undefined;
+
+        if (!currentUser) {
+          setLoading(false);
+          return;
+        }
+
+        try {
+          await ensureProfile(currentUser);
+          unsubscribeProfile = onValue(
+            profileRef(currentUser.uid),
+            (snapshot) => {
+              setProfile(snapshot.exists() ? (snapshot.val() as UserProfile) : null);
+              setLoading(false);
+            },
+            (error) => {
+              console.error('Realtime Database profile error:', error);
+              setProfile(null);
+              setLoading(false);
+            },
+          );
+        } catch (error) {
+          console.error('Profile initialization error:', error);
+          setProfile(null);
+          setLoading(false);
+        }
+      })();
+    });
+
+    return () => {
+      unsubscribeProfile?.();
+      unsubscribeAuth();
+    };
+  }, []);
 
   const loginWithGoogle = async () => { await signInWithPopup(auth, googleProvider); };
+
   const loginWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email.trim(), password);
   };
@@ -88,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const name = displayName.trim() || 'مستخدم جديد';
     const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
     await updateAuthProfile(credential.user, { displayName: name });
+
     const profile = createProfile(credential.user, name);
     await set(profileRef(credential.user.uid), profile);
     await setDoc(firestoreProfileRef(credential.user.uid), profile);
@@ -96,11 +117,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!user) throw new Error('يجب تسجيل الدخول أولاً');
+
     const editable: Partial<UserProfile> = { ...data };
     delete editable.uid;
     delete editable.email;
     delete editable.role;
     delete editable.createdAt;
+
     await update(profileRef(user.uid), editable);
     await updateDoc(firestoreProfileRef(user.uid), editable);
   };
