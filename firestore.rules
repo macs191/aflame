@@ -1,26 +1,29 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() {
+    function signedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function userExists(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid));
     }
 
     function isAdmin() {
-      return isSignedIn() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return signedIn()
+        && userExists(request.auth.uid)
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
     }
 
     function isSubscriber() {
-      return isAdmin() || (
-        isSignedIn() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active'
-      );
+      return isAdmin()
+        || (signedIn()
+          && userExists(request.auth.uid)
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active');
     }
 
     match /users/{userId} {
@@ -67,12 +70,12 @@ service cloud.firestore {
     }
 
     match /categories/{categoryId} {
-      allow read: if isSignedIn();
+      allow read: if signedIn();
       allow write: if isAdmin();
     }
 
     match /plans/{planId} {
-      allow read: if isSignedIn();
+      allow read: if signedIn();
       allow write: if isAdmin();
     }
 
