@@ -1,16 +1,18 @@
 import React from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
-import { Tv, Film, Clapperboard, LayoutDashboard } from 'lucide-react';
+import { Tv, Film, Clapperboard, LayoutDashboard, Users } from 'lucide-react';
 import { ChannelManager } from '@/components/admin/ChannelManager';
 import { MovieManager } from '@/components/admin/MovieManager';
 import { SeriesManager } from '@/components/admin/SeriesManager';
+import { Accounts } from '@/pages/admin/Accounts';
 
-type Tab = 'channels' | 'movies' | 'series';
+type Tab = 'channels' | 'movies' | 'series' | 'accounts';
 
 const tabs: { id: Tab; path: string; label: string; icon: React.ReactNode }[] = [
   { id: 'channels', path: '/admin/channels', label: 'البث المباشر', icon: <Tv className="w-5 h-5" /> },
   { id: 'movies', path: '/admin/movies', label: 'الأفلام', icon: <Film className="w-5 h-5" /> },
   { id: 'series', path: '/admin/series', label: 'المسلسلات', icon: <Clapperboard className="w-5 h-5" /> },
+  { id: 'accounts', path: '/admin/accounts', label: 'الحسابات', icon: <Users className="w-5 h-5" /> },
 ];
 
 export const AdminDashboard: React.FC = () => {
@@ -24,7 +26,9 @@ export const AdminDashboard: React.FC = () => {
     ? 'movies'
     : pathname.startsWith('/admin/series')
       ? 'series'
-      : 'channels';
+      : pathname.startsWith('/admin/accounts')
+        ? 'accounts'
+        : 'channels';
 
   return (
     <section className="min-h-screen bg-dark-900 text-white p-4 sm:p-6 md:p-10" dir="rtl">
@@ -42,7 +46,7 @@ export const AdminDashboard: React.FC = () => {
           </Link>
         </div>
 
-        <nav className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8" aria-label="أقسام لوحة الإدارة">
+        <nav className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-8" aria-label="أقسام لوحة الإدارة">
           {tabs.map((tab) => (
             <Link
               key={tab.id}
@@ -62,6 +66,7 @@ export const AdminDashboard: React.FC = () => {
         {activeTab === 'channels' && <ChannelManager />}
         {activeTab === 'movies' && <MovieManager />}
         {activeTab === 'series' && <SeriesManager />}
+        {activeTab === 'accounts' && <Accounts />}
       </div>
     </section>
   );
