@@ -4,52 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
-<title>لوحة الإدارة الفائقة v5.0 | VIP Media Engine</title>
+<title>لوحة الإدارة v6.0 | VIP Media Engine</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <style>
-/* =========================================================
-   DESIGN TOKENS
-   ========================================================= */
 :root{
-    --bg:#07070b;
-    --bg-2:#0b0b12;
-    --surface:rgba(20,20,28,.78);
-    --surface-2:rgba(28,28,38,.9);
-    --border:rgba(255,255,255,.08);
-    --border-strong:rgba(255,255,255,.15);
-    --accent:#ff0b37;
-    --accent-2:#ff4d6d;
-    --accent-glow:rgba(255,11,55,.35);
-    --vip:#f59e0b;
-    --vip-2:#fbbf24;
-    --vip-glow:rgba(245,158,11,.35);
-    --success:#10b981;
-    --danger:#ef4444;
-    --warning:#f59e0b;
-    --info:#06b6d4;
-    --live:#ef4444;
-    --live-glow:rgba(239,68,68,.35);
-    --text:#f1f5f9;
-    --text-2:#94a3b8;
-    --text-3:#64748b;
-    --radius-xl:22px;
-    --radius-lg:16px;
-    --radius-md:12px;
-    --radius-sm:9px;
-    --fast:.18s cubic-bezier(.4,0,.2,1);
-    --smooth:.35s cubic-bezier(.4,0,.2,1);
-    --font:'Cairo','Tajawal',sans-serif;
-    --safe-b: env(safe-area-inset-bottom,0px);
-    --safe-t: env(safe-area-inset-top,0px);
-    --nav-h: 66px;
+    --bg:#07070b;--surface:rgba(20,20,28,.78);--surface-2:rgba(28,28,38,.9);
+    --border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.15);
+    --accent:#ff0b37;--accent-2:#ff4d6d;--accent-glow:rgba(255,11,55,.35);
+    --vip:#f59e0b;--vip-2:#fbbf24;--vip-glow:rgba(245,158,11,.35);
+    --success:#10b981;--danger:#ef4444;--warning:#f59e0b;--info:#06b6d4;
+    --live:#ef4444;--live-glow:rgba(239,68,68,.35);
+    --text:#f1f5f9;--text-2:#94a3b8;--text-3:#64748b;
+    --radius-xl:22px;--radius-lg:16px;--radius-md:12px;--radius-sm:9px;
+    --fast:.18s cubic-bezier(.4,0,.2,1);--smooth:.35s cubic-bezier(.4,0,.2,1);
+    --font:'Cairo',sans-serif;
+    --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
+    --nav-h:66px;
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:var(--font);-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -59,46 +36,41 @@ body{
         radial-gradient(1200px 800px at 10% -10%,rgba(255,11,55,.08),transparent 60%),
         radial-gradient(900px 700px at 110% 20%,rgba(245,158,11,.06),transparent 60%),
         radial-gradient(700px 500px at 50% 120%,rgba(6,182,212,.05),transparent 60%);
-    background-attachment:fixed;
-    overflow-x:hidden;
+    background-attachment:fixed;overflow-x:hidden;
     padding-bottom:calc(var(--nav-h) + var(--safe-b) + 20px);
 }
-@media (min-width:1024px){
-    body{padding-bottom:20px;padding-right:250px}
-}
+@media (min-width:1024px){body{padding-bottom:20px;padding-right:250px}}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:#050508}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#27272a,#18181b);border-radius:20px;border:2px solid #050508}
 ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--accent),var(--accent-2))}
 
-/* =========================================================
-   LOGIN OVERLAY
-   ========================================================= */
+/* ========== LOGIN ========== */
 #loginOverlay{
     position:fixed;inset:0;z-index:99999;
     background:rgba(3,3,7,.97);
     backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
-    display:flex;align-items:center;justify-content:center;padding:20px;
+    display:flex;align-items:center;justify-content:center;padding:16px;
 }
+#loginOverlay.hidden{display:none}
 .login-card{
     background:linear-gradient(160deg,rgba(26,26,36,.95),rgba(16,16,24,.95));
-    border:1px solid var(--border-strong);
-    border-radius:26px;padding:34px 22px;width:100%;max-width:420px;text-align:center;
+    border:1px solid var(--border-strong);border-radius:26px;
+    padding:30px 20px;width:100%;max-width:420px;text-align:center;
     box-shadow:0 30px 80px rgba(0,0,0,.9),0 0 60px rgba(255,11,55,.12);
     position:relative;overflow:hidden;
-    animation:zoomIn .6s cubic-bezier(.34,1.56,.64,1);
+    animation:zoomIn .5s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes zoomIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
 .login-card::before{
-    content:'';position:absolute;top:-2px;left:-2px;right:-2px;height:3px;
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
     background:linear-gradient(90deg,transparent,var(--accent),var(--vip),transparent);
 }
 .login-logo{
-    width:80px;height:80px;border-radius:22px;margin:0 auto 18px;
+    width:76px;height:76px;border-radius:22px;margin:0 auto 16px;
     background:linear-gradient(135deg,var(--accent),var(--vip));
     display:flex;align-items:center;justify-content:center;
-    font-size:2rem;color:#fff;
-    box-shadow:0 15px 40px var(--accent-glow);
+    font-size:1.9rem;color:#fff;box-shadow:0 15px 40px var(--accent-glow);
     position:relative;
 }
 .login-logo::after{
@@ -106,22 +78,53 @@ body{
     border:1px dashed rgba(255,255,255,.15);animation:spin 20s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.pin-wrap{display:flex;gap:6px;justify-content:center;margin:24px 0 8px;direction:ltr}
+
+/* ========== PIN INPUT — FIXED ========== */
+.pin-wrap{
+    position:relative;
+    display:flex;gap:6px;justify-content:center;
+    margin:22px 0 8px;direction:ltr;
+    cursor:text;
+    padding:4px;
+}
 .pin-dot{
-    width:44px;height:52px;border-radius:12px;
+    width:42px;height:50px;border-radius:12px;
     background:#0a0a12;border:2px solid #1f1f2b;
     display:flex;align-items:center;justify-content:center;
-    font-size:1.4rem;color:var(--vip);font-weight:900;
+    font-size:1.3rem;color:var(--vip);font-weight:900;
     transition:var(--fast);
+    pointer-events:none;               /* clicks pass through to input */
+    user-select:none;
 }
-@media (min-width:480px){.pin-dot{width:52px;height:60px;font-size:1.6rem}}
+@media (min-width:480px){.pin-dot{width:50px;height:58px;font-size:1.6rem}}
 .pin-dot.filled{border-color:var(--vip);background:rgba(245,158,11,.1);box-shadow:0 0 15px var(--vip-glow)}
 .pin-dot.active{border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}
-#pinReal{position:absolute;opacity:0;pointer-events:none}
 
-/* =========================================================
-   SIDEBAR (Desktop)
-   ========================================================= */
+/* ✅ FIXED: overlay input covering pin dots, fully clickable */
+.pin-input-real{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    opacity:0;
+    cursor:text;
+    border:none;
+    outline:none;
+    background:transparent;
+    font-size:16px;               /* prevent iOS zoom */
+    color:transparent;
+    caret-color:transparent;
+    z-index:5;
+    letter-spacing:0;
+    padding:0;
+    /* keep clickable & focusable */
+    pointer-events:auto;
+    -webkit-appearance:none;
+    appearance:none;
+}
+.pin-input-real:focus{outline:none}
+
+/* ========== SIDEBAR / BOTTOM NAV ========== */
 .sidebar{
     position:fixed;top:0;right:0;bottom:0;width:250px;
     background:linear-gradient(180deg,#0b0b12,#08080d);
@@ -130,10 +133,7 @@ body{
     display:none;flex-direction:column;gap:5px;
 }
 @media (min-width:1024px){.sidebar{display:flex}}
-.side-brand{
-    display:flex;align-items:center;gap:10px;padding:6px 10px 18px;
-    border-bottom:1px solid var(--border);margin-bottom:12px;
-}
+.side-brand{display:flex;align-items:center;gap:10px;padding:6px 10px 18px;border-bottom:1px solid var(--border);margin-bottom:12px}
 .side-brand-icon{
     width:42px;height:42px;border-radius:12px;
     background:linear-gradient(135deg,var(--accent),var(--vip));
@@ -142,30 +142,20 @@ body{
 }
 .side-brand-text{font-size:1rem;font-weight:900;line-height:1.1}
 .side-brand-text small{display:block;font-size:.66rem;color:var(--text-3);font-weight:600;margin-top:2px}
-
 .nav-item{
-    display:flex;align-items:center;gap:10px;
-    padding:11px 12px;border-radius:var(--radius-md);
-    color:var(--text-2);font-weight:700;font-size:.88rem;
+    display:flex;align-items:center;gap:10px;padding:11px 12px;
+    border-radius:var(--radius-md);color:var(--text-2);font-weight:700;font-size:.88rem;
     cursor:pointer;transition:var(--fast);text-decoration:none;
-    position:relative;border:none;background:transparent;width:100%;text-align:right;
+    position:relative;border:none;background:transparent;width:100%;text-align:right;font-family:inherit;
 }
-.nav-item i{width:20px;text-align:center;font-size:1rem;transition:var(--fast)}
+.nav-item i{width:20px;text-align:center;font-size:1rem}
 .nav-item:hover{background:rgba(255,255,255,.04);color:#fff}
 .nav-item.active{background:linear-gradient(90deg,rgba(255,11,55,.15),rgba(255,11,55,.02));color:#fff}
-.nav-item.active::before{
-    content:'';position:absolute;right:0;top:20%;bottom:20%;width:3px;border-radius:3px;
-    background:linear-gradient(180deg,var(--accent),var(--vip));
-}
+.nav-item.active::before{content:'';position:absolute;right:0;top:20%;bottom:20%;width:3px;border-radius:3px;background:linear-gradient(180deg,var(--accent),var(--vip))}
 .nav-item.active i{color:var(--accent)}
-
 .side-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border)}
 .side-footer .nav-item{color:var(--danger)}
-.side-footer .nav-item:hover{background:rgba(239,68,68,.1)}
 
-/* =========================================================
-   BOTTOM NAV (Mobile)
-   ========================================================= */
 .bottom-nav{
     position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + var(--safe-b));
     background:rgba(11,11,18,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -182,18 +172,14 @@ body{
 }
 .bottom-nav .bn-item i{font-size:1.1rem;transition:var(--fast)}
 .bottom-nav .bn-item.active{color:var(--accent)}
-.bottom-nav .bn-item.active i{transform:translateY(-2px) scale(1.1);filter:drop-shadow(0 4px 8px var(--accent-glow))}
+.bottom-nav .bn-item.active i{transform:translateY(-2px) scale(1.1)}
 .bottom-nav .bn-item.live-tab.active{color:var(--live)}
-.bottom-nav .bn-item.live-tab.active i{filter:drop-shadow(0 4px 8px var(--live-glow))}
 
-/* =========================================================
-   TOPBAR
-   ========================================================= */
+/* ========== TOPBAR ========== */
 .topbar{
     position:sticky;top:0;z-index:90;
-    background:rgba(7,7,11,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-    border-bottom:1px solid var(--border);
-    padding:12px 14px;
+    background:rgba(7,7,11,.85);backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);padding:12px 14px;
     display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
 .topbar-title{font-size:1rem;font-weight:900;display:flex;align-items:center;gap:8px}
@@ -204,20 +190,17 @@ body{
     width:38px;height:38px;border-radius:11px;border:1px solid var(--border);
     background:var(--surface);color:var(--text);cursor:pointer;
     display:inline-flex;align-items:center;justify-content:center;
-    transition:var(--fast);font-size:.95rem;text-decoration:none;
+    transition:var(--fast);font-size:.95rem;
 }
 .icon-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
 
-/* =========================================================
-   MAIN
-   ========================================================= */
+/* ========== MAIN ========== */
 .main{max-width:1400px;margin:0 auto;padding:16px 12px}
 @media (min-width:640px){.main{padding:20px 16px}}
 .section{display:none;animation:fadeSlide .3s ease}
 .section.active{display:block}
 @keyframes fadeSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-/* Stats */
 .stats{display:grid;gap:10px;margin-bottom:20px;grid-template-columns:repeat(2,1fr)}
 @media (min-width:640px){.stats{grid-template-columns:repeat(4,1fr);gap:14px}}
 .stat{
@@ -226,44 +209,33 @@ body{
     backdrop-filter:blur(14px);transition:var(--smooth);
 }
 .stat:hover{transform:translateY(-3px);border-color:var(--border-strong)}
-.stat::after{
-    content:'';position:absolute;top:-10px;right:-10px;width:60px;height:60px;
-    border-radius:50%;filter:blur(30px);opacity:.35;
-}
-.stat.c1::after{background:var(--accent)}
-.stat.c2::after{background:var(--vip)}
-.stat.c3::after{background:var(--info)}
-.stat.c4::after{background:var(--live)}
+.stat::after{content:'';position:absolute;top:-10px;right:-10px;width:60px;height:60px;border-radius:50%;filter:blur(30px);opacity:.35}
+.stat.c1::after{background:var(--accent)} .stat.c2::after{background:var(--vip)}
+.stat.c3::after{background:var(--info)} .stat.c4::after{background:var(--live)}
 .stat-ico{
     width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
     font-size:1rem;color:#fff;margin-bottom:10px;position:relative;z-index:1;
 }
 @media (min-width:640px){.stat-ico{width:42px;height:42px;font-size:1.1rem;margin-bottom:12px}}
-.stat.c1 .stat-ico{background:linear-gradient(135deg,var(--accent),#ff4d6d);box-shadow:0 8px 20px var(--accent-glow)}
-.stat.c2 .stat-ico{background:linear-gradient(135deg,var(--vip),#d97706);box-shadow:0 8px 20px var(--vip-glow)}
-.stat.c3 .stat-ico{background:linear-gradient(135deg,var(--info),#0891b2);box-shadow:0 8px 20px rgba(6,182,212,.35)}
-.stat.c4 .stat-ico{background:linear-gradient(135deg,var(--live),#b91c1c);box-shadow:0 8px 20px var(--live-glow)}
+.stat.c1 .stat-ico{background:linear-gradient(135deg,var(--accent),#ff4d6d)}
+.stat.c2 .stat-ico{background:linear-gradient(135deg,var(--vip),#d97706)}
+.stat.c3 .stat-ico{background:linear-gradient(135deg,var(--info),#0891b2)}
+.stat.c4 .stat-ico{background:linear-gradient(135deg,var(--live),#b91c1c)}
 .stat-label{font-size:.72rem;color:var(--text-3);font-weight:700;margin-bottom:3px}
 .stat-value{font-size:1.5rem;font-weight:900;letter-spacing:-.5px;line-height:1}
 @media (min-width:640px){.stat-value{font-size:1.9rem}}
 
-/* Cards */
 .card{
     background:var(--surface);border:1px solid var(--border);
-    border-radius:var(--radius-xl);padding:16px;
-    margin-bottom:18px;backdrop-filter:blur(14px);
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    border-radius:var(--radius-xl);padding:16px;margin-bottom:18px;
+    backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.35);
 }
 @media (min-width:640px){.card{padding:22px;margin-bottom:22px}}
 .card-head{
     display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
-    margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);
-    position:relative;
+    margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);position:relative;
 }
-.card-head::after{
-    content:'';position:absolute;bottom:-1px;right:0;width:56px;height:2px;
-    background:linear-gradient(90deg,var(--accent),var(--vip));border-radius:2px;
-}
+.card-head::after{content:'';position:absolute;bottom:-1px;right:0;width:56px;height:2px;background:linear-gradient(90deg,var(--accent),var(--vip));border-radius:2px}
 .card-title{font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px}
 .card-title i{color:var(--accent)}
 .card.gold .card-head::after{background:linear-gradient(90deg,var(--vip),var(--vip-2))}
@@ -275,43 +247,31 @@ body{
 
 .card-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%}
 @media (min-width:640px){.card-tools{width:auto}}
-.card-tools input[type="text"]{
-    flex:1;min-width:0;padding:8px 12px;font-size:.82rem;
-    background:#0a0a10;border:1px solid var(--border);border-radius:10px;color:#fff;outline:none;
-}
-.card-tools select{padding:8px 10px;font-size:.82rem;background:#0a0a10;border:1px solid var(--border);border-radius:10px;color:#fff;outline:none}
+.card-tools input[type="text"]{flex:1;min-width:0;padding:8px 12px;font-size:.82rem;background:#0a0a10;border:1px solid var(--border);border-radius:10px;color:#fff;outline:none;font-family:inherit}
+.card-tools select{padding:8px 10px;font-size:.82rem;background:#0a0a10;border:1px solid var(--border);border-radius:10px;color:#fff;outline:none;font-family:inherit}
 .card-tools input:focus,.card-tools select:focus{border-color:var(--accent)}
 
-/* Forms */
 .form-grid{display:grid;gap:12px;grid-template-columns:1fr}
 @media (min-width:640px){.form-grid{grid-template-columns:repeat(2,1fr);gap:16px}}
 .form-grid .full{grid-column:1/-1}
 .fg{margin-bottom:0}
-.fg label{
-    display:flex;align-items:center;gap:6px;
-    font-size:.8rem;font-weight:700;color:#cbd5e1;margin-bottom:6px;
-}
+.fg label{display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:#cbd5e1;margin-bottom:6px}
 .fg label i{color:var(--accent);font-size:.82rem;width:14px;text-align:center}
 .fg .hint{font-size:.7rem;color:var(--text-3);font-weight:600;margin-top:4px;line-height:1.4}
 input[type="text"],input[type="url"],input[type="password"],input[type="email"],
 input[type="number"],input[type="date"],input[type="color"],select,textarea{
-    width:100%;padding:11px 12px;
-    background:#0a0a10;border:1px solid var(--border);border-radius:11px;
-    color:#fff;font-size:.88rem;outline:none;transition:var(--fast);font-family:var(--font);
+    width:100%;padding:11px 12px;background:#0a0a10;border:1px solid var(--border);
+    border-radius:11px;color:#fff;font-size:.88rem;outline:none;
+    transition:var(--fast);font-family:inherit;
 }
-input:focus,select:focus,textarea:focus{
-    border-color:var(--accent);background:#10101a;
-    box-shadow:0 0 0 4px rgba(255,11,55,.08);
-}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#10101a;box-shadow:0 0 0 4px rgba(255,11,55,.08)}
 textarea{resize:vertical;min-height:80px;line-height:1.5}
 input[type="color"]{padding:4px;height:42px;cursor:pointer}
-input[type="checkbox"]{width:auto;accent-color:var(--vip)}
 
-/* Buttons */
 .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:6px;
     padding:10px 16px;border-radius:11px;border:none;cursor:pointer;
-    font-size:.85rem;font-weight:800;font-family:var(--font);
+    font-size:.85rem;font-weight:800;font-family:inherit;
     transition:var(--fast);text-decoration:none;white-space:nowrap;
     background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
     box-shadow:0 5px 16px var(--accent-glow);
@@ -327,38 +287,17 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
 .btn.sm{padding:7px 10px;font-size:.75rem;border-radius:9px}
 .btn.block{width:100%}
 
-/* Server rows */
-.servers-box{
-    background:#08080e;border:1px dashed var(--border-strong);
-    border-radius:12px;padding:12px;margin-bottom:10px;
-    display:flex;flex-direction:column;gap:9px;
-}
-.server-row{
-    background:#0d0d15;border:1px solid var(--border);border-radius:11px;padding:10px;
-    display:grid;gap:7px;grid-template-columns:1fr;position:relative;
-}
-@media (min-width:640px){
-    .server-row{grid-template-columns:1.2fr 1fr 2.5fr auto;align-items:center;gap:8px}
-}
+.servers-box{background:#08080e;border:1px dashed var(--border-strong);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:9px}
+.server-row{background:#0d0d15;border:1px solid var(--border);border-radius:11px;padding:10px;display:grid;gap:7px;grid-template-columns:1fr;position:relative}
+@media (min-width:640px){.server-row{grid-template-columns:1.2fr 1fr 2.5fr auto;align-items:center;gap:8px}}
 .server-row input,.server-row select{padding:8px 10px;font-size:.82rem}
-.server-row .rm{
-    width:36px;height:36px;border-radius:9px;border:none;
-    background:rgba(239,68,68,.15);color:var(--danger);cursor:pointer;font-size:.85rem;
-    display:flex;align-items:center;justify-content:center;transition:var(--fast);
-}
+.server-row .rm{width:36px;height:36px;border-radius:9px;border:none;background:rgba(239,68,68,.15);color:var(--danger);cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:var(--fast)}
 .server-row .rm:hover{background:var(--danger);color:#fff}
 
-/* Data list (mobile-friendly) */
 .dl{display:flex;flex-direction:column;gap:9px}
-.dl-row{
-    background:#0b0b12;border:1px solid var(--border);border-radius:13px;
-    padding:11px;display:grid;gap:7px;grid-template-columns:1fr;
-    transition:var(--fast);
-}
+.dl-row{background:#0b0b12;border:1px solid var(--border);border-radius:13px;padding:11px;display:grid;gap:7px;grid-template-columns:1fr;transition:var(--fast)}
 .dl-row:hover{border-color:var(--border-strong);background:#0e0e16}
-@media (min-width:640px){
-    .dl-row{grid-template-columns:64px 1.6fr 1fr .8fr .7fr .7fr auto;align-items:center;gap:12px;padding:10px 12px}
-}
+@media (min-width:640px){.dl-row{grid-template-columns:64px 1.6fr 1fr .8fr .7fr .7fr auto;align-items:center;gap:12px;padding:10px 12px}}
 .dl-cell{display:flex;align-items:center;gap:8px;font-size:.85rem;min-width:0}
 .dl-cell .k{display:block;font-size:.7rem;color:var(--text-3);font-weight:700;margin-bottom:2px}
 @media (min-width:640px){.dl-cell .k{display:none}}
@@ -369,20 +308,7 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
 @media (min-width:640px){.dl-actions{justify-content:flex-end}}
 .dl-actions .btn{padding:6px 9px;font-size:.72rem}
 
-/* Live card preview in list */
-.live-indicator{
-    display:inline-flex;align-items:center;gap:4px;
-    padding:2px 6px;border-radius:4px;font-size:.62rem;font-weight:900;
-    background:var(--live);color:#fff;
-}
-.live-indicator::before{content:'';width:5px;height:5px;border-radius:50%;background:#fff;animation:pulse 1.2s infinite}
-
-/* Badges */
-.badge{
-    display:inline-flex;align-items:center;gap:4px;padding:3px 8px;
-    border-radius:20px;font-size:.68rem;font-weight:800;
-    background:rgba(255,255,255,.06);color:var(--text-2);white-space:nowrap;
-}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.68rem;font-weight:800;background:rgba(255,255,255,.06);color:var(--text-2);white-space:nowrap}
 .badge.vip{background:rgba(245,158,11,.14);color:var(--vip);border:1px solid rgba(245,158,11,.3)}
 .badge.ok{background:rgba(16,185,129,.14);color:var(--success);border:1px solid rgba(16,185,129,.3)}
 .badge.block{background:rgba(239,68,68,.14);color:var(--danger);border:1px solid rgba(239,68,68,.3)}
@@ -391,108 +317,60 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
 .badge.live{background:rgba(239,68,68,.14);color:var(--live);border:1px solid rgba(239,68,68,.3)}
 .badge.dl-badge{background:rgba(16,185,129,.14);color:var(--success);border:1px solid rgba(16,185,129,.3)}
 
-/* =========================================================
-   MODALS
-   ========================================================= */
-.modal{
-    position:fixed;inset:0;z-index:10000;
-    background:rgba(3,3,7,.85);
-    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    display:none;align-items:flex-end;justify-content:center;
-    padding:0;overflow-y:auto;
-}
+/* ========== CHART ========== */
+.chart-wrap{background:#08080e;border:1px solid var(--border);border-radius:14px;padding:14px;overflow:hidden}
+.chart-canvas{width:100%;height:220px;display:block}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:.75rem}
+.chart-legend .lg-item{display:flex;align-items:center;gap:6px;padding:5px 10px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border);max-width:100%}
+.chart-legend .lg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.chart-legend .lg-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.chart-legend .lg-val{color:var(--text-3);margin-right:auto;font-weight:800}
+
+/* ========== MODALS ========== */
+.modal{position:fixed;inset:0;z-index:10000;background:rgba(3,3,7,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:none;align-items:flex-end;justify-content:center;padding:0;overflow-y:auto}
 .modal.active{display:flex;animation:modalFade .25s ease}
 @media (min-width:640px){.modal{align-items:center;padding:20px}}
 @keyframes modalFade{from{opacity:0}to{opacity:1}}
-
 .modal-box{
     background:linear-gradient(180deg,#14141c,#0f0f16);
-    border:1px solid var(--border-strong);
-    width:100%;max-width:680px;
-    border-radius:22px 22px 0 0;
-    padding:20px 16px;
-    max-height:92vh;overflow-y:auto;
-    position:relative;
+    border:1px solid var(--border-strong);width:100%;max-width:680px;
+    border-radius:22px 22px 0 0;padding:20px 16px;
+    max-height:92vh;overflow-y:auto;position:relative;
     animation:sheetUp .35s cubic-bezier(.34,1.4,.64,1);
 }
-@media (min-width:640px){
-    .modal-box{border-radius:22px;max-height:88vh;padding:24px;animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}
-}
+@media (min-width:640px){.modal-box{border-radius:22px;max-height:88vh;padding:24px;animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes popIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
-
 .modal-grab{width:40px;height:4px;border-radius:4px;background:rgba(255,255,255,.15);margin:0 auto 14px}
 @media (min-width:640px){.modal-grab{display:none}}
-
-.modal-head{
-    display:flex;align-items:flex-start;gap:10px;
-    padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--border);
-}
-.modal-head .mi{
-    width:42px;height:42px;border-radius:11px;flex-shrink:0;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.05rem;
-    box-shadow:0 8px 22px var(--accent-glow);
-}
-.modal-head.gold .mi{background:linear-gradient(135deg,var(--vip),#d97706);color:#000;box-shadow:0 8px 22px var(--vip-glow)}
-.modal-head.red .mi{background:linear-gradient(135deg,var(--danger),#b91c1c);box-shadow:0 8px 22px rgba(239,68,68,.4)}
-.modal-head.green .mi{background:linear-gradient(135deg,var(--success),#059669);box-shadow:0 8px 22px rgba(16,185,129,.35)}
-.modal-head.live .mi{background:linear-gradient(135deg,var(--live),#b91c1c);box-shadow:0 8px 22px var(--live-glow)}
+.modal-head{display:flex;align-items:flex-start;gap:10px;padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-head .mi{width:42px;height:42px;border-radius:11px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.05rem;box-shadow:0 8px 22px var(--accent-glow)}
+.modal-head.gold .mi{background:linear-gradient(135deg,var(--vip),#d97706);color:#000}
+.modal-head.red .mi{background:linear-gradient(135deg,var(--danger),#b91c1c)}
+.modal-head.green .mi{background:linear-gradient(135deg,var(--success),#059669)}
+.modal-head.live .mi{background:linear-gradient(135deg,var(--live),#b91c1c)}
 .modal-head .mh-text{flex:1;min-width:0}
 .modal-head h3{font-size:1rem;font-weight:900;margin-bottom:2px}
 .modal-head p{font-size:.75rem;color:var(--text-3);line-height:1.4}
-.modal-close{
-    width:34px;height:34px;border-radius:11px;border:1px solid var(--border);
-    background:rgba(255,255,255,.03);color:var(--text-2);cursor:pointer;
-    display:flex;align-items:center;justify-content:center;transition:var(--fast);flex-shrink:0;
-}
+.modal-close{width:34px;height:34px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--fast);flex-shrink:0}
 .modal-close:hover{background:var(--danger);color:#fff;border-color:var(--danger);transform:rotate(90deg)}
-
-.modal-foot{
-    display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);
-    flex-wrap:wrap;
-}
+.modal-foot{display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap}
 .modal-foot .btn{flex:1;min-width:110px}
 
-/* Preview */
-.preview-thumb{
-    width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;
-    border:1px solid var(--border);margin-bottom:12px;background:#000;
-}
+.preview-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:1px solid var(--border);margin-bottom:12px;background:#000}
 .preview-servers{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
-.preview-servers .srv-pill{
-    padding:5px 10px;border-radius:20px;font-size:.75rem;font-weight:700;
-    background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text-2);
-}
-.preview-servers .srv-pill:hover{background:var(--accent);color:#fff;border-color:var(--accent);cursor:pointer}
-
-/* Confirm */
+.preview-servers .srv-pill{padding:5px 10px;border-radius:20px;font-size:.75rem;font-weight:700;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text-2)}
 .confirm-box{max-width:420px;text-align:center}
 .confirm-box .modal-head{flex-direction:column;align-items:center;text-align:center}
 .confirm-box .modal-head .mi{width:60px;height:60px;font-size:1.6rem}
 .confirm-msg{font-size:.9rem;color:var(--text-2);line-height:1.6;margin:6px 0 4px}
 
-/* =========================================================
-   TOAST
-   ========================================================= */
-.toast-wrap{
-    position:fixed;top:calc(14px + var(--safe-t));left:50%;transform:translateX(-50%);
-    z-index:100000;display:flex;flex-direction:column;gap:8px;pointer-events:none;
-    width:calc(100% - 24px);max-width:400px;
-}
-.toast{
-    background:linear-gradient(135deg,#14141c,#0e0e16);
-    border:1px solid var(--border-strong);border-radius:12px;
-    padding:11px 13px;display:flex;align-items:flex-start;gap:9px;
-    box-shadow:0 15px 40px rgba(0,0,0,.7);
-    animation:toastIn .35s cubic-bezier(.34,1.56,.64,1);
-    pointer-events:auto;position:relative;overflow:hidden;
-}
+/* ========== TOAST ========== */
+.toast-wrap{position:fixed;top:calc(14px + var(--safe-t));left:50%;transform:translateX(-50%);z-index:100000;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:calc(100% - 24px);max-width:400px}
+.toast{background:linear-gradient(135deg,#14141c,#0e0e16);border:1px solid var(--border-strong);border-radius:12px;padding:11px 13px;display:flex;align-items:flex-start;gap:9px;box-shadow:0 15px 40px rgba(0,0,0,.7);animation:toastIn .35s cubic-bezier(.34,1.56,.64,1);pointer-events:auto;position:relative;overflow:hidden}
 @keyframes toastIn{from{opacity:0;transform:translateY(-20px) scale(.95)}to{opacity:1;transform:none}}
 .toast::before{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:var(--accent)}
-.toast.ok::before{background:var(--success)}
-.toast.err::before{background:var(--danger)}
-.toast.warn::before{background:var(--warning)}
+.toast.ok::before{background:var(--success)} .toast.err::before{background:var(--danger)} .toast.warn::before{background:var(--warning)}
 .toast-i{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
 .toast.ok .toast-i{background:linear-gradient(135deg,var(--success),#059669)}
 .toast.err .toast-i{background:linear-gradient(135deg,var(--danger),#b91c1c)}
@@ -501,88 +379,32 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
 .toast-title{font-size:.82rem;font-weight:800;margin-bottom:1px}
 .toast-msg{font-size:.75rem;color:var(--text-2);line-height:1.4}
 
-/* =========================================================
-   FAB
-   ========================================================= */
-.fab-wrap{
-    position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 14px);left:14px;z-index:99;
-    display:flex;flex-direction:column-reverse;align-items:center;gap:10px;
-}
+/* ========== FAB ========== */
+.fab-wrap{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 14px);left:14px;z-index:99;display:flex;flex-direction:column-reverse;align-items:center;gap:10px}
 @media (min-width:1024px){.fab-wrap{bottom:22px;left:22px}}
-.fab-main{
-    width:54px;height:54px;border-radius:18px;border:none;cursor:pointer;
-    background:linear-gradient(135deg,var(--accent),var(--vip));
-    color:#fff;font-size:1.25rem;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 12px 30px var(--accent-glow);
-    transition:var(--smooth);
-}
+.fab-main{width:54px;height:54px;border-radius:18px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--vip));color:#fff;font-size:1.25rem;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px var(--accent-glow);transition:var(--smooth)}
 .fab-main:hover{transform:rotate(90deg) scale(1.05)}
-.fab-list{
-    display:flex;flex-direction:column;gap:8px;
-    opacity:0;visibility:hidden;transform:translateY(20px);transition:var(--smooth);
-}
+.fab-list{display:flex;flex-direction:column;gap:8px;opacity:0;visibility:hidden;transform:translateY(20px);transition:var(--smooth)}
 .fab-wrap.open .fab-list{opacity:1;visibility:visible;transform:none}
-.fab-i{
-    width:44px;height:44px;border-radius:13px;
-    background:var(--surface-2);border:1px solid var(--border-strong);
-    color:var(--text);cursor:pointer;font-size:.95rem;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 8px 20px rgba(0,0,0,.5);transition:var(--fast);
-    text-decoration:none;position:relative;
-}
+.fab-i{width:44px;height:44px;border-radius:13px;background:var(--surface-2);border:1px solid var(--border-strong);color:var(--text);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.5);transition:var(--fast);position:relative}
 .fab-i:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.08)}
-.fab-i::after{
-    content:attr(data-tip);position:absolute;right:54px;top:50%;transform:translateY(-50%) translateX(10px);
-    background:#000;color:#fff;padding:4px 9px;border-radius:7px;font-size:.72rem;white-space:nowrap;
-    opacity:0;pointer-events:none;transition:var(--fast);font-weight:700;
-}
+.fab-i::after{content:attr(data-tip);position:absolute;right:54px;top:50%;transform:translateY(-50%) translateX(10px);background:#000;color:#fff;padding:4px 9px;border-radius:7px;font-size:.72rem;white-space:nowrap;opacity:0;pointer-events:none;transition:var(--fast);font-weight:700}
 .fab-i:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
 
-/* Empty */
-.empty{
-    text-align:center;padding:36px 18px;color:var(--text-3);
-    display:flex;flex-direction:column;align-items:center;gap:10px;
-}
+.empty{text-align:center;padding:36px 18px;color:var(--text-3);display:flex;flex-direction:column;align-items:center;gap:10px}
 .empty i{font-size:2.2rem;opacity:.4}
 .empty p{font-size:.85rem;font-weight:600}
 
-/* Segmented control inside forms */
-.segmented{
-    display:flex;background:#0a0a10;border:1px solid var(--border);
-    border-radius:11px;padding:3px;gap:3px;
-}
-.segmented button{
-    flex:1;padding:9px 10px;border-radius:8px;border:none;background:transparent;
-    color:var(--text-2);font-weight:800;font-size:.82rem;cursor:pointer;
-    transition:var(--fast);font-family:inherit;
-    display:inline-flex;align-items:center;justify-content:center;gap:6px;
-}
-.segmented button.active{background:var(--accent);color:#fff}
-.segmented button.active.live-opt{background:var(--live)}
-
-/* Download options block */
-.dl-paths{
-    display:grid;gap:10px;grid-template-columns:1fr;
-    margin-top:10px;
-}
+.dl-paths{display:grid;gap:10px;grid-template-columns:1fr;margin-top:10px}
 @media (min-width:640px){.dl-paths{grid-template-columns:1fr 1fr}}
-.dl-path{
-    background:#0a0a10;border:1px solid var(--border);border-radius:12px;padding:12px;
-    position:relative;
-}
+.dl-path{background:#0a0a10;border:1px solid var(--border);border-radius:12px;padding:12px;position:relative}
 .dl-path.vip-path{border-color:rgba(245,158,11,.35)}
 .dl-path.free-path{border-color:rgba(16,185,129,.35)}
-.dl-path-head{
-    display:flex;align-items:center;gap:8px;margin-bottom:9px;
-    padding-bottom:8px;border-bottom:1px solid var(--border);
-}
-.dl-path-head i.vip{color:var(--vip)}
-.dl-path-head i.free{color:var(--success)}
+.dl-path-head{display:flex;align-items:center;gap:8px;margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.dl-path-head i.vip{color:var(--vip)} .dl-path-head i.free{color:var(--success)}
 .dl-path-head strong{font-size:.82rem;font-weight:800}
 .dl-path-head small{font-size:.68rem;color:var(--text-3);font-weight:600;display:block;margin-top:1px}
 
-/* Responsive tweaks */
 @media (max-width:639px){
     .dl-row .dl-cell{padding:3px 0}
     .dl-cell{display:flex;justify-content:space-between;align-items:center}
@@ -594,19 +416,22 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
 </head>
 <body>
 
-<!-- =========================================================
-     LOGIN
-     ========================================================= -->
+<!-- ============ LOGIN ============ -->
 <div id="loginOverlay">
     <div class="login-card">
         <div class="login-logo"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 style="font-weight:900;margin-bottom:6px;font-size:1.2rem">لوحة الإدارة الفائقة</h2>
         <p style="color:var(--text-3);font-size:.8rem;line-height:1.5">أدخل رمز الأمان للمتابعة</p>
+
+        <!-- ✅ FIXED PIN: input as overlay covering the dots -->
         <div class="pin-wrap" id="pinWrap">
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+            <input type="tel" id="pinReal" class="pin-input-real"
+                   maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                   autocomplete="off" autocorrect="off" spellcheck="false"
+                   aria-label="رمز الدخول">
         </div>
-        <input type="password" id="pinReal" maxlength="6" inputmode="numeric" autocomplete="off">
         <p id="pinErr" style="color:var(--danger);font-size:.82rem;font-weight:700;min-height:18px;margin-top:8px"></p>
         <button class="btn gold block" id="pinBtn" style="padding:13px;font-size:.9rem">
             <i class="fa-solid fa-lock-open"></i> تأكيد الدخول
@@ -617,18 +442,15 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
     </div>
 </div>
 
-<!-- =========================================================
-     SIDEBAR
-     ========================================================= -->
+<!-- ============ SIDEBAR ============ -->
 <aside class="sidebar">
     <div class="side-brand">
         <div class="side-brand-icon"><i class="fa-solid fa-sliders"></i></div>
         <div class="side-brand-text">
             <span id="sideBrandName">VIP Media</span>
-            <small>Admin v5.0</small>
+            <small>Admin v6.0</small>
         </div>
     </div>
-
     <button class="nav-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i> لوحة القيادة</button>
     <button class="nav-item" data-sec="media"><i class="fa-solid fa-film"></i> إدارة المحتوى</button>
     <button class="nav-item" data-sec="add"><i class="fa-solid fa-circle-plus"></i> إضافة محتوى</button>
@@ -636,16 +458,13 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
     <button class="nav-item" data-sec="categories"><i class="fa-solid fa-folder-tree"></i> التصنيفات</button>
     <button class="nav-item" data-sec="users"><i class="fa-solid fa-users-gear"></i> المستخدمون</button>
     <button class="nav-item" data-sec="settings"><i class="fa-solid fa-palette"></i> المظهر والإعدادات</button>
-
     <div class="side-footer">
         <a class="nav-item" id="previewLink" target="_blank"><i class="fa-solid fa-tv"></i> معاينة الموقع</a>
         <button class="nav-item" id="btnLogout"><i class="fa-solid fa-power-off"></i> تسجيل خروج</button>
     </div>
 </aside>
 
-<!-- =========================================================
-     BOTTOM NAV
-     ========================================================= -->
+<!-- ============ BOTTOM NAV ============ -->
 <nav class="bottom-nav">
     <button class="bn-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i><span>الرئيسية</span></button>
     <button class="bn-item" data-sec="media"><i class="fa-solid fa-film"></i><span>المحتوى</span></button>
@@ -654,47 +473,34 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
     <button class="bn-item" data-sec="settings"><i class="fa-solid fa-gear"></i><span>الإعدادات</span></button>
 </nav>
 
-<!-- =========================================================
-     TOPBAR
-     ========================================================= -->
+<!-- ============ TOPBAR ============ -->
 <header class="topbar">
-    <div class="topbar-title">
-        <span class="dot"></span>
-        <span id="topTitle">لوحة القيادة</span>
-    </div>
+    <div class="topbar-title"><span class="dot"></span><span id="topTitle">لوحة القيادة</span></div>
     <div class="topbar-actions">
         <button class="icon-btn" id="btnRefresh" title="تحديث"><i class="fa-solid fa-rotate"></i></button>
         <button class="icon-btn" id="btnBackup" title="نسخة احتياطية"><i class="fa-solid fa-download"></i></button>
     </div>
 </header>
 
-<!-- =========================================================
-     MAIN
-     ========================================================= -->
 <main class="main">
 
-    <!-- ===== DASHBOARD ===== -->
+    <!-- DASHBOARD -->
     <section class="section active" id="sec-dashboard">
         <div class="stats">
-            <div class="stat c1">
-                <div class="stat-ico"><i class="fa-solid fa-film"></i></div>
-                <div class="stat-label">إجمالي المحتوى</div>
-                <div class="stat-value" id="statTotalVideos">0</div>
+            <div class="stat c1"><div class="stat-ico"><i class="fa-solid fa-film"></i></div><div class="stat-label">إجمالي المحتوى</div><div class="stat-value" id="statTotalVideos">0</div></div>
+            <div class="stat c2"><div class="stat-ico"><i class="fa-solid fa-crown"></i></div><div class="stat-label">محتوى VIP</div><div class="stat-value" id="statVipVideos">0</div></div>
+            <div class="stat c3"><div class="stat-ico"><i class="fa-solid fa-users"></i></div><div class="stat-label">المستخدمون</div><div class="stat-value" id="statTotalUsers">0</div></div>
+            <div class="stat c4"><div class="stat-ico"><i class="fa-solid fa-tower-broadcast"></i></div><div class="stat-label">قنوات مباشرة</div><div class="stat-value" id="statTotalLive">0</div></div>
+        </div>
+
+        <!-- Chart: Top viewed -->
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-chart-simple"></i> أعلى 10 محتوى مشاهدة</div>
             </div>
-            <div class="stat c2">
-                <div class="stat-ico"><i class="fa-solid fa-crown"></i></div>
-                <div class="stat-label">محتوى VIP</div>
-                <div class="stat-value" id="statVipVideos">0</div>
-            </div>
-            <div class="stat c3">
-                <div class="stat-ico"><i class="fa-solid fa-users"></i></div>
-                <div class="stat-label">المستخدمون</div>
-                <div class="stat-value" id="statTotalUsers">0</div>
-            </div>
-            <div class="stat c4">
-                <div class="stat-ico"><i class="fa-solid fa-tower-broadcast"></i></div>
-                <div class="stat-label">قنوات مباشرة</div>
-                <div class="stat-value" id="statTotalLive">0</div>
+            <div class="chart-wrap">
+                <canvas id="topViewedChart" class="chart-canvas" width="800" height="440"></canvas>
+                <div class="chart-legend" id="topViewedLegend"></div>
             </div>
         </div>
 
@@ -721,7 +527,7 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
         </div>
     </section>
 
-    <!-- ===== MEDIA (VOD) ===== -->
+    <!-- MEDIA -->
     <section class="section" id="sec-media">
         <div class="card">
             <div class="card-head">
@@ -740,191 +546,119 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
         </div>
     </section>
 
-    <!-- ===== ADD MEDIA ===== -->
+    <!-- ADD MEDIA -->
     <section class="section" id="sec-add">
         <div class="card">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-circle-plus"></i> إضافة محتوى جديد</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-circle-plus"></i> إضافة محتوى جديد</div></div>
             <form id="addForm">
                 <div class="form-grid">
-                    <div class="fg">
-                        <label><i class="fa-solid fa-heading"></i> العنوان</label>
-                        <input type="text" id="addTitle" placeholder="فيلم، مسلسل..." required>
-                    </div>
-                    <div class="fg">
-                        <label><i class="fa-solid fa-layer-group"></i> التصنيف</label>
-                        <select id="addCategory"></select>
-                    </div>
-                    <div class="fg">
-                        <label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
+                    <div class="fg"><label><i class="fa-solid fa-heading"></i> العنوان</label><input type="text" id="addTitle" placeholder="فيلم، مسلسل..." required></div>
+                    <div class="fg"><label><i class="fa-solid fa-layer-group"></i> التصنيف</label><select id="addCategory"></select></div>
+                    <div class="fg"><label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
                         <select id="addIsVip">
                             <option value="false">مجاني للجميع</option>
                             <option value="true">👑 VIP مميز</option>
                         </select>
                     </div>
-                    <div class="fg">
-                        <label><i class="fa-solid fa-image"></i> رابط البوستر</label>
-                        <input type="url" id="addThumbnail" placeholder="https://...">
-                    </div>
-                    <div class="fg full">
-                        <label><i class="fa-solid fa-align-right"></i> الوصف</label>
-                        <textarea id="addDescription" placeholder="وصف مختصر..."></textarea>
-                    </div>
+                    <div class="fg"><label><i class="fa-solid fa-image"></i> رابط البوستر</label><input type="url" id="addThumbnail" placeholder="https://..."></div>
+                    <div class="fg full"><label><i class="fa-solid fa-align-right"></i> الوصف</label><textarea id="addDescription" placeholder="وصف مختصر..."></textarea></div>
                 </div>
 
                 <div class="fg" style="margin-top:14px">
                     <label><i class="fa-solid fa-server"></i> السيرفرات وروابط التشغيل</label>
                     <div class="servers-box" id="addServers"></div>
-                    <button type="button" class="btn ghost sm" id="addServerBtn">
-                        <i class="fa-solid fa-plus"></i> إضافة سيرفر
-                    </button>
+                    <button type="button" class="btn ghost sm" id="addServerBtn"><i class="fa-solid fa-plus"></i> إضافة سيرفر</button>
                 </div>
 
-                <!-- Download paths -->
                 <div class="fg" style="margin-top:14px">
                     <label><i class="fa-solid fa-download"></i> مسارات التحميل</label>
                     <div class="dl-paths">
                         <div class="dl-path vip-path">
-                            <div class="dl-path-head">
-                                <i class="fa-solid fa-crown vip" style="font-size:1.1rem"></i>
-                                <div>
-                                    <strong>تحميل مباشر (VIP)</strong>
-                                    <small>للمشتركين فقط، بدون إعلان</small>
-                                </div>
-                            </div>
+                            <div class="dl-path-head"><i class="fa-solid fa-crown vip" style="font-size:1.1rem"></i><div><strong>تحميل مباشر (VIP)</strong><small>للمشتركين فقط، بدون إعلان</small></div></div>
                             <input type="url" id="addDownloadUrl" placeholder="https://... رابط مباشر">
                         </div>
                         <div class="dl-path free-path">
-                            <div class="dl-path-head">
-                                <i class="fa-solid fa-play free" style="font-size:1.1rem"></i>
-                                <div>
-                                    <strong>تحميل مجاني (بإعلان)</strong>
-                                    <small>يظهر للزوار بعد إعلان</small>
-                                </div>
-                            </div>
+                            <div class="dl-path-head"><i class="fa-solid fa-play free" style="font-size:1.1rem"></i><div><strong>تحميل مجاني (بإعلان)</strong><small>يظهر للزوار بعد إعلان</small></div></div>
                             <input type="url" id="addAdDownloadUrl" placeholder="https://... رابط التحميل المجاني">
                         </div>
                     </div>
                 </div>
 
                 <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
-                    <button type="submit" class="btn" id="btnSubmitAdd" style="flex:1;min-width:160px">
-                        <i class="fa-solid fa-floppy-disk"></i> حفظ ونشر
-                    </button>
-                    <button type="button" class="btn ghost" onclick="resetAddForm()">
-                        <i class="fa-solid fa-rotate-left"></i> تفريغ
-                    </button>
+                    <button type="submit" class="btn" id="btnSubmitAdd" style="flex:1;min-width:160px"><i class="fa-solid fa-floppy-disk"></i> حفظ ونشر</button>
+                    <button type="button" class="btn ghost" onclick="resetAddForm()"><i class="fa-solid fa-rotate-left"></i> تفريغ</button>
                 </div>
             </form>
         </div>
     </section>
 
-    <!-- ===== LIVE TV ===== -->
+    <!-- LIVE -->
     <section class="section" id="sec-live">
-        <!-- Live Stats row -->
         <div class="stats" style="grid-template-columns:repeat(2,1fr)">
-            <div class="stat c4">
-                <div class="stat-ico"><i class="fa-solid fa-tv"></i></div>
-                <div class="stat-label">إجمالي القنوات</div>
-                <div class="stat-value" id="liveStatChannels">0</div>
-            </div>
-            <div class="stat c2">
-                <div class="stat-ico"><i class="fa-solid fa-crown"></i></div>
-                <div class="stat-label">قنوات VIP</div>
-                <div class="stat-value" id="liveStatVip">0</div>
-            </div>
+            <div class="stat c4"><div class="stat-ico"><i class="fa-solid fa-tv"></i></div><div class="stat-label">إجمالي القنوات</div><div class="stat-value" id="liveStatChannels">0</div></div>
+            <div class="stat c2"><div class="stat-ico"><i class="fa-solid fa-crown"></i></div><div class="stat-label">قنوات VIP</div><div class="stat-value" id="liveStatVip">0</div></div>
         </div>
 
-        <!-- Live Categories -->
         <div class="card live-card-head">
             <div class="card-head">
                 <div class="card-title"><i class="fa-solid fa-folder-plus"></i> إضافة تصنيف للبث</div>
             </div>
             <form id="addLiveCatForm">
                 <div class="form-grid">
-                    <div class="fg">
-                        <label><i class="fa-solid fa-tag"></i> اسم التصنيف</label>
-                        <input type="text" id="newLiveCatName" placeholder="رياضة، أخبار، أطفال..." required>
-                    </div>
-                    <div class="fg">
-                        <label><i class="fa-solid fa-icons"></i> أيقونة (اختياري)</label>
-                        <input type="text" id="newLiveCatIcon" placeholder="fa-futbol">
-                    </div>
+                    <div class="fg"><label><i class="fa-solid fa-tag"></i> اسم التصنيف</label><input type="text" id="newLiveCatName" placeholder="رياضة، أخبار..." required></div>
+                    <div class="fg"><label><i class="fa-solid fa-icons"></i> أيقونة (اختياري)</label><input type="text" id="newLiveCatIcon" placeholder="fa-futbol"></div>
                 </div>
-                <button type="submit" class="btn live block" style="margin-top:12px">
-                    <i class="fa-solid fa-plus"></i> إضافة تصنيف
-                </button>
+                <button type="submit" class="btn live block" style="margin-top:12px"><i class="fa-solid fa-plus"></i> إضافة تصنيف</button>
             </form>
         </div>
 
         <div class="card">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-folder-tree"></i> تصنيفات البث</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-folder-tree"></i> تصنيفات البث</div></div>
             <div class="dl" id="liveCatList"></div>
         </div>
 
-        <!-- Live Channels -->
         <div class="card live-card-head">
             <div class="card-head">
                 <div class="card-title"><i class="fa-solid fa-tower-broadcast"></i> إدارة قنوات البث</div>
-                <button class="btn live sm" id="btnNewLiveChannel">
-                    <i class="fa-solid fa-plus"></i> قناة جديدة
-                </button>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <button class="btn ghost sm" id="btnImportM3U"><i class="fa-solid fa-file-import"></i> استيراد M3U</button>
+                    <button class="btn live sm" id="btnNewLiveChannel"><i class="fa-solid fa-plus"></i> قناة جديدة</button>
+                </div>
             </div>
             <div class="card-tools" style="margin-bottom:12px">
                 <input type="text" id="qLive" placeholder="ابحث باسم قناة...">
-                <select id="filterLiveCat">
-                    <option value="all">كل التصنيفات</option>
-                </select>
+                <select id="filterLiveCat"><option value="all">كل التصنيفات</option></select>
             </div>
             <div class="dl" id="liveChannelsList"></div>
         </div>
     </section>
 
-    <!-- ===== CATEGORIES (VOD) ===== -->
+    <!-- CATEGORIES -->
     <section class="section" id="sec-categories">
         <div class="card">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-folder-plus"></i> إضافة تصنيف (VOD)</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-folder-plus"></i> إضافة تصنيف (VOD)</div></div>
             <form id="addCategoryForm">
                 <div class="form-grid">
-                    <div class="fg">
-                        <label><i class="fa-solid fa-tag"></i> اسم التصنيف</label>
-                        <input type="text" id="newCategoryName" placeholder="أفلام، مسلسلات..." required>
-                    </div>
-                    <div class="fg">
-                        <label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
-                        <select id="newCategoryType">
-                            <option value="عام">عام</option>
-                            <option value="VIP">VIP</option>
-                        </select>
+                    <div class="fg"><label><i class="fa-solid fa-tag"></i> اسم التصنيف</label><input type="text" id="newCategoryName" placeholder="أفلام، مسلسلات..." required></div>
+                    <div class="fg"><label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
+                        <select id="newCategoryType"><option value="عام">عام</option><option value="VIP">VIP</option></select>
                     </div>
                 </div>
-                <button type="submit" class="btn green block" style="margin-top:12px">
-                    <i class="fa-solid fa-plus"></i> إضافة التصنيف
-                </button>
+                <button type="submit" class="btn green block" style="margin-top:12px"><i class="fa-solid fa-plus"></i> إضافة التصنيف</button>
             </form>
         </div>
-
         <div class="card">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-folder-tree"></i> تصنيفات المحتوى</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-folder-tree"></i> تصنيفات المحتوى</div></div>
             <div class="dl" id="catList"></div>
         </div>
     </section>
 
-    <!-- ===== USERS ===== -->
+    <!-- USERS -->
     <section class="section" id="sec-users">
         <div class="card gold">
             <div class="card-head">
                 <div class="card-title"><i class="fa-solid fa-users-gear"></i> إدارة المستخدمين</div>
-                <button class="btn gold sm" id="btnNewUser">
-                    <i class="fa-solid fa-user-plus"></i> مستخدم جديد
-                </button>
+                <button class="btn gold sm" id="btnNewUser"><i class="fa-solid fa-user-plus"></i> مستخدم جديد</button>
             </div>
             <div class="card-tools" style="margin-bottom:12px">
                 <input type="text" id="qUser" placeholder="ابحث بالاسم أو البريد...">
@@ -939,241 +673,140 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
         </div>
     </section>
 
-    <!-- ===== SETTINGS ===== -->
+    <!-- SETTINGS -->
     <section class="section" id="sec-settings">
         <div class="card blue">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-palette"></i> تخصيص المظهر</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-palette"></i> تخصيص المظهر</div></div>
             <div class="form-grid">
-                <div class="fg">
-                    <label><i class="fa-solid fa-signature"></i> اسم الموقع</label>
-                    <input type="text" id="settingSiteName" placeholder="VIP Media">
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-bullhorn"></i> شريط الإعلانات</label>
-                    <input type="text" id="settingTickerText" placeholder="نص الشريط الإخباري...">
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-droplet"></i> اللون الرئيسي</label>
-                    <input type="color" id="settingAccentColor" value="#ff0b37">
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-crown"></i> لون VIP</label>
-                    <input type="color" id="settingVipColor" value="#f59e0b">
-                </div>
-                <div class="fg full">
-                    <label><i class="fa-solid fa-comment-dots"></i> إعلان منبثق (يظهر مرة واحدة)</label>
-                    <textarea id="settingPopupBanner" placeholder="نص يظهر للمستخدم عند فتح الموقع..."></textarea>
-                </div>
-                <div class="fg full">
-                    <label><i class="fa-solid fa-whatsapp" style="color:#25D366"></i> رابط واتساب/تواصل للاشتراك</label>
-                    <input type="url" id="settingWhatsappLink" placeholder="https://wa.me/...">
-                </div>
+                <div class="fg"><label><i class="fa-solid fa-signature"></i> اسم الموقع</label><input type="text" id="settingSiteName" placeholder="VIP Media"></div>
+                <div class="fg"><label><i class="fa-solid fa-bullhorn"></i> شريط الإعلانات</label><input type="text" id="settingTickerText" placeholder="نص الشريط الإخباري..."></div>
+                <div class="fg"><label><i class="fa-solid fa-droplet"></i> اللون الرئيسي</label><input type="color" id="settingAccentColor" value="#ff0b37"></div>
+                <div class="fg"><label><i class="fa-solid fa-crown"></i> لون VIP</label><input type="color" id="settingVipColor" value="#f59e0b"></div>
+                <div class="fg full"><label><i class="fa-solid fa-comment-dots"></i> إعلان منبثق (يظهر مرة واحدة)</label><textarea id="settingPopupBanner" placeholder="نص يظهر للمستخدم عند فتح الموقع..."></textarea></div>
+                <div class="fg full"><label><i class="fa-brands fa-whatsapp" style="color:#25D366"></i> رابط واتساب/تواصل</label><input type="url" id="settingWhatsappLink" placeholder="https://wa.me/..."></div>
             </div>
-            <button class="btn green block" id="btnSaveSettings" style="margin-top:14px">
-                <i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات
-            </button>
+            <button class="btn green block" id="btnSaveSettings" style="margin-top:14px"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>
         </div>
 
         <div class="card">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-rectangle-ad"></i> إعلان التحميل المجاني</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-rectangle-ad"></i> إعلان التحميل المجاني</div></div>
             <div class="fg">
-                <label><i class="fa-solid fa-code"></i> كود HTML للإعلان (iframe / صورة / سكريبت)</label>
-                <textarea id="settingDownloadAd" placeholder="<iframe src=...></iframe>  أو كود HTML" style="min-height:120px;font-family:monospace;font-size:.8rem"></textarea>
-                <div class="hint">يُعرض هذا الإعلان للمستخدمين العاديين قبل تفعيل زر التحميل المجاني (عدّاد 10 ثواني).</div>
+                <label><i class="fa-solid fa-code"></i> كود HTML للإعلان</label>
+                <textarea id="settingDownloadAd" placeholder="<iframe src=...></iframe>" style="min-height:120px;font-family:monospace;font-size:.8rem"></textarea>
+                <div class="hint">يُعرض للزوار قبل تفعيل زر التحميل المجاني (عدّاد 10 ثواني).</div>
             </div>
-            <button class="btn green block" id="btnSaveDownloadAd" style="margin-top:12px">
-                <i class="fa-solid fa-floppy-disk"></i> حفظ إعلان التحميل
-            </button>
+            <button class="btn green block" id="btnSaveDownloadAd" style="margin-top:12px"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعلان</button>
         </div>
 
         <div class="card">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-database"></i> البيانات</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-database"></i> البيانات والنسخ الاحتياطي</div></div>
             <div style="display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
                 <button class="btn ghost block" id="btnBackupSettings"><i class="fa-solid fa-cloud-arrow-down"></i> تصدير JSON</button>
+                <button class="btn ghost block" id="btnImportJSON"><i class="fa-solid fa-cloud-arrow-up"></i> استيراد JSON</button>
                 <button class="btn ghost block" id="btnChangePin"><i class="fa-solid fa-key"></i> تغيير الرمز</button>
             </div>
+            <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none">
         </div>
     </section>
 </main>
 
-<!-- =========================================================
-     FAB
-     ========================================================= -->
+<!-- FAB -->
 <div class="fab-wrap" id="fabWrap">
-    <button class="fab-main" id="fabMain" title="خيارات"><i class="fa-solid fa-bolt"></i></button>
+    <button class="fab-main" id="fabMain"><i class="fa-solid fa-bolt"></i></button>
     <div class="fab-list">
         <button class="fab-i" data-tip="محتوى جديد" data-goto="add"><i class="fa-solid fa-plus"></i></button>
         <button class="fab-i" data-tip="قناة مباشرة" id="fabNewLive"><i class="fa-solid fa-tower-broadcast"></i></button>
+        <button class="fab-i" data-tip="استيراد M3U" id="fabM3U"><i class="fa-solid fa-file-import"></i></button>
         <button class="fab-i" data-tip="المستخدمون" data-goto="users"><i class="fa-solid fa-users"></i></button>
-        <button class="fab-i" data-tip="التصنيفات" data-goto="categories"><i class="fa-solid fa-folder"></i></button>
         <button class="fab-i" data-tip="نسخة احتياطية" id="fabBackup"><i class="fa-solid fa-download"></i></button>
         <button class="fab-i" data-tip="للأعلى" id="fabTop"><i class="fa-solid fa-arrow-up"></i></button>
     </div>
 </div>
 
-<!-- =========================================================
-     MODALS
-     ========================================================= -->
+<!-- ============ MODALS ============ -->
 
-<!-- EDIT MEDIA -->
 <div class="modal" id="mEdit">
     <div class="modal-box">
         <div class="modal-grab"></div>
         <div class="modal-head">
             <div class="mi"><i class="fa-solid fa-pen-to-square"></i></div>
-            <div class="mh-text">
-                <h3>تعديل المحتوى</h3>
-                <p>قم بتحديث بيانات المحتوى والسيرفرات وروابط التحميل</p>
-            </div>
+            <div class="mh-text"><h3>تعديل المحتوى</h3><p>قم بتحديث البيانات والسيرفرات وروابط التحميل</p></div>
             <button class="modal-close" data-close="mEdit"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form id="editForm">
             <input type="hidden" id="editId">
             <div class="form-grid">
-                <div class="fg">
-                    <label><i class="fa-solid fa-heading"></i> العنوان</label>
-                    <input type="text" id="editTitle" required>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-layer-group"></i> التصنيف</label>
-                    <select id="editCategory"></select>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
-                    <select id="editIsVip">
-                        <option value="false">مجاني</option>
-                        <option value="true">VIP</option>
-                    </select>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-image"></i> رابط البوستر</label>
-                    <input type="url" id="editThumbnail">
-                </div>
-                <div class="fg full">
-                    <label><i class="fa-solid fa-align-right"></i> الوصف</label>
-                    <textarea id="editDescription"></textarea>
-                </div>
+                <div class="fg"><label>العنوان</label><input type="text" id="editTitle" required></div>
+                <div class="fg"><label>التصنيف</label><select id="editCategory"></select></div>
+                <div class="fg"><label>نوع الوصول</label><select id="editIsVip"><option value="false">مجاني</option><option value="true">VIP</option></select></div>
+                <div class="fg"><label>رابط البوستر</label><input type="url" id="editThumbnail"></div>
+                <div class="fg full"><label>الوصف</label><textarea id="editDescription"></textarea></div>
             </div>
-
             <div class="fg" style="margin-top:12px">
-                <label><i class="fa-solid fa-server"></i> السيرفرات</label>
+                <label>السيرفرات</label>
                 <div class="servers-box" id="editServers"></div>
-                <button type="button" class="btn ghost sm" id="editAddServer">
-                    <i class="fa-solid fa-plus"></i> إضافة سيرفر
-                </button>
+                <button type="button" class="btn ghost sm" id="editAddServer"><i class="fa-solid fa-plus"></i> إضافة سيرفر</button>
             </div>
-
             <div class="fg" style="margin-top:12px">
-                <label><i class="fa-solid fa-download"></i> مسارات التحميل</label>
+                <label>مسارات التحميل</label>
                 <div class="dl-paths">
                     <div class="dl-path vip-path">
-                        <div class="dl-path-head">
-                            <i class="fa-solid fa-crown vip" style="font-size:1.05rem"></i>
-                            <div><strong>تحميل VIP مباشر</strong><small>بدون إعلان</small></div>
-                        </div>
+                        <div class="dl-path-head"><i class="fa-solid fa-crown vip"></i><div><strong>تحميل VIP</strong><small>بدون إعلان</small></div></div>
                         <input type="url" id="editDownloadUrl" placeholder="https://...">
                     </div>
                     <div class="dl-path free-path">
-                        <div class="dl-path-head">
-                            <i class="fa-solid fa-play free" style="font-size:1.05rem"></i>
-                            <div><strong>تحميل مجاني (إعلان)</strong><small>للزوار</small></div>
-                        </div>
+                        <div class="dl-path-head"><i class="fa-solid fa-play free"></i><div><strong>تحميل مجاني (إعلان)</strong><small>للزوار</small></div></div>
                         <input type="url" id="editAdDownloadUrl" placeholder="https://...">
                     </div>
                 </div>
             </div>
-
             <div class="modal-foot">
-                <button type="submit" class="btn"><i class="fa-solid fa-check"></i> حفظ التعديلات</button>
+                <button type="submit" class="btn"><i class="fa-solid fa-check"></i> حفظ</button>
                 <button type="button" class="btn ghost" data-close="mEdit">إلغاء</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- EDIT LIVE CHANNEL -->
 <div class="modal" id="mLiveChannel">
     <div class="modal-box">
         <div class="modal-grab"></div>
         <div class="modal-head live">
             <div class="mi"><i class="fa-solid fa-tower-broadcast"></i></div>
-            <div class="mh-text">
-                <h3 id="liveChTitle">قناة بث مباشر</h3>
-                <p>أدخل بيانات القناة ورابط البث</p>
-            </div>
+            <div class="mh-text"><h3 id="liveChTitle">قناة بث</h3><p>بيانات القناة ورابط البث</p></div>
             <button class="modal-close" data-close="mLiveChannel"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form id="liveChForm">
             <input type="hidden" id="liveChId">
             <div class="form-grid">
-                <div class="fg">
-                    <label><i class="fa-solid fa-signature"></i> اسم القناة</label>
-                    <input type="text" id="liveChName" placeholder="beIN SPORTS 1" required>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-layer-group"></i> التصنيف</label>
-                    <select id="liveChCategory"></select>
-                </div>
-                <div class="fg full">
-                    <label><i class="fa-solid fa-image"></i> شعار القناة (URL)</label>
-                    <input type="url" id="liveChLogo" placeholder="https://... logo.png">
-                </div>
-                <div class="fg full">
-                    <label><i class="fa-solid fa-link"></i> رابط البث (m3u8 / mpd / iframe)</label>
-                    <input type="text" id="liveChUrl" placeholder="https://... .m3u8" required>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
-                    <select id="liveChIsVip">
-                        <option value="false">مجاني للجميع</option>
-                        <option value="true">👑 VIP مميز</option>
-                    </select>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-sort"></i> الترتيب (اختياري)</label>
-                    <input type="number" id="liveChOrder" value="0" min="0">
-                </div>
-                <div class="fg full">
-                    <label><i class="fa-solid fa-align-right"></i> وصف (اختياري)</label>
-                    <textarea id="liveChDescription" placeholder="وصف مختصر للقناة..."></textarea>
-                </div>
+                <div class="fg"><label>اسم القناة</label><input type="text" id="liveChName" required></div>
+                <div class="fg"><label>التصنيف</label><select id="liveChCategory"></select></div>
+                <div class="fg full"><label>شعار القناة (URL)</label><input type="url" id="liveChLogo"></div>
+                <div class="fg full"><label>رابط البث (m3u8 / mpd / iframe)</label><input type="text" id="liveChUrl" required></div>
+                <div class="fg"><label>نوع الوصول</label><select id="liveChIsVip"><option value="false">مجاني</option><option value="true">VIP</option></select></div>
+                <div class="fg"><label>الترتيب</label><input type="number" id="liveChOrder" value="0" min="0"></div>
+                <div class="fg full"><label>وصف</label><textarea id="liveChDescription"></textarea></div>
             </div>
             <div class="modal-foot">
-                <button type="submit" class="btn live"><i class="fa-solid fa-floppy-disk"></i> حفظ القناة</button>
+                <button type="submit" class="btn live"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
                 <button type="button" class="btn ghost" data-close="mLiveChannel">إلغاء</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- EDIT LIVE CATEGORY -->
 <div class="modal" id="mLiveCat">
     <div class="modal-box" style="max-width:480px">
         <div class="modal-grab"></div>
         <div class="modal-head live">
             <div class="mi"><i class="fa-solid fa-folder-pen"></i></div>
-            <div class="mh-text">
-                <h3 id="liveCatTitle">تعديل تصنيف البث</h3>
-                <p>تحديث اسم وأيقونة التصنيف</p>
-            </div>
+            <div class="mh-text"><h3>تعديل تصنيف البث</h3></div>
             <button class="modal-close" data-close="mLiveCat"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form id="liveCatForm">
             <input type="hidden" id="liveCatId">
-            <div class="fg">
-                <label><i class="fa-solid fa-tag"></i> الاسم</label>
-                <input type="text" id="liveCatName" required>
-            </div>
-            <div class="fg" style="margin-top:10px">
-                <label><i class="fa-solid fa-icons"></i> الأيقونة (FontAwesome)</label>
-                <input type="text" id="liveCatIcon" placeholder="fa-futbol">
-            </div>
+            <div class="fg"><label>الاسم</label><input type="text" id="liveCatName" required></div>
+            <div class="fg" style="margin-top:10px"><label>الأيقونة</label><input type="text" id="liveCatIcon" placeholder="fa-futbol"></div>
             <div class="modal-foot">
                 <button type="submit" class="btn live"><i class="fa-solid fa-check"></i> حفظ</button>
                 <button type="button" class="btn ghost" data-close="mLiveCat">إلغاء</button>
@@ -1182,16 +815,12 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
     </div>
 </div>
 
-<!-- PREVIEW MEDIA -->
 <div class="modal" id="mPreview">
     <div class="modal-box">
         <div class="modal-grab"></div>
         <div class="modal-head">
             <div class="mi"><i class="fa-solid fa-circle-play"></i></div>
-            <div class="mh-text">
-                <h3 id="pvTitle">—</h3>
-                <p id="pvMeta">—</p>
-            </div>
+            <div class="mh-text"><h3 id="pvTitle">—</h3><p id="pvMeta">—</p></div>
             <button class="modal-close" data-close="mPreview"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <img id="pvThumb" class="preview-thumb" alt="">
@@ -1204,51 +833,24 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
     </div>
 </div>
 
-<!-- USER -->
 <div class="modal" id="mUser">
     <div class="modal-box">
         <div class="modal-grab"></div>
         <div class="modal-head gold">
             <div class="mi"><i class="fa-solid fa-user-gear"></i></div>
-            <div class="mh-text">
-                <h3 id="userModalTitle">مستخدم جديد</h3>
-                <p>بيانات الحساب ومدة الاشتراك</p>
-            </div>
+            <div class="mh-text"><h3 id="userModalTitle">مستخدم</h3><p>بيانات الحساب ومدة الاشتراك</p></div>
             <button class="modal-close" data-close="mUser"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form id="userForm">
             <input type="hidden" id="userId">
             <div class="form-grid">
-                <div class="fg">
-                    <label><i class="fa-solid fa-user"></i> الاسم</label>
-                    <input type="text" id="userName" required>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-envelope"></i> البريد</label>
-                    <input type="email" id="userEmail" required>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-key"></i> كلمة المرور</label>
-                    <input type="text" id="userPassword">
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-gem"></i> نوع الحساب</label>
-                    <select id="userIsVip">
-                        <option value="false">عادي</option>
-                        <option value="true">👑 VIP</option>
-                    </select>
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-hourglass-half"></i> مدة التمديد</label>
-                    <input type="number" id="subValue" value="1" min="1">
-                </div>
-                <div class="fg">
-                    <label><i class="fa-solid fa-calendar"></i> الوحدة</label>
-                    <select id="subUnit">
-                        <option value="days">أيام</option>
-                        <option value="months" selected>أشهر</option>
-                        <option value="years">سنوات</option>
-                    </select>
+                <div class="fg"><label>الاسم</label><input type="text" id="userName" required></div>
+                <div class="fg"><label>البريد</label><input type="email" id="userEmail" required></div>
+                <div class="fg"><label>كلمة المرور</label><input type="text" id="userPassword"></div>
+                <div class="fg"><label>نوع الحساب</label><select id="userIsVip"><option value="false">عادي</option><option value="true">VIP</option></select></div>
+                <div class="fg"><label>مدة التمديد</label><input type="number" id="subValue" value="1" min="1"></div>
+                <div class="fg"><label>الوحدة</label>
+                    <select id="subUnit"><option value="days">أيام</option><option value="months" selected>أشهر</option><option value="years">سنوات</option></select>
                 </div>
             </div>
             <div class="modal-foot">
@@ -1259,36 +861,59 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
     </div>
 </div>
 
-<!-- EDIT VOD CATEGORY -->
 <div class="modal" id="mCat">
     <div class="modal-box" style="max-width:480px">
         <div class="modal-grab"></div>
         <div class="modal-head">
             <div class="mi"><i class="fa-solid fa-folder-pen"></i></div>
-            <div class="mh-text">
-                <h3>تعديل التصنيف</h3>
-                <p>تحديث اسم ونوع التصنيف</p>
-            </div>
+            <div class="mh-text"><h3>تعديل التصنيف</h3></div>
             <button class="modal-close" data-close="mCat"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form id="catForm">
             <input type="hidden" id="catId">
-            <div class="fg">
-                <label><i class="fa-solid fa-tag"></i> الاسم</label>
-                <input type="text" id="catName" required>
-            </div>
-            <div class="fg" style="margin-top:10px">
-                <label><i class="fa-solid fa-gem"></i> النوع</label>
-                <select id="catType">
-                    <option value="عام">عام</option>
-                    <option value="VIP">VIP</option>
-                </select>
-            </div>
+            <div class="fg"><label>الاسم</label><input type="text" id="catName" required></div>
+            <div class="fg" style="margin-top:10px"><label>النوع</label><select id="catType"><option value="عام">عام</option><option value="VIP">VIP</option></select></div>
             <div class="modal-foot">
                 <button type="submit" class="btn"><i class="fa-solid fa-check"></i> حفظ</button>
                 <button type="button" class="btn ghost" data-close="mCat">إلغاء</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- M3U IMPORT -->
+<div class="modal" id="mM3U">
+    <div class="modal-box" style="max-width:640px">
+        <div class="modal-grab"></div>
+        <div class="modal-head live">
+            <div class="mi"><i class="fa-solid fa-file-import"></i></div>
+            <div class="mh-text"><h3>استيراد قنوات M3U</h3><p>ألصق محتوى الملف أو حمّل ملف</p></div>
+            <button class="modal-close" data-close="mM3U"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="fg">
+            <label><i class="fa-solid fa-file-arrow-up"></i> تحميل ملف M3U</label>
+            <input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain">
+        </div>
+        <div class="fg" style="margin-top:10px">
+            <label><i class="fa-solid fa-paste"></i> أو الصق محتوى M3U هنا</label>
+            <textarea id="m3uText" placeholder="#EXTM3U&#10;#EXTINF:-1 tvg-logo=&quot;...&quot; group-title=&quot;رياضة&quot;,beIN 1&#10;https://...m3u8" style="min-height:200px;font-family:monospace;font-size:.75rem"></textarea>
+        </div>
+        <div class="form-grid" style="margin-top:10px">
+            <div class="fg">
+                <label><i class="fa-solid fa-gem"></i> نوع الوصول للقنوات المستوردة</label>
+                <select id="m3uVip"><option value="false">مجاني</option><option value="true">VIP</option></select>
+            </div>
+            <div class="fg">
+                <label><i class="fa-solid fa-folder-plus"></i> إنشاء تصنيفات جديدة تلقائياً</label>
+                <select id="m3uAutoCat"><option value="true">نعم</option><option value="false">لا</option></select>
+            </div>
+        </div>
+        <div id="m3uPreview" style="margin-top:12px;max-height:200px;overflow-y:auto;background:#08080e;border:1px solid var(--border);border-radius:12px;padding:10px;font-size:.78rem;display:none"></div>
+        <div class="modal-foot">
+            <button type="button" class="btn ghost" id="m3uParseBtn"><i class="fa-solid fa-eye"></i> معاينة</button>
+            <button type="button" class="btn live" id="m3uImportBtn"><i class="fa-solid fa-cloud-arrow-up"></i> استيراد</button>
+            <button type="button" class="btn ghost" data-close="mM3U">إلغاء</button>
+        </div>
     </div>
 </div>
 
@@ -1298,9 +923,7 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
         <div class="modal-grab"></div>
         <div class="modal-head">
             <div class="mi" id="cfIcon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <div class="mh-text">
-                <h3 id="cfTitle">تأكيد</h3>
-            </div>
+            <div class="mh-text"><h3 id="cfTitle">تأكيد</h3></div>
         </div>
         <p class="confirm-msg" id="cfMsg">هل أنت متأكد؟</p>
         <div class="modal-foot">
@@ -1310,27 +933,18 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
     </div>
 </div>
 
-<!-- PIN -->
+<!-- PIN CHANGE -->
 <div class="modal" id="mPin">
     <div class="modal-box" style="max-width:440px">
         <div class="modal-grab"></div>
         <div class="modal-head">
             <div class="mi"><i class="fa-solid fa-key"></i></div>
-            <div class="mh-text">
-                <h3>تغيير رمز الدخول</h3>
-                <p>سيُخزَّن في قاعدة البيانات</p>
-            </div>
+            <div class="mh-text"><h3>تغيير رمز الدخول</h3><p>يُخزَّن في Firebase</p></div>
             <button class="modal-close" data-close="mPin"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form id="pinForm">
-            <div class="fg">
-                <label><i class="fa-solid fa-lock"></i> الرمز الحالي</label>
-                <input type="password" id="pinOld" maxlength="6" inputmode="numeric" required>
-            </div>
-            <div class="fg" style="margin-top:10px">
-                <label><i class="fa-solid fa-lock-open"></i> الرمز الجديد</label>
-                <input type="password" id="pinNew" maxlength="6" inputmode="numeric" required>
-            </div>
+            <div class="fg"><label>الرمز الحالي</label><input type="password" id="pinOld" maxlength="6" inputmode="numeric" required></div>
+            <div class="fg" style="margin-top:10px"><label>الرمز الجديد</label><input type="password" id="pinNew" maxlength="6" inputmode="numeric" required></div>
             <div class="modal-foot">
                 <button type="submit" class="btn green"><i class="fa-solid fa-check"></i> تغيير</button>
                 <button type="button" class="btn ghost" data-close="mPin">إلغاء</button>
@@ -1339,13 +953,10 @@ input[type="checkbox"]{width:auto;accent-color:var(--vip)}
     </div>
 </div>
 
-<!-- TOASTS -->
 <div class="toast-wrap" id="toasts"></div>
 
 <script>
-/* =========================================================
-   FIREBASE
-   ========================================================= */
+/* ============ FIREBASE ============ */
 const firebaseConfig = {
     apiKey:"AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
     authDomain:"voip17.firebaseapp.com",
@@ -1359,15 +970,12 @@ const firebaseConfig = {
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* =========================================================
-   HELPERS
-   ========================================================= */
+/* ============ HELPERS ============ */
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const debounce = (fn,ms=220)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}) : '—';
-
 const userExpire = u => (u && (u.vipExpireDate || u.expireAt || 0)) || 0;
 const userIsBanned = u => !!(u && (u.isBanned === true || u.isBlocked === true));
 const userIsVipNow = u => {
@@ -1377,31 +985,18 @@ const userIsVipNow = u => {
     return u.isVip === true;
 };
 
-/* =========================================================
-   TOASTS
-   ========================================================= */
-function toast(title, msg='', type='', dur=3500){
+/* ============ TOAST ============ */
+function toast(title,msg='',type='',dur=3500){
     const wrap = $('#toasts');
     const el = document.createElement('div');
     el.className = 'toast ' + type;
     const icon = type==='ok'?'fa-circle-check':type==='err'?'fa-circle-exclamation':type==='warn'?'fa-triangle-exclamation':'fa-circle-info';
-    el.innerHTML = `
-        <div class="toast-i"><i class="fa-solid ${icon}"></i></div>
-        <div class="toast-body">
-            <div class="toast-title">${esc(title)}</div>
-            ${msg?`<div class="toast-msg">${esc(msg)}</div>`:''}
-        </div>`;
+    el.innerHTML = `<div class="toast-i"><i class="fa-solid ${icon}"></i></div><div class="toast-body"><div class="toast-title">${esc(title)}</div>${msg?`<div class="toast-msg">${esc(msg)}</div>`:''}</div>`;
     wrap.appendChild(el);
-    setTimeout(()=>{
-        el.style.transition='opacity .3s, transform .3s';
-        el.style.opacity='0'; el.style.transform='translateY(-10px)';
-        setTimeout(()=>el.remove(),320);
-    },dur);
+    setTimeout(()=>{el.style.transition='opacity .3s, transform .3s';el.style.opacity='0';el.style.transform='translateY(-10px)';setTimeout(()=>el.remove(),320);},dur);
 }
 
-/* =========================================================
-   CONFIRM
-   ========================================================= */
+/* ============ CONFIRM ============ */
 let confirmResolver = null;
 function askConfirm({title='تأكيد',msg='هل أنت متأكد؟',okText='تأكيد',type='red'}={}){
     return new Promise(res=>{
@@ -1411,56 +1006,34 @@ function askConfirm({title='تأكيد',msg='هل أنت متأكد؟',okText='�
         const ib = $('#cfIcon');
         ib.className = 'mi';
         if(type==='gold') ib.classList.add('gold');
+        if(type==='green') ib.classList.add('green');
         openModal('mConfirm');
         confirmResolver = res;
     });
 }
-$('#cfYes').addEventListener('click',()=>{
-    closeModal('mConfirm');
-    if(confirmResolver){confirmResolver(true);confirmResolver=null;}
-});
-$('#mConfirm').addEventListener('click',e=>{
-    if(e.target.id==='mConfirm' && confirmResolver){confirmResolver(false);confirmResolver=null;}
-});
+$('#cfYes').addEventListener('click',()=>{closeModal('mConfirm');if(confirmResolver){confirmResolver(true);confirmResolver=null;}});
+$('#mConfirm').addEventListener('click',e=>{if(e.target.id==='mConfirm'&&confirmResolver){confirmResolver(false);confirmResolver=null;}});
 
-/* =========================================================
-   MODAL CONTROLLER
-   ========================================================= */
-function openModal(id){
-    const m = document.getElementById(id);
-    if(!m) return;
-    m.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-function closeModal(id){
-    const m = document.getElementById(id);
-    if(!m) return;
-    m.classList.remove('active');
-    if(!$$('.modal.active').length) document.body.style.overflow = '';
-}
+/* ============ MODAL CONTROLLER ============ */
+function openModal(id){const m=document.getElementById(id);if(!m)return;m.classList.add('active');document.body.style.overflow='hidden';}
+function closeModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove('active');if(!$$('.modal.active').length)document.body.style.overflow='';}
 $$('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
 $$('.modal').forEach(m=>m.addEventListener('click',e=>{
-    if(e.target===m){
-        if(m.id==='mConfirm'&&confirmResolver){confirmResolver(false);confirmResolver=null;}
-        closeModal(m.id);
-    }
+    if(e.target===m){if(m.id==='mConfirm'&&confirmResolver){confirmResolver(false);confirmResolver=null;}closeModal(m.id);}
 }));
 document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){
         const act = $$('.modal.active').pop();
-        if(act){
-            if(act.id==='mConfirm'&&confirmResolver){confirmResolver(false);confirmResolver=null;}
-            closeModal(act.id);
-        }
+        if(act){if(act.id==='mConfirm'&&confirmResolver){confirmResolver(false);confirmResolver=null;}closeModal(act.id);}
     }
 });
 
-/* =========================================================
-   PIN LOGIN
-   ========================================================= */
+/* ============ PIN LOGIN (FIXED) ============ */
 let SECURITY_PIN = '171002';
 let pinValue = '';
 const isAuthed = ()=> sessionStorage.getItem('adm_authed')==='1';
+const pinInput = $('#pinReal');
+const pinWrap = $('#pinWrap');
 
 function renderPinDots(){
     $$('#pinWrap .pin-dot').forEach((d,i)=>{
@@ -1469,12 +1042,36 @@ function renderPinDots(){
         d.textContent = i < pinValue.length ? '●' : '';
     });
 }
-function onPinInput(){
-    pinValue = pinValue.replace(/\D/g,'').slice(0,6);
-    $('#pinReal').value = pinValue;
+
+// Focus pin input on tap anywhere on the pin-wrap
+pinWrap.addEventListener('click', () => pinInput.focus());
+// On login overlay, tap anywhere focuses input
+$('#loginOverlay').addEventListener('click', e => {
+    // don't refocus if user clicked an interactive element
+    if(e.target.closest('button') && e.target.id !== 'pinBtn') return;
+    if(e.target.closest('input')) return;
+    pinInput.focus();
+});
+
+// Sync input value to dots
+pinInput.addEventListener('input', () => {
+    pinValue = pinInput.value.replace(/\D/g,'').slice(0,6);
+    pinInput.value = pinValue;
     renderPinDots();
-    if(pinValue.length===6) setTimeout(verifyPin,150);
-}
+    if(pinValue.length === 6) setTimeout(verifyPin, 200);
+});
+// Handle paste
+pinInput.addEventListener('paste', () => {
+    setTimeout(() => {
+        pinValue = pinInput.value.replace(/\D/g,'').slice(0,6);
+        pinInput.value = pinValue;
+        renderPinDots();
+        if(pinValue.length === 6) setTimeout(verifyPin, 200);
+    }, 10);
+});
+// Enter key
+pinInput.addEventListener('keydown', e => { if(e.key === 'Enter') verifyPin(); });
+
 async function verifyPin(){
     $('#pinErr').textContent = '';
     try{
@@ -1485,38 +1082,44 @@ async function verifyPin(){
     }catch(_){}
     if(pinValue === SECURITY_PIN){
         sessionStorage.setItem('adm_authed','1');
-        $('#loginOverlay').style.display = 'none';
+        $('#loginOverlay').classList.add('hidden');
         logActivity('تسجيل دخول');
         toast('مرحباً بك 👋','تم الدخول بنجاح','ok');
     }else{
         $('#pinErr').textContent = '❌ رمز غير صحيح';
-        pinValue=''; $('#pinReal').value='';
+        pinValue = ''; pinInput.value = '';
         renderPinDots();
+        pinInput.focus();
     }
 }
-$('#pinBtn').addEventListener('click',verifyPin);
-$('#pinReal').addEventListener('input',onPinInput);
-$('#loginOverlay').addEventListener('click',()=>$('#pinReal').focus());
-if(isAuthed()) $('#loginOverlay').style.display='none';
-else{ $('#loginOverlay').style.display='flex'; setTimeout(()=>$('#pinReal').focus(),200); }
-renderPinDots();
 
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-function logout(){ sessionStorage.removeItem('adm_authed'); location.reload(); }
+$('#pinBtn').addEventListener('click', verifyPin);
+$('#pinBtn').addEventListener('click', (e) => e.stopPropagation());
+
+function bootLogin(){
+    if(isAuthed()){
+        $('#loginOverlay').classList.add('hidden');
+    }else{
+        $('#loginOverlay').classList.remove('hidden');
+        // Auto focus once on mount
+        setTimeout(() => pinInput.focus(), 300);
+    }
+    renderPinDots();
+}
+bootLogin();
+
+/* ============ LOGOUT ============ */
+function logout(){
+    sessionStorage.removeItem('adm_authed');
+    location.reload();
+}
 $('#btnLogout').addEventListener('click',async()=>{
     const ok = await askConfirm({title:'تسجيل الخروج',msg:'هل تريد قفل اللوحة والخروج؟',okText:'خروج'});
     if(ok) logout();
 });
 
-/* =========================================================
-   NAVIGATION
-   ========================================================= */
-const secTitles = {
-    dashboard:'لوحة القيادة', media:'إدارة المحتوى', add:'إضافة محتوى',
-    live:'البث المباشر', categories:'التصنيفات', users:'المستخدمون', settings:'الإعدادات'
-};
+/* ============ NAV ============ */
+const secTitles = {dashboard:'لوحة القيادة',media:'إدارة المحتوى',add:'إضافة محتوى',live:'البث المباشر',categories:'التصنيفات',users:'المستخدمون',settings:'الإعدادات'};
 function go(sec){
     if(!secTitles[sec]) sec = 'dashboard';
     $$('.section').forEach(s=>s.classList.toggle('active', s.id==='sec-'+sec));
@@ -1527,16 +1130,11 @@ function go(sec){
     history.replaceState(null,'','#'+sec);
 }
 $$('[data-sec]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.sec)));
-$$('[data-goto]').forEach(b=>b.addEventListener('click',()=>{
-    go(b.dataset.goto);
-    if(b.dataset.goto==='add') setTimeout(()=>$('#addTitle')?.focus(),300);
-}));
+$$('[data-goto]').forEach(b=>b.addEventListener('click',()=>{go(b.dataset.goto);if(b.dataset.goto==='add') setTimeout(()=>$('#addTitle')?.focus(),300);}));
 window.addEventListener('hashchange',()=>go(location.hash.replace('#','')));
 go(location.hash.replace('#','')||'dashboard');
 
-/* =========================================================
-   FAB
-   ========================================================= */
+/* ============ FAB ============ */
 $('#fabMain').addEventListener('click',()=>$('#fabWrap').classList.toggle('open'));
 $('#fabTop').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
 $('#fabBackup').addEventListener('click',exportBackup);
@@ -1545,11 +1143,11 @@ $('#btnQuickBackup').addEventListener('click',exportBackup);
 $('#btnBackupSettings').addEventListener('click',exportBackup);
 $('#btnRefresh').addEventListener('click',()=>location.reload());
 $('#fabNewLive').addEventListener('click',()=>openLiveChannelModal());
-$('#btnQuickLive').addEventListener('click',()=>{ go('live'); setTimeout(openLiveChannelModal,300); });
+$('#btnQuickLive').addEventListener('click',()=>{go('live');setTimeout(openLiveChannelModal,300);});
+$('#fabM3U').addEventListener('click',()=>openModal('mM3U'));
+$('#btnImportM3U').addEventListener('click',()=>openModal('mM3U'));
 
-/* =========================================================
-   ACTIVITY LOG
-   ========================================================= */
+/* ============ ACTIVITY LOG ============ */
 function logActivity(text){
     const list = JSON.parse(localStorage.getItem('adm_log')||'[]');
     list.unshift({t:Date.now(),text});
@@ -1559,34 +1157,22 @@ function logActivity(text){
 function renderActivity(){
     const list = JSON.parse(localStorage.getItem('adm_log')||'[]');
     const box = $('#activityList');
-    if(!list.length){
-        box.innerHTML = `<div class="empty"><i class="fa-solid fa-clock"></i><p>لا توجد نشاطات بعد</p></div>`;
-        return;
-    }
-    box.innerHTML = list.map(x=>`
-        <div class="dl-row" style="grid-template-columns:1fr auto;align-items:center">
-            <div class="dl-cell"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i><span class="v">${esc(x.text)}</span></div>
-            <span style="font-size:.7rem;color:var(--text-3);font-weight:700">${new Date(x.t).toLocaleString('ar-EG')}</span>
-        </div>`).join('');
+    if(!list.length){box.innerHTML = `<div class="empty"><i class="fa-solid fa-clock"></i><p>لا توجد نشاطات بعد</p></div>`;return;}
+    box.innerHTML = list.map(x=>`<div class="dl-row" style="grid-template-columns:1fr auto;align-items:center"><div class="dl-cell"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i><span class="v">${esc(x.text)}</span></div><span style="font-size:.7rem;color:var(--text-3);font-weight:700">${new Date(x.t).toLocaleString('ar-EG')}</span></div>`).join('');
 }
 $('#btnClearLog').addEventListener('click',async()=>{
     const ok = await askConfirm({title:'مسح السجل',msg:'حذف كل النشاطات؟',okText:'مسح'});
-    if(ok){ localStorage.removeItem('adm_log'); renderActivity(); toast('تم المسح','','ok'); }
+    if(ok){localStorage.removeItem('adm_log');renderActivity();toast('تم المسح','','ok');}
 });
 renderActivity();
 
-/* =========================================================
-   SERVER ROWS
-   ========================================================= */
+/* ============ SERVER ROWS ============ */
 function serverRow(name='',val='',type='url'){
     const div = document.createElement('div');
     div.className = 'server-row';
     div.innerHTML = `
         <input class="srv-name" placeholder="اسم السيرفر" value="${esc(name)}">
-        <select class="srv-type">
-            <option value="url" ${type==='url'?'selected':''}>رابط</option>
-            <option value="embed" ${type==='embed'?'selected':''}>كود HTML</option>
-        </select>
+        <select class="srv-type"><option value="url" ${type==='url'?'selected':''}>رابط</option><option value="embed" ${type==='embed'?'selected':''}>كود HTML</option></select>
         <input class="srv-val" placeholder="الرابط أو كود iframe" value="${esc(val)}">
         <button type="button" class="rm"><i class="fa-solid fa-trash"></i></button>`;
     div.querySelector('.rm').addEventListener('click',()=>div.remove());
@@ -1618,28 +1204,20 @@ $('#editAddServer').addEventListener('click',()=>$('#editServers').appendChild(s
 $('#addServers').appendChild(serverRow('سيرفر رئيسي'));
 fillServers('#editServers',[]);
 
-/* =========================================================
-   VOD CATEGORIES
-   ========================================================= */
+/* ============ VOD CATEGORIES ============ */
 const DEFAULT_CATS = ['أفلام','مسلسلات','رياضة','عام','محتوى VIP شركات'];
-
 function loadCategories(){
     db.ref('categories').on('value', snap=>{
         const addSel = $('#addCategory');
         const editSel = $('#editCategory');
-        addSel.innerHTML = '';
-        editSel.innerHTML = '';
-
+        addSel.innerHTML = ''; editSel.innerHTML = '';
         if(!snap.exists()){
             DEFAULT_CATS.forEach(c=>db.ref('categories').push({name:c,type:c.includes('VIP')?'VIP':'عام',createdAt:Date.now()}));
             return;
         }
         const rows = [];
         snap.forEach(c=>rows.push({id:c.key,...c.val()}));
-        rows.forEach(r=>{
-            addSel.add(new Option(r.name, r.name));
-            editSel.add(new Option(r.name, r.name));
-        });
+        rows.forEach(r=>{addSel.add(new Option(r.name, r.name));editSel.add(new Option(r.name, r.name));});
         const box = $('#catList');
         box.innerHTML = rows.map(r=>`
             <div class="dl-row" style="grid-template-columns:1fr auto auto;gap:8px;align-items:center">
@@ -1662,14 +1240,9 @@ $('#addCategoryForm').addEventListener('submit',async e=>{
         $('#newCategoryName').value = '';
         logActivity(`إضافة تصنيف: ${name}`);
         toast('تم الإضافة',name,'ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 });
-function editCat(id,name,type){
-    $('#catId').value = id;
-    $('#catName').value = name;
-    $('#catType').value = type;
-    openModal('mCat');
-}
+function editCat(id,name,type){$('#catId').value=id;$('#catName').value=name;$('#catType').value=type;openModal('mCat');}
 $('#catForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const id = $('#catId').value;
@@ -1678,7 +1251,7 @@ $('#catForm').addEventListener('submit',async e=>{
         closeModal('mCat');
         logActivity('تعديل تصنيف');
         toast('تم الحفظ','','ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 });
 async function delCat(id,name){
     const ok = await askConfirm({title:'حذف تصنيف',msg:`حذف "${name}"؟`,okText:'حذف'});
@@ -1689,9 +1262,7 @@ async function delCat(id,name){
 }
 window.editCat = editCat; window.delCat = delCat;
 
-/* =========================================================
-   ★ LIVE TV MANAGEMENT
-   ========================================================= */
+/* ============ LIVE CATEGORIES ============ */
 let allLiveCats = [];
 let allLiveChs = [];
 
@@ -1702,24 +1273,13 @@ function loadLiveCategories(){
         sel.innerHTML = '';
         filt.innerHTML = '<option value="all">كل التصنيفات</option>';
         allLiveCats = [];
-        if(snap.exists()){
-            snap.forEach(c=>allLiveCats.push({id:c.key,...c.val()}));
-        }
-        allLiveCats.forEach(r=>{
-            sel.add(new Option(r.name, r.name));
-            filt.add(new Option(r.name, r.name));
-        });
+        if(snap.exists()) snap.forEach(c=>allLiveCats.push({id:c.key,...c.val()}));
+        allLiveCats.forEach(r=>{sel.add(new Option(r.name, r.name));filt.add(new Option(r.name, r.name));});
         const box = $('#liveCatList');
-        if(!allLiveCats.length){
-            box.innerHTML = `<div class="empty"><i class="fa-solid fa-folder-open"></i><p>لا توجد تصنيفات بعد</p></div>`;
-            return;
-        }
+        if(!allLiveCats.length){box.innerHTML = `<div class="empty"><i class="fa-solid fa-folder-open"></i><p>لا توجد تصنيفات بعد</p></div>`;return;}
         box.innerHTML = allLiveCats.map(r=>`
             <div class="dl-row" style="grid-template-columns:1fr auto;gap:8px;align-items:center">
-                <div class="dl-cell">
-                    <i class="fa-solid ${esc(r.icon||'fa-folder')}" style="color:var(--live)"></i>
-                    <span class="v">${esc(r.name)}</span>
-                </div>
+                <div class="dl-cell"><i class="fa-solid ${esc(r.icon||'fa-folder')}" style="color:var(--live)"></i><span class="v">${esc(r.name)}</span></div>
                 <div class="dl-actions">
                     <button class="btn ghost sm" onclick="editLiveCat('${esc(r.id)}','${esc(r.name)}','${esc(r.icon||'')}')"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn red sm" onclick="delLiveCat('${esc(r.id)}','${esc(r.name)}')"><i class="fa-solid fa-trash"></i></button>
@@ -1727,7 +1287,6 @@ function loadLiveCategories(){
             </div>`).join('');
     });
 }
-
 $('#addLiveCatForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const name = $('#newLiveCatName').value.trim();
@@ -1739,26 +1298,18 @@ $('#addLiveCatForm').addEventListener('submit',async e=>{
         $('#newLiveCatIcon').value = '';
         logActivity(`إضافة تصنيف بث: ${name}`);
         toast('تم الإضافة',name,'ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 });
-function editLiveCat(id,name,icon){
-    $('#liveCatId').value = id;
-    $('#liveCatName').value = name;
-    $('#liveCatIcon').value = icon;
-    openModal('mLiveCat');
-}
+function editLiveCat(id,name,icon){$('#liveCatId').value=id;$('#liveCatName').value=name;$('#liveCatIcon').value=icon;openModal('mLiveCat');}
 $('#liveCatForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const id = $('#liveCatId').value;
     try{
-        await db.ref('liveCategories/'+id).update({
-            name: $('#liveCatName').value.trim(),
-            icon: $('#liveCatIcon').value.trim() || 'fa-tv'
-        });
+        await db.ref('liveCategories/'+id).update({name: $('#liveCatName').value.trim(),icon: $('#liveCatIcon').value.trim() || 'fa-tv'});
         closeModal('mLiveCat');
         logActivity('تعديل تصنيف بث');
         toast('تم الحفظ','','ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 });
 async function delLiveCat(id,name){
     const ok = await askConfirm({title:'حذف تصنيف بث',msg:`حذف "${name}"؟`,okText:'حذف'});
@@ -1769,14 +1320,11 @@ async function delLiveCat(id,name){
 }
 window.editLiveCat = editLiveCat; window.delLiveCat = delLiveCat;
 
-/* ----- Live Channels ----- */
+/* ============ LIVE CHANNELS ============ */
 function loadLiveChannels(){
     db.ref('liveChannels').on('value', snap=>{
         allLiveChs = [];
-        if(snap.exists()){
-            snap.forEach(c=>allLiveChs.push({id:c.key,...c.val()}));
-        }
-        // Stats
+        if(snap.exists()) snap.forEach(c=>allLiveChs.push({id:c.key,...c.val()}));
         const vip = allLiveChs.filter(c=>c.isVip).length;
         $('#liveStatChannels').textContent = allLiveChs.length.toLocaleString('ar-EG');
         $('#liveStatVip').textContent = vip.toLocaleString('ar-EG');
@@ -1784,12 +1332,10 @@ function loadLiveChannels(){
         renderLiveChannelsList();
     });
 }
-
 function renderLiveChannelsList(){
     const q = ($('#qLive').value||'').toLowerCase().trim();
     const f = $('#filterLiveCat').value;
     const box = $('#liveChannelsList');
-
     let list = allLiveChs.filter(c=>{
         if(f !== 'all' && c.category !== f) return false;
         if(q){
@@ -1799,12 +1345,7 @@ function renderLiveChannelsList(){
         }
         return true;
     });
-
-    if(!list.length){
-        box.innerHTML = `<div class="empty"><i class="fa-solid fa-tv"></i><p>لا توجد قنوات مطابقة</p></div>`;
-        return;
-    }
-
+    if(!list.length){box.innerHTML = `<div class="empty"><i class="fa-solid fa-tv"></i><p>لا توجد قنوات مطابقة</p></div>`;return;}
     box.innerHTML = list.map(c=>`
         <div class="dl-row">
             <img class="dl-thumb logo" src="${esc(c.logo||'https://via.placeholder.com/80x50/1f1f1f/ffffff?text=LIVE')}" onerror="this.src='https://via.placeholder.com/80x50/1f1f1f/ffffff?text=LIVE'">
@@ -1819,7 +1360,6 @@ function renderLiveChannelsList(){
             </div>
         </div>`).join('');
 }
-
 $('#qLive').addEventListener('input',debounce(renderLiveChannelsList,220));
 $('#filterLiveCat').addEventListener('change',renderLiveChannelsList);
 $('#btnNewLiveChannel').addEventListener('click',()=>openLiveChannelModal());
@@ -1842,7 +1382,6 @@ function openLiveChannelModal(ch=null){
     }
     openModal('mLiveChannel');
 }
-
 async function editLiveChannel(id){
     const snap = await db.ref('liveChannels/'+id).once('value');
     if(!snap.exists()) return toast('غير موجود','','err');
@@ -1864,18 +1403,13 @@ $('#liveChForm').addEventListener('submit',async e=>{
         updatedAt: Date.now()
     };
     try{
-        if(id){
-            await db.ref('liveChannels/'+id).update(data);
-            logActivity(`تعديل قناة: ${data.name}`);
-        }else{
-            await db.ref('liveChannels').push({...data, viewers:0, createdAt:Date.now()});
-            logActivity(`إضافة قناة: ${data.name}`);
-        }
+        if(id) await db.ref('liveChannels/'+id).update(data);
+        else await db.ref('liveChannels').push({...data, viewers:0, createdAt:Date.now()});
         closeModal('mLiveChannel');
+        logActivity(`${id?'تعديل':'إضافة'} قناة: ${data.name}`);
         toast('تم الحفظ', data.name, 'ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 });
-
 async function delLiveChannel(id,name){
     const ok = await askConfirm({title:'حذف قناة',msg:`حذف "${name}"؟`,okText:'حذف'});
     if(!ok) return;
@@ -1885,9 +1419,112 @@ async function delLiveChannel(id,name){
 }
 window.delLiveChannel = delLiveChannel;
 
-/* =========================================================
-   VOD MEDIA
-   ========================================================= */
+/* ============ M3U IMPORT ============ */
+let parsedM3U = [];
+$('#m3uFile').addEventListener('change', e=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    const r = new FileReader();
+    r.onload = ev => { $('#m3uText').value = ev.target.result; parseM3U(); };
+    r.readAsText(f);
+});
+$('#m3uParseBtn').addEventListener('click', parseM3U);
+$('#m3uText').addEventListener('input', debounce(parseM3U, 400));
+
+function parseM3U(){
+    const text = $('#m3uText').value || '';
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    const out = [];
+    let current = null;
+    for(const line of lines){
+        if(line.startsWith('#EXTM3U')) continue;
+        if(line.startsWith('#EXTINF')){
+            // Parse attributes
+            const info = line.substring(line.indexOf(':')+1);
+            const commaIdx = info.lastIndexOf(',');
+            const attrsPart = commaIdx >= 0 ? info.substring(0, commaIdx) : info;
+            const name = commaIdx >= 0 ? info.substring(commaIdx+1).trim() : '';
+            const getAttr = (key) => {
+                const m = attrsPart.match(new RegExp(key + '="([^"]*)"'));
+                return m ? m[1] : '';
+            };
+            current = {
+                name: name || 'قناة',
+                logo: getAttr('tvg-logo'),
+                category: getAttr('group-title') || 'عام'
+            };
+        }else if(line.startsWith('#')){
+            // skip other directives
+        }else{
+            // URL line
+            if(current){
+                current.url = line;
+                out.push(current);
+                current = null;
+            }
+        }
+    }
+    parsedM3U = out;
+    const preview = $('#m3uPreview');
+    preview.style.display = 'block';
+    if(!out.length){
+        preview.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:10px">لم يتم العثور على قنوات</div>';
+        return;
+    }
+    preview.innerHTML = `
+        <div style="font-weight:800;margin-bottom:8px;color:var(--live)"><i class="fa-solid fa-tower-broadcast"></i> ${out.length} قناة جاهزة للاستيراد</div>
+        <div style="max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:5px">
+            ${out.slice(0,50).map((c,i)=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 6px;background:rgba(255,255,255,.02);border-radius:6px"><span style="color:#fff;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</span><span style="color:var(--text-3);font-size:.72rem">${esc(c.category)}</span></div>`).join('')}
+            ${out.length > 50 ? `<div style="text-align:center;color:var(--text-3);font-size:.72rem;padding:4px">+ ${out.length - 50} أخرى...</div>` : ''}
+        </div>
+    `;
+}
+
+$('#m3uImportBtn').addEventListener('click', async ()=>{
+    if(!parsedM3U.length){ toast('لا توجد قنوات','اضغط على معاينة أولاً أو الصق محتوى','err'); return; }
+    const isVip = $('#m3uVip').value === 'true';
+    const autoCat = $('#m3uAutoCat').value === 'true';
+
+    const ok = await askConfirm({title:'استيراد قنوات',msg:`استيراد ${parsedM3U.length} قناة؟`,okText:'استيراد',type:'gold'});
+    if(!ok) return;
+
+    try{
+        // Collect unique categories
+        const catsNeeded = new Set();
+        if(autoCat){
+            parsedM3U.forEach(c => { if(c.category) catsNeeded.add(c.category); });
+            const existingCats = new Set(allLiveCats.map(c=>c.name));
+            for(const cat of catsNeeded){
+                if(!existingCats.has(cat)){
+                    await db.ref('liveCategories').push({name:cat, icon:'fa-tv', createdAt:Date.now()});
+                }
+            }
+        }
+        // Batch insert channels
+        const updates = {};
+        parsedM3U.forEach((c,i) => {
+            const key = db.ref('liveChannels').push().key;
+            updates[`liveChannels/${key}`] = {
+                name: c.name,
+                category: c.category || 'عام',
+                logo: c.logo || '',
+                url: c.url,
+                isVip,
+                viewers: 0,
+                order: i,
+                createdAt: Date.now()
+            };
+        });
+        await db.ref().update(updates);
+        closeModal('mM3U');
+        $('#m3uText').value = ''; parsedM3U = [];
+        $('#m3uPreview').style.display = 'none';
+        logActivity(`استيراد ${parsedM3U.length} قناة من M3U`);
+        toast('تم الاستيراد', `${Object.keys(updates).length} قناة`, 'ok');
+    }catch(err){ toast('خطأ',err.message,'err'); }
+});
+
+/* ============ VOD MEDIA ============ */
 let allItems = [];
 let allUsers = [];
 
@@ -1904,7 +1541,6 @@ $('#addForm').addEventListener('submit',async e=>{
     btn.disabled = true;
     const oldHTML = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
-
     const data = {
         title: $('#addTitle').value.trim(),
         category: $('#addCategory').value,
@@ -1914,8 +1550,7 @@ $('#addForm').addEventListener('submit',async e=>{
         servers: collectServers('#addServers'),
         downloadUrl: $('#addDownloadUrl').value.trim(),
         adDownloadUrl: $('#addAdDownloadUrl').value.trim(),
-        views: 0,
-        createdAt: Date.now()
+        views: 0, createdAt: Date.now()
     };
     try{
         await db.ref('videos').push(data);
@@ -1923,12 +1558,8 @@ $('#addForm').addEventListener('submit',async e=>{
         toast('تم النشر',data.title,'ok');
         resetAddForm();
         go('media');
-    }catch(err){
-        toast('خطأ في الحفظ',err.message,'err');
-    }finally{
-        btn.disabled = false;
-        btn.innerHTML = oldHTML;
-    }
+    }catch(err){ toast('خطأ في الحفظ',err.message,'err'); }
+    finally{ btn.disabled = false; btn.innerHTML = oldHTML; }
 });
 
 function loadMedia(){
@@ -1937,19 +1568,16 @@ function loadMedia(){
         snap.forEach(c=>allItems.push({id:c.key,...c.val()}));
         const total = allItems.length;
         const vip = allItems.filter(i=>i.isVip).length;
-        const views = allItems.reduce((s,i)=>s+(i.views||0),0);
         $('#statTotalVideos').textContent = total.toLocaleString('ar-EG');
         $('#statVipVideos').textContent = vip.toLocaleString('ar-EG');
-        // Views goes to a stat too? No — replaced with live. Only show counts.
         renderMedia();
+        renderTopViewedChart();
     });
 }
-
 function renderMedia(){
     const q = ($('#qMedia').value||'').toLowerCase().trim();
     const f = $('#filterVip').value;
     const box = $('#mediaList');
-
     let list = allItems.filter(i=>{
         if(f === 'vip' && !i.isVip) return false;
         if(f === 'free' && i.isVip) return false;
@@ -1961,12 +1589,7 @@ function renderMedia(){
         }
         return true;
     });
-
-    if(!list.length){
-        box.innerHTML = `<div class="empty"><i class="fa-solid fa-film"></i><p>لا يوجد محتوى مطابق</p></div>`;
-        return;
-    }
-
+    if(!list.length){ box.innerHTML = `<div class="empty"><i class="fa-solid fa-film"></i><p>لا يوجد محتوى مطابق</p></div>`; return; }
     box.innerHTML = list.map(i=>{
         const hasDl = !!(i.downloadUrl || i.adDownloadUrl);
         return `
@@ -1985,7 +1608,6 @@ function renderMedia(){
         </div>`;
     }).join('');
 }
-
 $('#qMedia').addEventListener('input',debounce(renderMedia,220));
 $('#filterVip').addEventListener('change',renderMedia);
 
@@ -2005,7 +1627,6 @@ async function editItem(id){
     openModal('mEdit');
 }
 window.editItem = editItem;
-
 $('#editForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const id = $('#editId').value;
@@ -2023,9 +1644,8 @@ $('#editForm').addEventListener('submit',async e=>{
         closeModal('mEdit');
         logActivity('تعديل محتوى');
         toast('تم الحفظ','','ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 });
-
 async function delItem(id,title){
     const ok = await askConfirm({title:'حذف المحتوى',msg:`سيتم حذف "${title}" نهائياً.`,okText:'حذف نهائي'});
     if(!ok) return;
@@ -2042,16 +1662,102 @@ function previewItem(id){
     $('#pvMeta').textContent = `${item.category||'عام'} • ${item.isVip?'VIP':'مجاني'} • ${item.views||0} مشاهدة`;
     $('#pvThumb').src = item.thumbnailUrl || 'https://via.placeholder.com/640x360/1f1f1f/ffffff?text=No+Image';
     $('#pvDesc').textContent = item.description || 'لا يوجد وصف.';
-    $('#pvServers').innerHTML = (item.servers||[]).map((s,i)=>
-        `<span class="srv-pill"><i class="fa-solid fa-play"></i> ${esc(s.name||('سيرفر '+(i+1)))}</span>`).join('') || '<span class="srv-pill">لا سيرفرات</span>';
+    $('#pvServers').innerHTML = (item.servers||[]).map((s,i)=>`<span class="srv-pill"><i class="fa-solid fa-play"></i> ${esc(s.name||('سيرفر '+(i+1)))}</span>`).join('') || '<span class="srv-pill">لا سيرفرات</span>';
     $('#pvOpen').href = 'play.html#watch-' + id;
     openModal('mPreview');
 }
 window.previewItem = previewItem;
 
-/* =========================================================
-   USERS
-   ========================================================= */
+/* ============ TOP VIEWED CHART ============ */
+function renderTopViewedChart(){
+    const canvas = $('#topViewedChart');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const W = rect.width;
+    const H = 220;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+
+    const top = [...allItems].sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,10);
+    const legend = $('#topViewedLegend');
+    if(!top.length){
+        ctx.fillStyle = '#64748b';
+        ctx.font = '600 13px Cairo, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('لا توجد بيانات', W/2, H/2);
+        legend.innerHTML = '';
+        return;
+    }
+
+    const maxVal = Math.max(...top.map(i=>i.views||0)) || 1;
+    const padding = {t:14, r:14, b:14, l:14};
+    const gap = 6;
+    const barW = (W - padding.l - padding.r - gap*(top.length-1)) / top.length;
+
+    // Draw baseline
+    ctx.strokeStyle = 'rgba(255,255,255,.05)';
+    ctx.lineWidth = 1;
+    for(let i=0; i<=4; i++){
+        const y = padding.t + (H - padding.t - padding.b) * (i/4);
+        ctx.beginPath();
+        ctx.moveTo(padding.l, y);
+        ctx.lineTo(W - padding.r, y);
+        ctx.stroke();
+    }
+
+    const colors = ['#ff0b37','#ff4d6d','#f59e0b','#fbbf24','#06b6d4','#10b981','#8b5cf6','#ec4899','#14b8a6','#eab308'];
+
+    top.forEach((item, i) => {
+        const val = item.views||0;
+        const barH = ((H - padding.t - padding.b) * val) / maxVal;
+        const x = padding.l + i*(barW + gap);
+        const y = H - padding.b - barH;
+
+        // Gradient fill
+        const g = ctx.createLinearGradient(0, y, 0, H - padding.b);
+        g.addColorStop(0, colors[i % colors.length]);
+        g.addColorStop(1, colors[i % colors.length] + '22');
+        ctx.fillStyle = g;
+
+        // Rounded bars
+        const r = Math.min(6, barW/2, barH/2);
+        ctx.beginPath();
+        ctx.moveTo(x, H - padding.b);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.lineTo(x + barW - r, y);
+        ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+        ctx.lineTo(x + barW, H - padding.b);
+        ctx.closePath();
+        ctx.fill();
+
+        // Value on top
+        if(barW > 30){
+            ctx.fillStyle = '#f1f5f9';
+            ctx.font = '700 10px Cairo, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(val, x + barW/2, y - 4);
+        }
+    });
+
+    // Legend
+    legend.innerHTML = top.slice(0,5).map((it,i)=>`
+        <div class="lg-item">
+            <span class="lg-dot" style="background:${colors[i % colors.length]}"></span>
+            <span class="lg-text">${esc(it.title||'بدون عنوان')}</span>
+            <span class="lg-val">${(it.views||0).toLocaleString('ar-EG')}</span>
+        </div>
+    `).join('');
+}
+window.addEventListener('resize', debounce(renderTopViewedChart, 300));
+
+/* ============ USERS ============ */
 function loadUsers(){
     db.ref('users').on('value', snap=>{
         allUsers = [];
@@ -2060,13 +1766,11 @@ function loadUsers(){
         renderUsers();
     });
 }
-
 function renderUsers(){
     const q = ($('#qUser').value||'').toLowerCase().trim();
     const f = $('#filterUserStatus').value;
     const now = Date.now();
     const box = $('#usersList');
-
     let list = allUsers.filter(u=>{
         if(q){
             const n = (u.name||'').toLowerCase();
@@ -2081,12 +1785,7 @@ function renderUsers(){
         if(f === 'expired' && !(exp > 0 && exp <= now)) return false;
         return true;
     });
-
-    if(!list.length){
-        box.innerHTML = `<div class="empty"><i class="fa-solid fa-users"></i><p>لا يوجد مستخدمون</p></div>`;
-        return;
-    }
-
+    if(!list.length){ box.innerHTML = `<div class="empty"><i class="fa-solid fa-users"></i><p>لا يوجد مستخدمون</p></div>`; return; }
     box.innerHTML = list.map(u=>{
         const vip = userIsVipNow(u);
         const banned = userIsBanned(u);
@@ -2109,28 +1808,17 @@ function renderUsers(){
             <div class="dl-cell"><span class="k">الحالة</span>${statusBadge}</div>
             <div class="dl-actions">
                 <button class="btn ghost sm" onclick="editUser('${esc(u.id)}')"><i class="fa-solid fa-user-pen"></i></button>
-                <button class="btn ${banned?'green':'gold'} sm" onclick="toggleBan('${esc(u.id)}',${!banned})">
-                    <i class="fa-solid ${banned?'fa-lock-open':'fa-ban'}"></i>
-                </button>
+                <button class="btn ${banned?'green':'gold'} sm" onclick="toggleBan('${esc(u.id)}',${!banned})"><i class="fa-solid ${banned?'fa-lock-open':'fa-ban'}"></i></button>
                 <button class="btn red sm" onclick="delUser('${esc(u.id)}','${esc(u.name||'')}')"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`;
     }).join('');
 }
-
 $('#qUser').addEventListener('input',debounce(renderUsers,220));
 $('#filterUserStatus').addEventListener('change',renderUsers);
-
 $('#btnNewUser').addEventListener('click',()=>openUserModal());
 $('#btnQuickUser').addEventListener('click',()=>openUserModal());
-
-function openUserModal(){
-    $('#userForm').reset();
-    $('#userId').value = '';
-    $('#userModalTitle').textContent = 'مستخدم جديد';
-    openModal('mUser');
-}
-
+function openUserModal(){$('#userForm').reset();$('#userId').value='';$('#userModalTitle').textContent='مستخدم جديد';openModal('mUser');}
 async function editUser(id){
     const snap = await db.ref('users/'+id).once('value');
     if(!snap.exists()) return toast('غير موجود','','err');
@@ -2144,7 +1832,6 @@ async function editUser(id){
     openModal('mUser');
 }
 window.editUser = editUser;
-
 $('#userForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const id = $('#userId').value;
@@ -2154,12 +1841,10 @@ $('#userForm').addEventListener('submit',async e=>{
     const isVip = $('#userIsVip').value === 'true';
     const val = parseInt($('#subValue').value)||1;
     const unit = $('#subUnit').value;
-
     let addMs = 0;
     if(unit==='days') addMs = val * 86400000;
     else if(unit==='months') addMs = val * 30 * 86400000;
     else if(unit==='years') addMs = val * 365 * 86400000;
-
     const now = Date.now();
     let baseTime = now;
     if(id){
@@ -2169,34 +1854,21 @@ $('#userForm').addEventListener('submit',async e=>{
         if(prevExp > now) baseTime = prevExp;
     }
     const expireAt = baseTime + addMs;
-
-    const payload = {
-        name, email, password,
-        isVip,
-        expireAt,
-        vipExpireDate: expireAt,
-        updatedAt: now
-    };
-
+    const payload = {name, email, password, isVip, expireAt, vipExpireDate: expireAt, updatedAt: now};
     try{
-        if(id){
-            await db.ref('users/'+id).update(payload);
-        }else{
-            await db.ref('users').push({...payload, isBlocked:false, isBanned:false, createdAt:now});
-        }
+        if(id) await db.ref('users/'+id).update(payload);
+        else await db.ref('users').push({...payload, isBlocked:false, isBanned:false, createdAt:now});
         closeModal('mUser');
         logActivity(id?`تعديل مستخدم: ${name}`:`إضافة مستخدم: ${name}`);
         toast('تم الحفظ', name, 'ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 });
-
 async function toggleBan(id, status){
     await db.ref('users/'+id).update({isBlocked:status, isBanned:status});
     logActivity(status?'حظر مستخدم':'إلغاء حظر');
     toast(status?'تم الحظر':'تم إلغاء الحظر','','ok');
 }
 window.toggleBan = toggleBan;
-
 async function delUser(id,name){
     const ok = await askConfirm({title:'حذف حساب',msg:`حذف "${name}"؟`,okText:'حذف'});
     if(!ok) return;
@@ -2206,9 +1878,7 @@ async function delUser(id,name){
 }
 window.delUser = delUser;
 
-/* =========================================================
-   SETTINGS
-   ========================================================= */
+/* ============ SETTINGS ============ */
 function loadSettings(){
     db.ref('settings').on('value', snap=>{
         if(!snap.exists()) return;
@@ -2223,7 +1893,6 @@ function loadSettings(){
 }
 $('#btnSaveSettings').addEventListener('click',async()=>{
     try{
-        // merge preserve existing fields
         const snap = await db.ref('settings').once('value');
         const prev = snap.val() || {};
         await db.ref('settings').set({
@@ -2236,12 +1905,10 @@ $('#btnSaveSettings').addEventListener('click',async()=>{
             whatsappLink: $('#settingWhatsappLink').value.trim(),
             updatedAt: Date.now()
         });
-        logActivity('تحديث إعدادات المظهر');
-        toast('تم الحفظ','الإعدادات طُبّقت','ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+        logActivity('تحديث الإعدادات');
+        toast('تم الحفظ','','ok');
+    }catch(err){toast('خطأ',err.message,'err');}
 });
-
-/* Download ad */
 function loadDownloadAd(){
     db.ref('ads/downloadAd').on('value', snap=>{
         $('#settingDownloadAd').value = snap.exists() ? (snap.val()||'') : '';
@@ -2251,17 +1918,12 @@ $('#btnSaveDownloadAd').addEventListener('click',async()=>{
     try{
         await db.ref('ads').child('downloadAd').set($('#settingDownloadAd').value);
         logActivity('تحديث إعلان التحميل');
-        toast('تم الحفظ','إعلان التحميل جاهز','ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+        toast('تم الحفظ','','ok');
+    }catch(err){toast('خطأ',err.message,'err');}
 });
 
-/* =========================================================
-   CHANGE PIN
-   ========================================================= */
-$('#btnChangePin').addEventListener('click',()=>{
-    $('#pinForm').reset();
-    openModal('mPin');
-});
+/* ============ CHANGE PIN ============ */
+$('#btnChangePin').addEventListener('click',()=>{$('#pinForm').reset();openModal('mPin');});
 $('#pinForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const oldP = $('#pinOld').value.trim();
@@ -2274,15 +1936,13 @@ $('#pinForm').addEventListener('submit',async e=>{
         closeModal('mPin');
         logActivity('تغيير رمز الدخول');
         toast('تم التغيير','','ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 });
 
-/* =========================================================
-   BACKUP
-   ========================================================= */
+/* ============ BACKUP / RESTORE ============ */
 async function exportBackup(){
     try{
-        toast('جاري التحضير','...','');
+        toast('جاري التحضير','','');
         const snap = await db.ref().once('value');
         const data = JSON.stringify(snap.val()||{}, null, 2);
         const blob = new Blob([data], {type:'application/json'});
@@ -2294,20 +1954,30 @@ async function exportBackup(){
         URL.revokeObjectURL(url);
         logActivity('تصدير نسخة احتياطية');
         toast('تم التصدير','','ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
+    }catch(err){toast('خطأ',err.message,'err');}
 }
+$('#btnImportJSON').addEventListener('click',()=>$('#jsonFileInput').click());
+$('#jsonFileInput').addEventListener('change', async e=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    const ok = await askConfirm({title:'استيراد نسخة',msg:'سيتم دمج البيانات مع الحالية. متابعة؟',okText:'استيراد',type:'gold'});
+    if(!ok){ e.target.value = ''; return; }
+    try{
+        const text = await f.text();
+        const data = JSON.parse(text);
+        await db.ref().update(data);
+        logActivity('استيراد نسخة احتياطية');
+        toast('تم الاستيراد','',"ok");
+    }catch(err){ toast('خطأ',err.message,'err'); }
+    e.target.value = '';
+});
 
-/* =========================================================
-   PREVIEW LINK
-   ========================================================= */
-(function initPreview(){
-    const link = $('#previewLink');
-    link.href = new URL('play.html', location.href).href;
+/* ============ PREVIEW LINK ============ */
+(function(){
+    $('#previewLink').href = new URL('play.html', location.href).href;
 })();
 
-/* =========================================================
-   BOOT
-   ========================================================= */
+/* ============ BOOT ============ */
 window.addEventListener('DOMContentLoaded',()=>{
     loadCategories();
     loadLiveCategories();
@@ -2316,6 +1986,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     loadUsers();
     loadSettings();
     loadDownloadAd();
+    renderTopViewedChart();
 });
 </script>
 </body>
