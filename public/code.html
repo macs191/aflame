@@ -1239,10 +1239,10 @@ go(location.hash.replace('#','')||'dashboard');
 /* ============ FAB ============ */
 $('#fabMain').addEventListener('click',()=>$('#fabWrap').classList.toggle('open'));
 $('#fabTop').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
-$('#fabBackup').addEventListener('click',exportBackup);
-$('#btnBackup').addEventListener('click',exportBackup);
-$('#btnQuickBackup').addEventListener('click',exportBackup);
-$('#btnBackupSettings').addEventListener('click',exportBackup);
+$('#fabBackup').addEventListener('click',()=>exportBackup());          // ✅ FIX
+$('#btnBackup').addEventListener('click',()=>exportBackup());          // ✅ FIX
+$('#btnQuickBackup').addEventListener('click',()=>exportBackup());     // ✅ FIX
+$('#btnBackupSettings').addEventListener('click',()=>exportBackup());  // ✅ FIX
 $('#btnRefresh').addEventListener('click',()=>location.reload());
 $('#fabNewLive').addEventListener('click',()=>openLiveChannelModal());
 $('#btnQuickLive').addEventListener('click',()=>{go('live');setTimeout(openLiveChannelModal,300);});
