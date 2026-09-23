@@ -3,141 +3,658 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل الفيديوهات - FARESPCB Video Player</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- HLS.js library for m3u8 streaming -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <title>لوحة التحكم والإدارة | منصة عرض الميديا</title>
+    
+    <!-- CSS / Fonts / Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase Compatibility SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .player-container { width: 100%; max-width: 900px; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .video-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
-        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .info-panel { padding: 20px; }
-        h1 { font-size: 1.4rem; color: #38bdf8; margin-bottom: 15px; }
-        .servers-title { font-size: 0.95rem; color: #94a3b8; margin-bottom: 10px; font-weight: 600; }
-        .servers-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-        .server-btn { background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.9rem; font-weight: 600; }
-        .server-btn:hover { background: #0284c7; border-color: #38bdf8; }
-        .server-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
-        .loading { text-align: center; padding: 40px; color: #94a3b8; }
-        .error-msg { text-align: center; padding: 30px; color: #ef4444; }
+        :root {
+            --bg-color: #0f0f0f;
+            --card-bg: #1f1f1f;
+            --accent-color: #e50914;
+            --accent-hover: #b80710;
+            --text-color: #ffffff;
+            --text-secondary: #aaaaaa;
+            --border-color: #333333;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 50px;
+        }
+
+        /* Top Navbar */
+        .navbar {
+            background-color: #000;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .card-header {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ddd;
+        }
+
+        input[type="text"], input[type="url"], select, textarea {
+            width: 100%;
+            padding: 11px 14px;
+            background: #121212;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Server Builder Section */
+        .servers-box {
+            background: #141414;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        .server-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .server-row input {
+            margin-bottom: 0;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: #333;
+            color: #ccc;
+        }
+
+        .btn-secondary:hover {
+            background-color: #444;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background-color: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background-color: #991b1b;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        /* Table */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #121212;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        td img {
+            width: 50px;
+            height: 30px;
+            object-fit: cover;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+
+        .badge {
+            background: #282828;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #bbb;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+
+        .close-modal:hover { color: #fff; }
+
+        @media (max-width: 650px) {
+            .server-row { flex-direction: column; }
+            .container { padding: 0 12px; }
+        }
     </style>
 </head>
 <body>
 
-<div class="player-container">
-    <div id="content">
-        <div class="loading">جاري تحميل المشغل والبيانات...</div>
+    <!-- Header Navbar -->
+    <nav class="navbar">
+        <a href="#" class="navbar-brand">
+            <i class="fa-solid fa-sliders"></i> لوحة الإدارة والتحكم
+        </a>
+        <a href="index.html" target="_blank" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-tv"></i> فتح منصة العرض
+        </a>
+    </nav>
+
+    <div class="container">
+        
+        <!-- بطاقة إضافة عنصر جديد -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-solid fa-plus-circle"></i> إضافة فيديو / قناة جديدة
+            </div>
+            <form id="addForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-heading"></i> عنوان الفيديو / القناة:</label>
+                        <input type="text" id="addTitle" placeholder="مثال: قناة الكأس HD 1 أو فيلم X" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-layer-group"></i> التصنيف / القسم:</label>
+                        <select id="addCategory">
+                            <option value="بث مباشر">بث مباشر</option>
+                            <option value="أفلام">أفلام</option>
+                            <option value="مسلسلات">مسلسلات</option>
+                            <option value="رياضة">رياضة</option>
+                            <option value="عام">عام</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label><i class="fa-solid fa-image"></i> رابط الصورة البوستر (Thumbnail URL):</label>
+                        <input type="url" id="addThumbnail" placeholder="https://example.com/poster.jpg">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label><i class="fa-solid fa-align-right"></i> الوصف (اختياري):</label>
+                        <textarea id="addDescription" placeholder="اكتب وصفاً قصيراً هنا..."></textarea>
+                    </div>
+                </div>
+
+                <!-- قائمة سيرفرات المشاهدة -->
+                <div class="form-group">
+                    <label><i class="fa-solid fa-server"></i> سيرفرات وروابط المشاهدة (m3u8, MP4, YouTube...):</label>
+                    <div class="servers-box" id="addServersContainer">
+                        <div class="server-row">
+                            <input type="text" placeholder="اسم السيرفر (مثلاً: سيرفر رئيسي HD)" class="srv-name" required>
+                            <input type="url" placeholder="رابط البث أو الفيديو" class="srv-url" required>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnAddServerField">
+                        <i class="fa-solid fa-plus"></i> إضافة سيرفر آخر
+                    </button>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="btn" id="btnSubmitAdd">
+                        <i class="fa-solid fa-floppy-disk"></i> حفظ وإضافة للمنصة
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- بطاقة عرض وإدارة الفيديوهات -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-solid fa-list-check"></i> المحتوى المضاف حالياً
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>البوستر</th>
+                            <th>العنوان</th>
+                            <th>التصنيف</th>
+                            <th>السيرفرات</th>
+                            <th>المشاهدات</th>
+                            <th>التحكم</th>
+                        </tr>
+                    </thead>
+                    <tbody id="videosTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-secondary);">
+                                جاري تحميل البيانات...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
-</div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <!-- Modal التعديل -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="card-header" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
+                <i class="fa-solid fa-pen-to-square"></i> تعديل بيانات المحتوى
+            </div>
+            
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>العنوان:</label>
+                    <input type="text" id="editTitle" required>
+                </div>
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
-        authDomain: "voip17.firebaseapp.com",
-        databaseURL: "https://voip17-default-rtdb.firebaseio.com",
-        projectId: "voip17",
-        storageBucket: "voip17.firebasestorage.app",
-        messagingSenderId: "608379006778",
-        appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
-        measurementId: "G-GZNJZLM701"
-    };
+                <div class="form-group">
+                    <label>التصنيف:</label>
+                    <select id="editCategory">
+                        <option value="بث مباشر">بث مباشر</option>
+                        <option value="أفلام">أفلام</option>
+                        <option value="مسلسلات">مسلسلات</option>
+                        <option value="رياضة">رياضة</option>
+                        <option value="عام">عام</option>
+                    </select>
+                </div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+                <div class="form-group">
+                    <label>رابط الصورة البوستر:</label>
+                    <input type="url" id="editThumbnail">
+                </div>
 
-    // جلب VID من URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const vid = urlParams.get('vid');
+                <div class="form-group">
+                    <label>الوصف:</label>
+                    <textarea id="editDescription"></textarea>
+                </div>
 
-    let hls = null;
+                <div class="form-group">
+                    <label>السيرفرات:</label>
+                    <div class="servers-box" id="editServersContainer"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnEditAddServerField">
+                        <i class="fa-solid fa-plus"></i> إضافة سيرفر جديد
+                    </button>
+                </div>
 
-    async function initPlayer() {
-        const container = document.getElementById('content');
-        if (!vid) {
-            container.innerHTML = '<div class="error-msg">معرف الفيديو غير صحيح أو مفقود!</div>';
-            return;
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn"><i class="fa-solid fa-check"></i> حفظ التعديلات</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================
+        // 1. إعدادات Firebase (نفس الإعدادات الموجودة بصفحة العرض)
+        // =========================================================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
+        const db = firebase.database();
 
-        try {
-            const snapshot = await get(ref(db, 'videos/' + vid));
-            if (!snapshot.exists()) {
-                container.innerHTML = '<div class="error-msg">الفيديو غير موجود أو تم حذفه!</div>';
-                return;
-            }
+        // =========================================================
+        // 2. الديناميكية الخاصة بحقول السيرفرات (إضافة / حذف حقل)
+        // =========================================================
+        document.getElementById('btnAddServerField').addEventListener('click', () => {
+            appendServerRow('addServersContainer', '', '');
+        });
 
-            const videoData = snapshot.val();
-            const servers = videoData.servers || [];
+        document.getElementById('btnEditAddServerField').addEventListener('click', () => {
+            appendServerRow('editServersContainer', '', '');
+        });
 
-            if (servers.length === 0) {
-                container.innerHTML = '<div class="error-msg">لا توجد سيرفرات متاح لهذا الفيديو حالياً!</div>';
-                return;
-            }
-
-            // بناء واجهة المشغل
-            container.innerHTML = `
-                <div class="video-wrapper">
-                    <video id="videoPlayer" controls poster="${videoData.poster || ''}"></video>
-                </div>
-                <div class="info-panel">
-                    <h1>${videoData.title}</h1>
-                    <div class="servers-title">اختر سيرفر المشاهدة:</div>
-                    <div class="servers-btns" id="serversContainer"></div>
-                </div>
+        function appendServerRow(containerId, name = '', url = '') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'server-row';
+            div.innerHTML = `
+                <input type="text" placeholder="اسم السيرفر" value="${name}" class="srv-name" required>
+                <input type="url" placeholder="رابط البث أو الفيديو" value="${url}" class="srv-url" required>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()" title="حذف السيرفر">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             `;
-
-            const serversContainer = document.getElementById('serversContainer');
-            servers.forEach((srv, index) => {
-                const btn = document.createElement('button');
-                btn.className = `server-btn ${index === 0 ? 'active' : ''}`;
-                btn.innerText = srv.name || `سيرفر ${index + 1}`;
-                btn.onclick = () => {
-                    document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    playStream(srv.url);
-                };
-                serversContainer.appendChild(btn);
-            });
-
-            // تشغيل السيرفر الأول تلقائياً
-            playStream(servers[0].url);
-
-        } catch (err) {
-            container.innerHTML = `<div class="error-msg">حدث خطأ في جلب البيانات: ${err.message}</div>`;
-        }
-    }
-
-    function playStream(url) {
-        const video = document.getElementById('videoPlayer');
-
-        if (hls) {
-            hls.destroy();
+            container.appendChild(div);
         }
 
-        if (Hls.isSupported()) {
-            hls = new Hls();
-            hls.loadSource(url);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                video.play().catch(() => {});
+        // =========================================================
+        // 3. إضافة فيديو / قناة جديدة لـ Firebase
+        // =========================================================
+        document.getElementById('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('btnSubmitAdd');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
+
+            const title = document.getElementById('addTitle').value.trim();
+            const category = document.getElementById('addCategory').value;
+            const thumbnailUrl = document.getElementById('addThumbnail').value.trim();
+            const description = document.getElementById('addDescription').value.trim();
+
+            const srvNames = document.querySelectorAll('#addServersContainer .srv-name');
+            const srvUrls = document.querySelectorAll('#addServersContainer .srv-url');
+
+            let servers = [];
+            srvNames.forEach((item, idx) => {
+                servers.push({
+                    name: item.value.trim(),
+                    url: srvUrls[idx].value.trim()
+                });
             });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // لدعم متصفح Safari على iOS / Mac
-            video.src = url;
-            video.addEventListener('loadedmetadata', function() {
-                video.play().catch(() => {});
+
+            try {
+                const newRef = db.ref('videos').push();
+                await newRef.set({
+                    title,
+                    category,
+                    thumbnailUrl,
+                    description,
+                    servers,
+                    views: 0,
+                    createdAt: Date.now()
+                });
+
+                alert('تمت إضافة المحتوى بنجاح!');
+                document.getElementById('addForm').reset();
+                document.getElementById('addServersContainer').innerHTML = `
+                    <div class="server-row">
+                        <input type="text" placeholder="اسم السيرفر (مثلاً: سيرفر رئيسي HD)" class="srv-name" required>
+                        <input type="url" placeholder="رابط البث أو الفيديو" class="srv-url" required>
+                    </div>
+                `;
+            } catch (error) {
+                alert('حدث خطأ أثناء الحفظ: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> حفظ وإضافة للمنصة';
+            }
+        });
+
+        // =========================================================
+        // 4. قراءة القائمة وعرضها في الجدول لحظياً
+        // =========================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            db.ref('videos').on('value', (snapshot) => {
+                const tbody = document.getElementById('videosTableBody');
+                tbody.innerHTML = '';
+
+                if (!snapshot.exists()) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا يوجد محتوى مضاف حالياً.</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach((childSnapshot) => {
+                    const id = childSnapshot.key;
+                    const item = childSnapshot.val();
+                    const thumb = item.thumbnailUrl || 'https://via.placeholder.com/50x30/1f1f1f/ffffff?text=N/A';
+                    const serversCount = item.servers ? item.servers.length : 0;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><img src="${thumb}" alt="${item.title}"></td>
+                        <td><strong>${item.title || 'بدون عنوان'}</strong></td>
+                        <td><span class="badge">${item.category || 'عام'}</span></td>
+                        <td>${serversCount} سيرفرات</td>
+                        <td><i class="fa-regular fa-eye"></i> ${item.views || 0}</td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="btn btn-secondary btn-sm" onclick="openEditModal('${id}')" title="تعديل">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteItem('${id}')" title="حذف">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             });
-        } else {
-            alert('المتصفح لا يدعم تشغيل هذا النوع من الفيديوهات (HLS/m3u8)');
+        });
+
+        // =========================================================
+        // 5. حذف عنصر
+        // =========================================================
+        function deleteItem(id) {
+            if (confirm('هل أنت متأكد من حذف هذا المحتوى نهائياً؟')) {
+                db.ref('videos/' + id).remove();
+            }
         }
-    }
 
-    initPlayer();
-</script>
+        // =========================================================
+        // 6. فتح نافذة التعديل وحفظها
+        // =========================================================
+        async function openEditModal(id) {
+            const snapshot = await db.ref('videos/' + id).once('value');
+            if (!snapshot.exists()) return;
 
+            const item = snapshot.val();
+            document.getElementById('editId').value = id;
+            document.getElementById('editTitle').value = item.title || '';
+            document.getElementById('editCategory').value = item.category || 'عام';
+            document.getElementById('editThumbnail').value = item.thumbnailUrl || '';
+            document.getElementById('editDescription').value = item.description || '';
+
+            const container = document.getElementById('editServersContainer');
+            container.innerHTML = '';
+
+            if (item.servers && item.servers.length > 0) {
+                item.servers.forEach(srv => {
+                    appendServerRow('editServersContainer', srv.name, srv.url);
+                });
+            } else if (item.videoUrl || item.url) {
+                appendServerRow('editServersContainer', 'سيرفر افتراضي', item.videoUrl || item.url);
+            }
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('editId').value;
+            const title = document.getElementById('editTitle').value.trim();
+            const category = document.getElementById('editCategory').value;
+            const thumbnailUrl = document.getElementById('editThumbnail').value.trim();
+            const description = document.getElementById('editDescription').value.trim();
+
+            const srvNames = document.querySelectorAll('#editServersContainer .srv-name');
+            const srvUrls = document.querySelectorAll('#editServersContainer .srv-url');
+
+            let servers = [];
+            srvNames.forEach((item, idx) => {
+                servers.push({
+                    name: item.value.trim(),
+                    url: srvUrls[idx].value.trim()
+                });
+            });
+
+            try {
+                await db.ref('videos/' + id).update({
+                    title,
+                    category,
+                    thumbnailUrl,
+                    description,
+                    servers
+                });
+
+                alert('تم تعديل البيانات بنجاح!');
+                closeEditModal();
+            } catch (err) {
+                alert('حدث خطأ في التحديث: ' + err.message);
+            }
+        });
+    </script>
 </body>
 </html>
