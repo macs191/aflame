@@ -39,7 +39,22 @@ const createProfile = (currentUser: User, displayName?: string): UserProfile => 
 async function ensureProfile(currentUser: User, displayName?: string): Promise<UserProfile> {
   const profileDocument = userDocument(currentUser.uid);
   const snapshot = await getDoc(profileDocument);
-  if (snapshot.exists()) return snapshot.data() as UserProfile;
+
+  if (snapshot.exists()) {
+    const savedData = snapshot.data() as Partial<UserProfile>;
+    return {
+      uid: currentUser.uid,
+      email: savedData.email || currentUser.email || '',
+      displayName: savedData.displayName || displayName?.trim() || currentUser.displayName || 'مستخدم جديد',
+      photoURL: savedData.photoURL || currentUser.photoURL || '',
+      role: savedData.role || 'user',
+      subscriptionStatus: savedData.subscriptionStatus || 'inactive',
+      createdAt: savedData.createdAt || new Date().toISOString(),
+      planId: savedData.planId,
+      billingCycle: savedData.billingCycle,
+      subscriptionExpiresAt: savedData.subscriptionExpiresAt,
+    };
+  }
 
   const profile = createProfile(currentUser, displayName);
   await setDoc(profileDocument, profile);
@@ -57,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleAuthStateChanged = (currentUser: User | null): void => {
       void (async (): Promise<void> => {
         if (disposed) return;
+
         setUser(currentUser);
         setProfile(null);
         setLoading(true);
@@ -79,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const unsubscribe = onAuthStateChanged(auth, handleAuthStateChanged);
+
     return (): void => {
       disposed = true;
       unsubscribe();
@@ -97,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const name = displayName.trim() || 'مستخدم جديد';
     const credential = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
     await updateAuthProfile(credential.user, { displayName: name });
+
     const newProfile = createProfile(credential.user, name);
     await setDoc(userDocument(credential.user.uid), newProfile);
     setProfile(newProfile);
@@ -104,11 +122,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUserProfile = async (data: Partial<UserProfile>): Promise<void> => {
     if (!user) throw new Error('يجب تسجيل الدخول أولاً');
+
     const editable: Partial<UserProfile> = { ...data };
     delete editable.uid;
     delete editable.email;
     delete editable.role;
     delete editable.createdAt;
+
     await updateDoc(userDocument(user.uid), editable);
     setProfile((previous) => (previous ? { ...previous, ...editable } : previous));
   };
@@ -118,7 +138,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, loginWithGoogle, loginWithEmail, signUpWithEmail, updateUserProfile, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        loading,
+        loginWithGoogle,
+        loginWithEmail,
+        signUpWithEmail,
+        updateUserProfile,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
