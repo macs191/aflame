@@ -3,126 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم والإدارة - Vercel & Firebase</title>
+    <title>مشغل الفيديوهات - FARESPCB Video Player</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- HLS.js library for m3u8 streaming -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; padding: 20px; }
-        .container { max-width: 1050px; margin: 0 auto; }
-        h1 { font-size: 1.8rem; margin-bottom: 20px; color: #38bdf8; text-align: center; }
-        
-        .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #334155; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95rem; }
-        input[type="text"], input[type="url"] {
-            width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155;
-            border-radius: 6px; color: #fff; font-size: 0.95rem; outline: none; margin-bottom: 5px;
-        }
-        input:focus { border-color: #38bdf8; }
-        
-        .servers-container { background: #0f172a; padding: 12px; border-radius: 8px; border: 1px dashed #334155; margin-bottom: 15px; }
-        .server-item { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
-        
-        .btn { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .btn:hover { background: #0369a1; }
-        .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
-        .btn-add-server { background: #334155; color: #e2e8f0; }
-        .btn-add-server:hover { background: #475569; }
-        .btn-edit { background: #f59e0b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-        .btn-danger { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: right; border-bottom: 1px solid #334155; font-size: 0.9rem; }
-        th { background: #0f172a; color: #94a3b8; }
-        td a { color: #38bdf8; text-decoration: none; }
-        
-        /* Modal Style */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100; }
-        .modal-content { background: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; border: 1px solid #334155; max-height: 90vh; overflow-y: auto; }
+        body { background-color: #0f172a; color: #f8fafc; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .player-container { width: 100%; max-width: 900px; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .video-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
+        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .info-panel { padding: 20px; }
+        h1 { font-size: 1.4rem; color: #38bdf8; margin-bottom: 15px; }
+        .servers-title { font-size: 0.95rem; color: #94a3b8; margin-bottom: 10px; font-weight: 600; }
+        .servers-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+        .server-btn { background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.9rem; font-weight: 600; }
+        .server-btn:hover { background: #0284c7; border-color: #38bdf8; }
+        .server-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
+        .loading { text-align: center; padding: 40px; color: #94a3b8; }
+        .error-msg { text-align: center; padding: 30px; color: #ef4444; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>لوحة تحكم وإدارة الفيديوهات والسيرفرات</h1>
-
-    <!-- نموذج إضافة فيديو جديد -->
-    <div class="card">
-        <h2>إضافة فيديو / حلقة جديدة</h2>
-        <form id="addForm" style="margin-top: 15px;">
-            <div class="form-group">
-                <label>عنوان الفيديو / الحلقة:</label>
-                <input type="text" id="title" placeholder="مثال: مسلسل X - الحلقة 1" required>
-            </div>
-            
-            <div class="form-group">
-                <label>صورة بوستر الفيديو (رابط اختياري):</label>
-                <input type="url" id="poster" placeholder="https://domain.com/image.jpg">
-            </div>
-
-            <!-- سيرفرات المشاهدة المتعددة -->
-            <label>سيرفرات وروابط المشاهدة (m3u8):</label>
-            <div class="servers-container" id="serversList">
-                <div class="server-item">
-                    <input type="text" placeholder="اسم السيرفر (مثلاً: سيرفر رئيسي HD)" class="srv-name" required>
-                    <input type="url" placeholder="رابط m3u8" class="srv-url" required>
-                </div>
-            </div>
-            <button type="button" class="btn btn-sm btn-add-server" id="addServerBtn">+ إضافة سيرفر آخر</button>
-
-            <br><br>
-            <button type="submit" class="btn" id="submitBtn">حفظ وإضافة الفيديو</button>
-        </form>
-    </div>
-
-    <!-- جدول عرض الفيديوهات المضافة -->
-    <div class="card">
-        <h2>قائمة الفيديوهات</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>العنوان</th>
-                    <th>VID</th>
-                    <th>عدد السيرفرات</th>
-                    <th>المشاهدة</th>
-                    <th>التحكم</th>
-                </tr>
-            </thead>
-            <tbody id="videoTableBody">
-                <tr><td colspan="5" style="text-align: center;">جاري جلب البيانات من Firebase...</td></tr>
-            </tbody>
-        </table>
+<div class="player-container">
+    <div id="content">
+        <div class="loading">جاري تحميل المشغل والبيانات...</div>
     </div>
 </div>
 
-<!-- Modal التعديل -->
-<div class="modal" id="editModal">
-    <div class="modal-content">
-        <h2>تعديل بيانات الفيديو</h2>
-        <form id="editForm" style="margin-top: 15px;">
-            <input type="hidden" id="editVid">
-            <div class="form-group">
-                <label>العنوان:</label>
-                <input type="text" id="editTitle" required>
-            </div>
-            <div class="form-group">
-                <label>رابط الصورة البوستر:</label>
-                <input type="url" id="editPoster">
-            </div>
-            <label>السيرفرات:</label>
-            <div class="servers-container" id="editServersList"></div>
-            <button type="button" class="btn btn-sm btn-add-server" id="addEditServerBtn">+ إضافة سيرفر جديد</button>
-            <br><br>
-            <button type="submit" class="btn">حفظ التعديلات</button>
-            <button type="button" class="btn btn-danger" onclick="closeEditModal()">إلغاء</button>
-        </form>
-    </div>
-</div>
-
-<!-- Firebase Modular SDK -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
@@ -138,159 +50,93 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    function generateVID() {
-        return Math.random().toString(36).substring(2, 11);
-    }
+    // جلب VID من URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const vid = urlParams.get('vid');
 
-    // إضافة حقل سيرفر جديد في نموذج الإضافة
-    document.getElementById('addServerBtn').addEventListener('click', () => {
-        const div = document.createElement('div');
-        div.className = 'server-item';
-        div.innerHTML = `
-            <input type="text" placeholder="اسم السيرفر" class="srv-name" required>
-            <input type="url" placeholder="رابط m3u8" class="srv-url" required>
-            <button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
-        `;
-        document.getElementById('serversList').appendChild(div);
-    });
+    let hls = null;
 
-    // حفظ الفيديو في Firebase
-    document.getElementById('addForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.innerText = 'جاري الحفظ...';
-        submitBtn.disabled = true;
-
-        const title = document.getElementById('title').value;
-        const poster = document.getElementById('poster').value;
-        const vid = generateVID();
-
-        const srvNames = document.querySelectorAll('#serversList .srv-name');
-        const srvUrls = document.querySelectorAll('#serversList .srv-url');
-        
-        let servers = [];
-        srvNames.forEach((item, index) => {
-            servers.push({ name: item.value, url: srvUrls[index].value });
-        });
-
-        try {
-            await set(ref(db, 'videos/' + vid), {
-                vid, title, poster, servers, createdAt: Date.now()
-            });
-            alert('تمت إضافة الفيديو بنجاح!');
-            document.getElementById('addForm').reset();
-            loadVideos();
-        } catch (err) {
-            alert('خطأ في الاتصال بقاعدة البيانات: ' + err.message);
-        } finally {
-            submitBtn.innerText = 'حفظ وإضافة الفيديو';
-            submitBtn.disabled = false;
+    async function initPlayer() {
+        const container = document.getElementById('content');
+        if (!vid) {
+            container.innerHTML = '<div class="error-msg">معرف الفيديو غير صحيح أو مفقود!</div>';
+            return;
         }
-    });
 
-    // جلب عرض الفيديوهات
-    async function loadVideos() {
-        const tbody = document.getElementById('videoTableBody');
         try {
-            const snapshot = await get(ref(db, 'videos'));
-            tbody.innerHTML = '';
-
+            const snapshot = await get(ref(db, 'videos/' + vid));
             if (!snapshot.exists()) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">لا توجد فيديوهات مضافة حتى الآن.</td></tr>';
+                container.innerHTML = '<div class="error-msg">الفيديو غير موجود أو تم حذفه!</div>';
                 return;
             }
 
-            const data = snapshot.val();
-            Object.values(data).reverse().forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${item.title}</td>
-                    <td><code>${item.vid}</code></td>
-                    <td>${item.servers ? item.servers.length : 0} سيرفرات</td>
-                    <td><a href="play.html?vid=${item.vid}" target="_blank">فتح المشغل ↗</a></td>
-                    <td>
-                        <button class="btn-edit btn-sm" onclick="editVideo('${item.vid}')">تعديل</button>
-                        <button class="btn-danger btn-sm" onclick="deleteVideo('${item.vid}')">حذف</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+            const videoData = snapshot.val();
+            const servers = videoData.servers || [];
+
+            if (servers.length === 0) {
+                container.innerHTML = '<div class="error-msg">لا توجد سيرفرات متاح لهذا الفيديو حالياً!</div>';
+                return;
+            }
+
+            // بناء واجهة المشغل
+            container.innerHTML = `
+                <div class="video-wrapper">
+                    <video id="videoPlayer" controls poster="${videoData.poster || ''}"></video>
+                </div>
+                <div class="info-panel">
+                    <h1>${videoData.title}</h1>
+                    <div class="servers-title">اختر سيرفر المشاهدة:</div>
+                    <div class="servers-btns" id="serversContainer"></div>
+                </div>
+            `;
+
+            const serversContainer = document.getElementById('serversContainer');
+            servers.forEach((srv, index) => {
+                const btn = document.createElement('button');
+                btn.className = `server-btn ${index === 0 ? 'active' : ''}`;
+                btn.innerText = srv.name || `سيرفر ${index + 1}`;
+                btn.onclick = () => {
+                    document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    playStream(srv.url);
+                };
+                serversContainer.appendChild(btn);
             });
+
+            // تشغيل السيرفر الأول تلقائياً
+            playStream(servers[0].url);
+
         } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">حدث خطأ أثناء تحميل البيانات!</td></tr>';
+            container.innerHTML = `<div class="error-msg">حدث خطأ في جلب البيانات: ${err.message}</div>`;
         }
     }
 
-    // حذف فيديو
-    window.deleteVideo = async (vid) => {
-        if (confirm('هل أنت متأكد من حذف هذا الفيديو؟')) {
-            await remove(ref(db, 'videos/' + vid));
-            loadVideos();
+    function playStream(url) {
+        const video = document.getElementById('videoPlayer');
+
+        if (hls) {
+            hls.destroy();
         }
-    };
 
-    // تعديل فيديو
-    window.editVideo = async (vid) => {
-        const snapshot = await get(ref(db, 'videos/' + vid));
-        if (snapshot.exists()) {
-            const video = snapshot.val();
-            document.getElementById('editVid').value = video.vid;
-            document.getElementById('editTitle').value = video.title;
-            document.getElementById('editPoster').value = video.poster || '';
-
-            const editList = document.getElementById('editServersList');
-            editList.innerHTML = '';
-
-            (video.servers || []).forEach(srv => {
-                const div = document.createElement('div');
-                div.className = 'server-item';
-                div.innerHTML = `
-                    <input type="text" value="${srv.name}" class="srv-name" required>
-                    <input type="url" value="${srv.url}" class="srv-url" required>
-                    <button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
-                `;
-                editList.appendChild(div);
+        if (Hls.isSupported()) {
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play().catch(() => {});
             });
-
-            document.getElementById('editModal').style.display = 'flex';
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // لدعم متصفح Safari على iOS / Mac
+            video.src = url;
+            video.addEventListener('loadedmetadata', function() {
+                video.play().catch(() => {});
+            });
+        } else {
+            alert('المتصفح لا يدعم تشغيل هذا النوع من الفيديوهات (HLS/m3u8)');
         }
-    };
+    }
 
-    document.getElementById('addEditServerBtn').addEventListener('click', () => {
-        const div = document.createElement('div');
-        div.className = 'server-item';
-        div.innerHTML = `
-            <input type="text" placeholder="اسم السيرفر" class="srv-name" required>
-            <input type="url" placeholder="رابط m3u8" class="srv-url" required>
-            <button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
-        `;
-        document.getElementById('editServersList').appendChild(div);
-    });
-
-    document.getElementById('editForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const vid = document.getElementById('editVid').value;
-        const title = document.getElementById('editTitle').value;
-        const poster = document.getElementById('editPoster').value;
-
-        const srvNames = document.querySelectorAll('#editServersList .srv-name');
-        const srvUrls = document.querySelectorAll('#editServersList .srv-url');
-        
-        let servers = [];
-        srvNames.forEach((item, index) => {
-            servers.push({ name: item.value, url: srvUrls[index].value });
-        });
-
-        await update(ref(db, 'videos/' + vid), { title, poster, servers });
-        alert('تم تعديل بيانات الفيديو بنجاح!');
-        closeEditModal();
-        loadVideos();
-    });
-
-    window.closeEditModal = () => {
-        document.getElementById('editModal').style.display = 'none';
-    };
-
-    loadVideos();
+    initPlayer();
 </script>
 
 </body>
