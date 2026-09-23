@@ -3,141 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - Vercel & Firebase</title>
+    <title>لوحة التحكم والإدارة - Vercel & Firebase</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         body { background-color: #0f172a; color: #f8fafc; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
+        .container { max-width: 1050px; margin: 0 auto; }
         h1 { font-size: 1.8rem; margin-bottom: 20px; color: #38bdf8; text-align: center; }
         
-        .card { background: #1e293b; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #334155; }
+        .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #334155; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95rem; }
-        input[type="text"] {
+        input[type="text"], input[type="url"] {
             width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155;
-            border-radius: 6px; color: #fff; font-size: 0.95rem; outline: none;
+            border-radius: 6px; color: #fff; font-size: 0.95rem; outline: none; margin-bottom: 5px;
         }
         input:focus { border-color: #38bdf8; }
+        
+        .servers-container { background: #0f172a; padding: 12px; border-radius: 8px; border: 1px dashed #334155; margin-bottom: 15px; }
+        .server-item { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+        
         .btn { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
         .btn:hover { background: #0369a1; }
-        .btn-danger { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+        .btn-add-server { background: #334155; color: #e2e8f0; }
+        .btn-add-server:hover { background: #475569; }
+        .btn-edit { background: #f59e0b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; text-align: right; border-bottom: 1px solid #334155; font-size: 0.9rem; }
         th { background: #0f172a; color: #94a3b8; }
         td a { color: #38bdf8; text-decoration: none; }
-        .url-cell { max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Modal Style */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; border: 1px solid #334155; max-height: 90vh; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>لوحة تحكم الفيديوهات (Vercel)</h1>
+    <h1>لوحة تحكم وإدارة الفيديوهات والسيرفرات</h1>
 
-    <!-- نموذج إضافة فيديو -->
+    <!-- نموذج إضافة فيديو جديد -->
     <div class="card">
-        <h2>إضافة فيديو جديد</h2>
+        <h2>إضافة فيديو / حلقة جديدة</h2>
         <form id="addForm" style="margin-top: 15px;">
             <div class="form-group">
                 <label>عنوان الفيديو / الحلقة:</label>
                 <input type="text" id="title" placeholder="مثال: مسلسل X - الحلقة 1" required>
             </div>
+            
             <div class="form-group">
-                <label>رابط البث (m3u8):</label>
-                <input type="text" id="streamUrl" placeholder="https://domain.com/hls/.../master.m3u8" required>
+                <label>صورة بوستر الفيديو (رابط اختياري):</label>
+                <input type="url" id="poster" placeholder="https://domain.com/image.jpg">
             </div>
-            <button type="submit" class="btn">حفظ وإضافة الفيديو</button>
+
+            <!-- سيرفرات المشاهدة المتعددة -->
+            <label>سيرفرات وروابط المشاهدة (m3u8):</label>
+            <div class="servers-container" id="serversList">
+                <div class="server-item">
+                    <input type="text" placeholder="اسم السيرفر (مثلاً: سيرفر رئيسي HD)" class="srv-name" required>
+                    <input type="url" placeholder="رابط m3u8" class="srv-url" required>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-add-server" id="addServerBtn">+ إضافة سيرفر آخر</button>
+
+            <br><br>
+            <button type="submit" class="btn" id="submitBtn">حفظ وإضافة الفيديو</button>
         </form>
     </div>
 
-    <!-- جدول الفيديوهات -->
+    <!-- جدول عرض الفيديوهات المضافة -->
     <div class="card">
-        <h2>الفيديوهات المضافة</h2>
+        <h2>قائمة الفيديوهات</h2>
         <table>
             <thead>
                 <tr>
                     <th>العنوان</th>
                     <th>VID</th>
-                    <th>الرابط</th>
+                    <th>عدد السيرفرات</th>
                     <th>المشاهدة</th>
-                    <th>إجراء</th>
+                    <th>التحكم</th>
                 </tr>
             </thead>
             <tbody id="videoTableBody">
-                <tr><td colspan="5" style="text-align: center;">جاري التحميل...</td></tr>
+                <tr><td colspan="5" style="text-align: center;">جاري جلب البيانات من Firebase...</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
-<script>
-    // ضع رابط قاعدة البيانات الخاص بك هنا (تأكد من وجود / في نهاية الرابط)
-    const DB_URL = "https://voip17-default-rtdb.firebaseio.com/videos";
+<!-- Modal التعديل -->
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <h2>تعديل بيانات الفيديو</h2>
+        <form id="editForm" style="margin-top: 15px;">
+            <input type="hidden" id="editVid">
+            <div class="form-group">
+                <label>العنوان:</label>
+                <input type="text" id="editTitle" required>
+            </div>
+            <div class="form-group">
+                <label>رابط الصورة البوستر:</label>
+                <input type="url" id="editPoster">
+            </div>
+            <label>السيرفرات:</label>
+            <div class="servers-container" id="editServersList"></div>
+            <button type="button" class="btn btn-sm btn-add-server" id="addEditServerBtn">+ إضافة سيرفر جديد</button>
+            <br><br>
+            <button type="submit" class="btn">حفظ التعديلات</button>
+            <button type="button" class="btn btn-danger" onclick="closeEditModal()">إلغاء</button>
+        </form>
+    </div>
+</div>
 
-    // دالة لتوليد كود فريد مكون من 9 أحرف (VID)
+<!-- Firebase Modular SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
+        authDomain: "voip17.firebaseapp.com",
+        databaseURL: "https://voip17-default-rtdb.firebaseio.com",
+        projectId: "voip17",
+        storageBucket: "voip17.firebasestorage.app",
+        messagingSenderId: "608379006778",
+        appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
+        measurementId: "G-GZNJZLM701"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
     function generateVID() {
         return Math.random().toString(36).substring(2, 11);
     }
 
-    // إضافة فيديو جديد
+    // إضافة حقل سيرفر جديد في نموذج الإضافة
+    document.getElementById('addServerBtn').addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.className = 'server-item';
+        div.innerHTML = `
+            <input type="text" placeholder="اسم السيرفر" class="srv-name" required>
+            <input type="url" placeholder="رابط m3u8" class="srv-url" required>
+            <button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
+        `;
+        document.getElementById('serversList').appendChild(div);
+    });
+
+    // حفظ الفيديو في Firebase
     document.getElementById('addForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = 'جاري الحفظ...';
+        submitBtn.disabled = true;
+
         const title = document.getElementById('title').value;
-        const streamUrl = document.getElementById('streamUrl').value;
+        const poster = document.getElementById('poster').value;
         const vid = generateVID();
 
-        const data = { vid, title, streamUrl, createdAt: Date.now() };
+        const srvNames = document.querySelectorAll('#serversList .srv-name');
+        const srvUrls = document.querySelectorAll('#serversList .srv-url');
+        
+        let servers = [];
+        srvNames.forEach((item, index) => {
+            servers.push({ name: item.value, url: srvUrls[index].value });
+        });
 
         try {
-            await fetch(`${DB_URL}/${vid}.json`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
+            await set(ref(db, 'videos/' + vid), {
+                vid, title, poster, servers, createdAt: Date.now()
             });
             alert('تمت إضافة الفيديو بنجاح!');
             document.getElementById('addForm').reset();
             loadVideos();
         } catch (err) {
-            alert('حدث خطأ أثناء الإضافة!');
+            alert('خطأ في الاتصال بقاعدة البيانات: ' + err.message);
+        } finally {
+            submitBtn.innerText = 'حفظ وإضافة الفيديو';
+            submitBtn.disabled = false;
         }
     });
 
-    // جلب الفيديوهات
+    // جلب عرض الفيديوهات
     async function loadVideos() {
         const tbody = document.getElementById('videoTableBody');
         try {
-            const res = await fetch(`${DB_URL}.json`);
-            const data = await res.json();
+            const snapshot = await get(ref(db, 'videos'));
             tbody.innerHTML = '';
 
-            if (!data) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">لا توجد فيديوهات مضافة بعد.</td></tr>';
+            if (!snapshot.exists()) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">لا توجد فيديوهات مضافة حتى الآن.</td></tr>';
                 return;
             }
 
+            const data = snapshot.val();
             Object.values(data).reverse().forEach(item => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${item.title}</td>
                     <td><code>${item.vid}</code></td>
-                    <td class="url-cell" title="${item.streamUrl}">${item.streamUrl}</td>
-                    <td><a href="play.html?vid=${item.vid}" target="_blank">رابط المشغل ↗</a></td>
-                    <td><button class="btn-danger" onclick="deleteVideo('${item.vid}')">حذف</button></td>
+                    <td>${item.servers ? item.servers.length : 0} سيرفرات</td>
+                    <td><a href="play.html?vid=${item.vid}" target="_blank">فتح المشغل ↗</a></td>
+                    <td>
+                        <button class="btn-edit btn-sm" onclick="editVideo('${item.vid}')">تعديل</button>
+                        <button class="btn-danger btn-sm" onclick="deleteVideo('${item.vid}')">حذف</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
         } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">حدث خطأ أثناء تحميل البيانات.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">حدث خطأ أثناء تحميل البيانات!</td></tr>';
         }
     }
 
     // حذف فيديو
-    async function deleteVideo(vid) {
-        if (confirm('هل أنت تأكد من الحذف؟')) {
-            await fetch(`${DB_URL}/${vid}.json`, { method: 'DELETE' });
+    window.deleteVideo = async (vid) => {
+        if (confirm('هل أنت متأكد من حذف هذا الفيديو؟')) {
+            await remove(ref(db, 'videos/' + vid));
             loadVideos();
         }
-    }
+    };
+
+    // تعديل فيديو
+    window.editVideo = async (vid) => {
+        const snapshot = await get(ref(db, 'videos/' + vid));
+        if (snapshot.exists()) {
+            const video = snapshot.val();
+            document.getElementById('editVid').value = video.vid;
+            document.getElementById('editTitle').value = video.title;
+            document.getElementById('editPoster').value = video.poster || '';
+
+            const editList = document.getElementById('editServersList');
+            editList.innerHTML = '';
+
+            (video.servers || []).forEach(srv => {
+                const div = document.createElement('div');
+                div.className = 'server-item';
+                div.innerHTML = `
+                    <input type="text" value="${srv.name}" class="srv-name" required>
+                    <input type="url" value="${srv.url}" class="srv-url" required>
+                    <button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
+                `;
+                editList.appendChild(div);
+            });
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+    };
+
+    document.getElementById('addEditServerBtn').addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.className = 'server-item';
+        div.innerHTML = `
+            <input type="text" placeholder="اسم السيرفر" class="srv-name" required>
+            <input type="url" placeholder="رابط m3u8" class="srv-url" required>
+            <button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
+        `;
+        document.getElementById('editServersList').appendChild(div);
+    });
+
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const vid = document.getElementById('editVid').value;
+        const title = document.getElementById('editTitle').value;
+        const poster = document.getElementById('editPoster').value;
+
+        const srvNames = document.querySelectorAll('#editServersList .srv-name');
+        const srvUrls = document.querySelectorAll('#editServersList .srv-url');
+        
+        let servers = [];
+        srvNames.forEach((item, index) => {
+            servers.push({ name: item.value, url: srvUrls[index].value });
+        });
+
+        await update(ref(db, 'videos/' + vid), { title, poster, servers });
+        alert('تم تعديل بيانات الفيديو بنجاح!');
+        closeEditModal();
+        loadVideos();
+    });
+
+    window.closeEditModal = () => {
+        document.getElementById('editModal').style.display = 'none';
+    };
 
     loadVideos();
 </script>
