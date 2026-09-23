@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
-<title>لوحة الإدارة v6.0 | VIP Media Engine</title>
+<title>لوحة الإدارة v7.0 | VIP Media Engine</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,161 +38,87 @@ body{
         radial-gradient(700px 500px at 50% 120%,rgba(6,182,212,.05),transparent 60%);
     background-attachment:fixed;overflow-x:hidden;
     padding-bottom:calc(var(--nav-h) + var(--safe-b) + 20px);
+    transition:background-color .3s;
 }
 @media (min-width:1024px){body{padding-bottom:20px;padding-right:250px}}
+
+/* ========== LIGHT THEME (NEW) ========== */
+body.light-theme{
+    --bg:#f4f6fb;--surface:rgba(255,255,255,.92);--surface-2:rgba(255,255,255,.98);
+    --border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.14);
+    --text:#0f172a;--text-2:#475569;--text-3:#94a3b8;
+    background-image:radial-gradient(1200px 800px at 10% -10%,rgba(255,11,55,.05),transparent 60%);
+}
+body.light-theme .sidebar{background:linear-gradient(180deg,#fff,#f8fafc);border-color:rgba(0,0,0,.08)}
+body.light-theme .topbar{background:rgba(255,255,255,.85)}
+body.light-theme .card,body.light-theme .stat{background:rgba(255,255,255,.9)}
+body.light-theme input,body.light-theme select,body.light-theme textarea{background:#f8fafc;color:#0f172a;border-color:rgba(0,0,0,.1)}
+body.light-theme .server-row,body.light-theme .dl-row{background:#f8fafc}
+body.light-theme .modal-box{background:linear-gradient(180deg,#fff,#f8fafc)}
+body.light-theme .bottom-nav{background:rgba(255,255,255,.96)}
+
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:#050508}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#27272a,#18181b);border-radius:20px;border:2px solid #050508}
 ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--accent),var(--accent-2))}
 
 /* ========== LOGIN ========== */
-#loginOverlay{
-    position:fixed;inset:0;z-index:99999;
-    background:rgba(3,3,7,.97);
-    backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
-    display:flex;align-items:center;justify-content:center;padding:16px;
-}
+#loginOverlay{position:fixed;inset:0;z-index:99999;background:rgba(3,3,7,.97);backdrop-filter:blur(28px);display:flex;align-items:center;justify-content:center;padding:16px}
 #loginOverlay.hidden{display:none}
-.login-card{
-    background:linear-gradient(160deg,rgba(26,26,36,.95),rgba(16,16,24,.95));
-    border:1px solid var(--border-strong);border-radius:26px;
-    padding:30px 20px;width:100%;max-width:420px;text-align:center;
-    box-shadow:0 30px 80px rgba(0,0,0,.9),0 0 60px rgba(255,11,55,.12);
-    position:relative;overflow:hidden;
-    animation:zoomIn .5s cubic-bezier(.34,1.56,.64,1);
-}
+.login-card{background:linear-gradient(160deg,rgba(26,26,36,.95),rgba(16,16,24,.95));border:1px solid var(--border-strong);border-radius:26px;padding:30px 20px;width:100%;max-width:420px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.9),0 0 60px rgba(255,11,55,.12);position:relative;overflow:hidden;animation:zoomIn .5s cubic-bezier(.34,1.56,.64,1)}
 @keyframes zoomIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
-.login-card::before{
-    content:'';position:absolute;top:0;left:0;right:0;height:3px;
-    background:linear-gradient(90deg,transparent,var(--accent),var(--vip),transparent);
-}
-.login-logo{
-    width:76px;height:76px;border-radius:22px;margin:0 auto 16px;
-    background:linear-gradient(135deg,var(--accent),var(--vip));
-    display:flex;align-items:center;justify-content:center;
-    font-size:1.9rem;color:#fff;box-shadow:0 15px 40px var(--accent-glow);
-    position:relative;
-}
-.login-logo::after{
-    content:'';position:absolute;inset:-6px;border-radius:26px;
-    border:1px dashed rgba(255,255,255,.15);animation:spin 20s linear infinite;
-}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent),var(--vip),transparent)}
+.login-logo{width:76px;height:76px;border-radius:22px;margin:0 auto 16px;background:linear-gradient(135deg,var(--accent),var(--vip));display:flex;align-items:center;justify-content:center;font-size:1.9rem;color:#fff;box-shadow:0 15px 40px var(--accent-glow);position:relative}
+.login-logo::after{content:'';position:absolute;inset:-6px;border-radius:26px;border:1px dashed rgba(255,255,255,.15);animation:spin 20s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ========== PIN INPUT — FIXED ========== */
-.pin-wrap{
-    position:relative;
-    display:flex;gap:6px;justify-content:center;
-    margin:22px 0 8px;direction:ltr;
-    cursor:text;
-    padding:4px;
-}
-.pin-dot{
-    width:42px;height:50px;border-radius:12px;
-    background:#0a0a12;border:2px solid #1f1f2b;
-    display:flex;align-items:center;justify-content:center;
-    font-size:1.3rem;color:var(--vip);font-weight:900;
-    transition:var(--fast);
-    pointer-events:none;               /* clicks pass through to input */
-    user-select:none;
-}
+/* ========== PIN INPUT ========== */
+.pin-wrap{position:relative;display:flex;gap:6px;justify-content:center;margin:22px 0 8px;direction:ltr;cursor:text;padding:4px}
+.pin-dot{width:42px;height:50px;border-radius:12px;background:#0a0a12;border:2px solid #1f1f2b;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--vip);font-weight:900;transition:var(--fast);pointer-events:none;user-select:none}
 @media (min-width:480px){.pin-dot{width:50px;height:58px;font-size:1.6rem}}
 .pin-dot.filled{border-color:var(--vip);background:rgba(245,158,11,.1);box-shadow:0 0 15px var(--vip-glow)}
 .pin-dot.active{border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}
-
-/* ✅ FIXED: overlay input covering pin dots, fully clickable */
-.pin-input-real{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    opacity:0;
-    cursor:text;
-    border:none;
-    outline:none;
-    background:transparent;
-    font-size:16px;               /* prevent iOS zoom */
-    color:transparent;
-    caret-color:transparent;
-    z-index:5;
-    letter-spacing:0;
-    padding:0;
-    /* keep clickable & focusable */
-    pointer-events:auto;
-    -webkit-appearance:none;
-    appearance:none;
-}
+.pin-input-real{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:text;border:none;outline:none;background:transparent;font-size:16px;color:transparent;caret-color:transparent;z-index:5;letter-spacing:0;padding:0;pointer-events:auto;-webkit-appearance:none;appearance:none}
 .pin-input-real:focus{outline:none}
 
-/* ========== SIDEBAR / BOTTOM NAV ========== */
-.sidebar{
-    position:fixed;top:0;right:0;bottom:0;width:250px;
-    background:linear-gradient(180deg,#0b0b12,#08080d);
-    border-left:1px solid var(--border);
-    padding:22px 14px;z-index:100;
-    display:none;flex-direction:column;gap:5px;
-}
+/* ========== SIDEBAR ========== */
+.sidebar{position:fixed;top:0;right:0;bottom:0;width:250px;background:linear-gradient(180deg,#0b0b12,#08080d);border-left:1px solid var(--border);padding:22px 14px;z-index:100;display:none;flex-direction:column;gap:5px;overflow-y:auto}
 @media (min-width:1024px){.sidebar{display:flex}}
 .side-brand{display:flex;align-items:center;gap:10px;padding:6px 10px 18px;border-bottom:1px solid var(--border);margin-bottom:12px}
-.side-brand-icon{
-    width:42px;height:42px;border-radius:12px;
-    background:linear-gradient(135deg,var(--accent),var(--vip));
-    display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.15rem;
-    box-shadow:0 8px 22px var(--accent-glow);flex-shrink:0;
-}
+.side-brand-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--vip));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.15rem;box-shadow:0 8px 22px var(--accent-glow);flex-shrink:0}
 .side-brand-text{font-size:1rem;font-weight:900;line-height:1.1}
 .side-brand-text small{display:block;font-size:.66rem;color:var(--text-3);font-weight:600;margin-top:2px}
-.nav-item{
-    display:flex;align-items:center;gap:10px;padding:11px 12px;
-    border-radius:var(--radius-md);color:var(--text-2);font-weight:700;font-size:.88rem;
-    cursor:pointer;transition:var(--fast);text-decoration:none;
-    position:relative;border:none;background:transparent;width:100%;text-align:right;font-family:inherit;
-}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:var(--radius-md);color:var(--text-2);font-weight:700;font-size:.88rem;cursor:pointer;transition:var(--fast);text-decoration:none;position:relative;border:none;background:transparent;width:100%;text-align:right;font-family:inherit}
 .nav-item i{width:20px;text-align:center;font-size:1rem}
 .nav-item:hover{background:rgba(255,255,255,.04);color:#fff}
 .nav-item.active{background:linear-gradient(90deg,rgba(255,11,55,.15),rgba(255,11,55,.02));color:#fff}
 .nav-item.active::before{content:'';position:absolute;right:0;top:20%;bottom:20%;width:3px;border-radius:3px;background:linear-gradient(180deg,var(--accent),var(--vip))}
 .nav-item.active i{color:var(--accent)}
+.nav-badge-pill{margin-right:auto;background:var(--warning);color:#000;font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:900;animation:pulse 2s infinite}
 .side-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border)}
 .side-footer .nav-item{color:var(--danger)}
 
-.bottom-nav{
-    position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + var(--safe-b));
-    background:rgba(11,11,18,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-    border-top:1px solid var(--border);
-    display:flex;align-items:flex-start;justify-content:space-around;
-    padding:6px 4px calc(var(--safe-b) + 4px);z-index:100;
-}
+/* ========== BOTTOM NAV ========== */
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + var(--safe-b));background:rgba(11,11,18,.94);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-around;padding:6px 4px calc(var(--safe-b) + 4px);z-index:100;overflow-x:auto;scrollbar-width:none}
+.bottom-nav::-webkit-scrollbar{display:none}
 @media (min-width:1024px){.bottom-nav{display:none}}
-.bottom-nav .bn-item{
-    flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;
-    padding:6px 2px;border-radius:12px;color:var(--text-3);
-    font-size:.65rem;font-weight:700;cursor:pointer;transition:var(--fast);
-    border:none;background:transparent;font-family:inherit;
-}
+.bottom-nav .bn-item{flex:1;min-width:56px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:12px;color:var(--text-3);font-size:.62rem;font-weight:700;cursor:pointer;transition:var(--fast);border:none;background:transparent;font-family:inherit;position:relative}
 .bottom-nav .bn-item i{font-size:1.1rem;transition:var(--fast)}
 .bottom-nav .bn-item.active{color:var(--accent)}
 .bottom-nav .bn-item.active i{transform:translateY(-2px) scale(1.1)}
 .bottom-nav .bn-item.live-tab.active{color:var(--live)}
+.bottom-nav .bn-item .bn-dot{position:absolute;top:6px;right:calc(50% - 16px);width:8px;height:8px;background:var(--warning);border-radius:50%;animation:pulse 1.5s infinite}
 
 /* ========== TOPBAR ========== */
-.topbar{
-    position:sticky;top:0;z-index:90;
-    background:rgba(7,7,11,.85);backdrop-filter:blur(20px);
-    border-bottom:1px solid var(--border);padding:12px 14px;
-    display:flex;align-items:center;justify-content:space-between;gap:12px;
-}
+.topbar{position:sticky;top:0;z-index:90;background:rgba(7,7,11,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .topbar-title{font-size:1rem;font-weight:900;display:flex;align-items:center;gap:8px}
 .topbar-title .dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 10px var(--success);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .topbar-actions{display:flex;gap:6px}
-.icon-btn{
-    width:38px;height:38px;border-radius:11px;border:1px solid var(--border);
-    background:var(--surface);color:var(--text);cursor:pointer;
-    display:inline-flex;align-items:center;justify-content:center;
-    transition:var(--fast);font-size:.95rem;
-}
+.icon-btn{width:38px;height:38px;border-radius:11px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:var(--fast);font-size:.95rem}
 .icon-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+.icon-btn.warn-active{border-color:var(--warning);color:var(--warning);position:relative}
+.icon-btn.warn-active::after{content:attr(data-count);position:absolute;top:-4px;right:-4px;background:var(--warning);color:#000;font-size:.6rem;font-weight:900;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center}
 
 /* ========== MAIN ========== */
 .main{max-width:1400px;margin:0 auto;padding:16px 12px}
@@ -203,38 +129,26 @@ body{
 
 .stats{display:grid;gap:10px;margin-bottom:20px;grid-template-columns:repeat(2,1fr)}
 @media (min-width:640px){.stats{grid-template-columns:repeat(4,1fr);gap:14px}}
-.stat{
-    background:var(--surface);border:1px solid var(--border);
-    border-radius:var(--radius-lg);padding:14px;position:relative;overflow:hidden;
-    backdrop-filter:blur(14px);transition:var(--smooth);
-}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;position:relative;overflow:hidden;backdrop-filter:blur(14px);transition:var(--smooth);cursor:pointer}
 .stat:hover{transform:translateY(-3px);border-color:var(--border-strong)}
 .stat::after{content:'';position:absolute;top:-10px;right:-10px;width:60px;height:60px;border-radius:50%;filter:blur(30px);opacity:.35}
 .stat.c1::after{background:var(--accent)} .stat.c2::after{background:var(--vip)}
 .stat.c3::after{background:var(--info)} .stat.c4::after{background:var(--live)}
-.stat-ico{
-    width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-    font-size:1rem;color:#fff;margin-bottom:10px;position:relative;z-index:1;
-}
+.stat.c5::after{background:var(--warning)}
+.stat-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#fff;margin-bottom:10px;position:relative;z-index:1}
 @media (min-width:640px){.stat-ico{width:42px;height:42px;font-size:1.1rem;margin-bottom:12px}}
 .stat.c1 .stat-ico{background:linear-gradient(135deg,var(--accent),#ff4d6d)}
 .stat.c2 .stat-ico{background:linear-gradient(135deg,var(--vip),#d97706)}
 .stat.c3 .stat-ico{background:linear-gradient(135deg,var(--info),#0891b2)}
 .stat.c4 .stat-ico{background:linear-gradient(135deg,var(--live),#b91c1c)}
+.stat.c5 .stat-ico{background:linear-gradient(135deg,var(--warning),#d97706)}
 .stat-label{font-size:.72rem;color:var(--text-3);font-weight:700;margin-bottom:3px}
 .stat-value{font-size:1.5rem;font-weight:900;letter-spacing:-.5px;line-height:1}
 @media (min-width:640px){.stat-value{font-size:1.9rem}}
 
-.card{
-    background:var(--surface);border:1px solid var(--border);
-    border-radius:var(--radius-xl);padding:16px;margin-bottom:18px;
-    backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.35);
-}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:16px;margin-bottom:18px;backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
 @media (min-width:640px){.card{padding:22px;margin-bottom:22px}}
-.card-head{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
-    margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);position:relative;
-}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);position:relative}
 .card-head::after{content:'';position:absolute;bottom:-1px;right:0;width:56px;height:2px;background:linear-gradient(90deg,var(--accent),var(--vip));border-radius:2px}
 .card-title{font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px}
 .card-title i{color:var(--accent)}
@@ -244,6 +158,8 @@ body{
 .card.blue .card-title i{color:var(--info)}
 .card.live-card-head .card-head::after{background:linear-gradient(90deg,var(--live),#b91c1c)}
 .card.live-card-head .card-title i{color:var(--live)}
+.card.warn-card-head .card-head::after{background:linear-gradient(90deg,var(--warning),#d97706)}
+.card.warn-card-head .card-title i{color:var(--warning)}
 
 .card-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%}
 @media (min-width:640px){.card-tools{width:auto}}
@@ -261,21 +177,21 @@ body{
 input[type="text"],input[type="url"],input[type="password"],input[type="email"],
 input[type="number"],input[type="date"],input[type="color"],select,textarea{
     width:100%;padding:11px 12px;background:#0a0a10;border:1px solid var(--border);
-    border-radius:11px;color:#fff;font-size:.88rem;outline:none;
-    transition:var(--fast);font-family:inherit;
+    border-radius:11px;color:#fff;font-size:.88rem;outline:none;transition:var(--fast);font-family:inherit;
 }
 input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#10101a;box-shadow:0 0 0 4px rgba(255,11,55,.08)}
 textarea{resize:vertical;min-height:80px;line-height:1.5}
 input[type="color"]{padding:4px;height:42px;cursor:pointer}
 
-.btn{
-    display:inline-flex;align-items:center;justify-content:center;gap:6px;
-    padding:10px 16px;border-radius:11px;border:none;cursor:pointer;
-    font-size:.85rem;font-weight:800;font-family:inherit;
-    transition:var(--fast);text-decoration:none;white-space:nowrap;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
-    box-shadow:0 5px 16px var(--accent-glow);
-}
+/* ========== INPUT WITH COPY BUTTON (NEW) ========== */
+.input-copy-wrap{display:flex;gap:6px;align-items:stretch}
+.input-copy-wrap input{flex:1;min-width:0}
+.copy-btn{width:44px;flex-shrink:0;border-radius:11px;border:1px solid var(--border);background:#0a0a10;color:var(--text-2);cursor:pointer;font-size:.9rem;transition:var(--fast)}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,11,55,.05)}
+.copy-btn.copied{border-color:var(--success);color:var(--success);background:rgba(16,185,129,.1)}
+
+/* ========== BUTTONS ========== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:11px;border:none;cursor:pointer;font-size:.85rem;font-weight:800;font-family:inherit;transition:var(--fast);text-decoration:none;white-space:nowrap;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 5px 16px var(--accent-glow)}
 .btn:active{transform:scale(.97)}
 .btn:hover{transform:translateY(-1px)}
 .btn.gold{background:linear-gradient(135deg,var(--vip),#d97706);color:#000;box-shadow:0 5px 16px var(--vip-glow)}
@@ -286,14 +202,20 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 .btn.ghost:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,11,55,.05)}
 .btn.sm{padding:7px 10px;font-size:.75rem;border-radius:9px}
 .btn.block{width:100%}
+.btn.wa{background:linear-gradient(135deg,#25D366,#128C7E);box-shadow:0 5px 16px rgba(37,211,102,.3)}
 
+/* ========== SERVER ROWS ========== */
 .servers-box{background:#08080e;border:1px dashed var(--border-strong);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:9px}
 .server-row{background:#0d0d15;border:1px solid var(--border);border-radius:11px;padding:10px;display:grid;gap:7px;grid-template-columns:1fr;position:relative}
-@media (min-width:640px){.server-row{grid-template-columns:1.2fr 1fr 2.5fr auto;align-items:center;gap:8px}}
+@media (min-width:640px){.server-row{grid-template-columns:1.2fr 1fr 2.5fr auto auto;align-items:center;gap:8px}}
 .server-row input,.server-row select{padding:8px 10px;font-size:.82rem}
 .server-row .rm{width:36px;height:36px;border-radius:9px;border:none;background:rgba(239,68,68,.15);color:var(--danger);cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:var(--fast)}
 .server-row .rm:hover{background:var(--danger);color:#fff}
+.server-row .test-btn{width:36px;height:36px;border-radius:9px;border:none;background:rgba(6,182,212,.15);color:var(--info);cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:var(--fast)}
+.server-row .test-btn:hover{background:var(--info);color:#fff}
+.server-row .test-btn.testing{animation:spin .8s linear infinite}
 
+/* ========== DATA LIST ========== */
 .dl{display:flex;flex-direction:column;gap:9px}
 .dl-row{background:#0b0b12;border:1px solid var(--border);border-radius:13px;padding:11px;display:grid;gap:7px;grid-template-columns:1fr;transition:var(--fast)}
 .dl-row:hover{border-color:var(--border-strong);background:#0e0e16}
@@ -308,6 +230,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 @media (min-width:640px){.dl-actions{justify-content:flex-end}}
 .dl-actions .btn{padding:6px 9px;font-size:.72rem}
 
+/* ========== BADGES ========== */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.68rem;font-weight:800;background:rgba(255,255,255,.06);color:var(--text-2);white-space:nowrap}
 .badge.vip{background:rgba(245,158,11,.14);color:var(--vip);border:1px solid rgba(245,158,11,.3)}
 .badge.ok{background:rgba(16,185,129,.14);color:var(--success);border:1px solid rgba(16,185,129,.3)}
@@ -316,6 +239,22 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 .badge.info{background:rgba(6,182,212,.14);color:var(--info);border:1px solid rgba(6,182,212,.3)}
 .badge.live{background:rgba(239,68,68,.14);color:var(--live);border:1px solid rgba(239,68,68,.3)}
 .badge.dl-badge{background:rgba(16,185,129,.14);color:var(--success);border:1px solid rgba(16,185,129,.3)}
+.badge.warn{background:rgba(245,158,11,.14);color:var(--warning);border:1px solid rgba(245,158,11,.3)}
+
+/* ========== VIP REQUEST CARDS (NEW) ========== */
+.vr-row{background:#0b0b12;border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;transition:var(--fast);position:relative;overflow:hidden}
+.vr-row::before{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:var(--warning)}
+.vr-row.approved::before{background:var(--success)}
+.vr-row.rejected::before{background:var(--danger)}
+.vr-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.vr-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--vip),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:1rem;flex-shrink:0}
+.vr-info{flex:1;min-width:0}
+.vr-name{font-size:.9rem;font-weight:800;margin-bottom:2px;color:#fff}
+.vr-email{font-size:.75rem;color:var(--text-3);word-break:break-all}
+.vr-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:.72rem;color:var(--text-2)}
+.vr-meta span{display:inline-flex;align-items:center;gap:4px}
+.vr-actions{display:flex;gap:6px;flex-wrap:wrap}
+.vr-note{background:#0a0a10;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:.78rem;color:var(--text-2);line-height:1.5}
 
 /* ========== CHART ========== */
 .chart-wrap{background:#08080e;border:1px solid var(--border);border-radius:14px;padding:14px;overflow:hidden}
@@ -327,17 +266,11 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 .chart-legend .lg-val{color:var(--text-3);margin-right:auto;font-weight:800}
 
 /* ========== MODALS ========== */
-.modal{position:fixed;inset:0;z-index:10000;background:rgba(3,3,7,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:none;align-items:flex-end;justify-content:center;padding:0;overflow-y:auto}
+.modal{position:fixed;inset:0;z-index:10000;background:rgba(3,3,7,.85);backdrop-filter:blur(14px);display:none;align-items:flex-end;justify-content:center;padding:0;overflow-y:auto}
 .modal.active{display:flex;animation:modalFade .25s ease}
 @media (min-width:640px){.modal{align-items:center;padding:20px}}
 @keyframes modalFade{from{opacity:0}to{opacity:1}}
-.modal-box{
-    background:linear-gradient(180deg,#14141c,#0f0f16);
-    border:1px solid var(--border-strong);width:100%;max-width:680px;
-    border-radius:22px 22px 0 0;padding:20px 16px;
-    max-height:92vh;overflow-y:auto;position:relative;
-    animation:sheetUp .35s cubic-bezier(.34,1.4,.64,1);
-}
+.modal-box{background:linear-gradient(180deg,#14141c,#0f0f16);border:1px solid var(--border-strong);width:100%;max-width:680px;border-radius:22px 22px 0 0;padding:20px 16px;max-height:92vh;overflow-y:auto;position:relative;animation:sheetUp .35s cubic-bezier(.34,1.4,.64,1)}
 @media (min-width:640px){.modal-box{border-radius:22px;max-height:88vh;padding:24px;animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes popIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
@@ -349,6 +282,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 .modal-head.red .mi{background:linear-gradient(135deg,var(--danger),#b91c1c)}
 .modal-head.green .mi{background:linear-gradient(135deg,var(--success),#059669)}
 .modal-head.live .mi{background:linear-gradient(135deg,var(--live),#b91c1c)}
+.modal-head.warn .mi{background:linear-gradient(135deg,var(--warning),#d97706)}
 .modal-head .mh-text{flex:1;min-width:0}
 .modal-head h3{font-size:1rem;font-weight:900;margin-bottom:2px}
 .modal-head p{font-size:.75rem;color:var(--text-3);line-height:1.4}
@@ -382,8 +316,9 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 /* ========== FAB ========== */
 .fab-wrap{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 14px);left:14px;z-index:99;display:flex;flex-direction:column-reverse;align-items:center;gap:10px}
 @media (min-width:1024px){.fab-wrap{bottom:22px;left:22px}}
-.fab-main{width:54px;height:54px;border-radius:18px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--vip));color:#fff;font-size:1.25rem;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px var(--accent-glow);transition:var(--smooth)}
+.fab-main{width:54px;height:54px;border-radius:18px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--vip));color:#fff;font-size:1.25rem;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px var(--accent-glow);transition:var(--smooth);position:relative}
 .fab-main:hover{transform:rotate(90deg) scale(1.05)}
+.fab-main .fab-badge{position:absolute;top:-4px;right:-4px;background:var(--warning);color:#000;font-size:.65rem;font-weight:900;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
 .fab-list{display:flex;flex-direction:column;gap:8px;opacity:0;visibility:hidden;transform:translateY(20px);transition:var(--smooth)}
 .fab-wrap.open .fab-list{opacity:1;visibility:visible;transform:none}
 .fab-i{width:44px;height:44px;border-radius:13px;background:var(--surface-2);border:1px solid var(--border-strong);color:var(--text);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.5);transition:var(--fast);position:relative}
@@ -405,32 +340,36 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 .dl-path-head strong{font-size:.82rem;font-weight:800}
 .dl-path-head small{font-size:.68rem;color:var(--text-3);font-weight:600;display:block;margin-top:1px}
 
+/* ========== SERVER TEST RESULT MODAL (NEW) ========== */
+.test-result{background:#08080e;border-radius:12px;padding:14px;font-size:.82rem;font-family:monospace;word-break:break-all;max-height:200px;overflow-y:auto;line-height:1.6}
+.test-result .ok{color:var(--success)}
+.test-result .fail{color:var(--danger)}
+
+/* ========== MOBILE ========== */
 @media (max-width:639px){
     .dl-row .dl-cell{padding:3px 0}
     .dl-cell{display:flex;justify-content:space-between;align-items:center}
     .dl-cell .k{display:block}
     .dl-actions{margin-top:5px;padding-top:9px;border-top:1px solid var(--border)}
     .card-tools{gap:6px}
+    .vr-head{flex-direction:column;align-items:flex-start}
+    .vr-actions{width:100%}
+    .vr-actions .btn{flex:1}
 }
 </style>
 </head>
 <body>
 
-<!-- ============ LOGIN ============ -->
+<!-- ============ LOGIN (unchanged) ============ -->
 <div id="loginOverlay">
     <div class="login-card">
         <div class="login-logo"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 style="font-weight:900;margin-bottom:6px;font-size:1.2rem">لوحة الإدارة الفائقة</h2>
         <p style="color:var(--text-3);font-size:.8rem;line-height:1.5">أدخل رمز الأمان للمتابعة</p>
-
-        <!-- ✅ FIXED PIN: input as overlay covering the dots -->
         <div class="pin-wrap" id="pinWrap">
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-            <input type="tel" id="pinReal" class="pin-input-real"
-                   maxlength="6" inputmode="numeric" pattern="[0-9]*"
-                   autocomplete="off" autocorrect="off" spellcheck="false"
-                   aria-label="رمز الدخول">
+            <input type="tel" id="pinReal" class="pin-input-real" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="رمز الدخول">
         </div>
         <p id="pinErr" style="color:var(--danger);font-size:.82rem;font-weight:700;min-height:18px;margin-top:8px"></p>
         <button class="btn gold block" id="pinBtn" style="padding:13px;font-size:.9rem">
@@ -442,19 +381,21 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
-<!-- ============ SIDEBAR ============ -->
+<!-- ============ SIDEBAR (unchanged + 2 new items) ============ -->
 <aside class="sidebar">
     <div class="side-brand">
         <div class="side-brand-icon"><i class="fa-solid fa-sliders"></i></div>
         <div class="side-brand-text">
             <span id="sideBrandName">VIP Media</span>
-            <small>Admin v6.0</small>
+            <small>Admin v7.0</small>
         </div>
     </div>
     <button class="nav-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i> لوحة القيادة</button>
     <button class="nav-item" data-sec="media"><i class="fa-solid fa-film"></i> إدارة المحتوى</button>
     <button class="nav-item" data-sec="add"><i class="fa-solid fa-circle-plus"></i> إضافة محتوى</button>
     <button class="nav-item" data-sec="live"><i class="fa-solid fa-tower-broadcast"></i> البث المباشر</button>
+    <!-- NEW: VIP requests -->
+    <button class="nav-item" data-sec="viprequests"><i class="fa-solid fa-crown"></i> طلبات VIP <span class="nav-badge-pill" id="navVipCount" style="display:none">0</span></button>
     <button class="nav-item" data-sec="categories"><i class="fa-solid fa-folder-tree"></i> التصنيفات</button>
     <button class="nav-item" data-sec="users"><i class="fa-solid fa-users-gear"></i> المستخدمون</button>
     <button class="nav-item" data-sec="settings"><i class="fa-solid fa-palette"></i> المظهر والإعدادات</button>
@@ -464,19 +405,22 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </aside>
 
-<!-- ============ BOTTOM NAV ============ -->
+<!-- ============ BOTTOM NAV (unchanged + VIP item) ============ -->
 <nav class="bottom-nav">
     <button class="bn-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i><span>الرئيسية</span></button>
     <button class="bn-item" data-sec="media"><i class="fa-solid fa-film"></i><span>المحتوى</span></button>
     <button class="bn-item live-tab" data-sec="live"><i class="fa-solid fa-tower-broadcast"></i><span>البث</span></button>
+    <button class="bn-item" data-sec="viprequests"><i class="fa-solid fa-crown"></i><span>طلبات VIP</span><span class="bn-dot" id="bnVipDot" style="display:none"></span></button>
     <button class="bn-item" data-sec="users"><i class="fa-solid fa-users"></i><span>المستخدمون</span></button>
     <button class="bn-item" data-sec="settings"><i class="fa-solid fa-gear"></i><span>الإعدادات</span></button>
 </nav>
 
-<!-- ============ TOPBAR ============ -->
+<!-- ============ TOPBAR (unchanged + 2 new icons) ============ -->
 <header class="topbar">
     <div class="topbar-title"><span class="dot"></span><span id="topTitle">لوحة القيادة</span></div>
     <div class="topbar-actions">
+        <button class="icon-btn" id="btnNotifications" title="إشعارات"><i class="fa-solid fa-bell"></i></button>
+        <button class="icon-btn" id="btnThemeToggle" title="تبديل الوضع"><i class="fa-solid fa-moon"></i></button>
         <button class="icon-btn" id="btnRefresh" title="تحديث"><i class="fa-solid fa-rotate"></i></button>
         <button class="icon-btn" id="btnBackup" title="نسخة احتياطية"><i class="fa-solid fa-download"></i></button>
     </div>
@@ -484,7 +428,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 
 <main class="main">
 
-    <!-- DASHBOARD -->
+    <!-- DASHBOARD (unchanged + new stat card) -->
     <section class="section active" id="sec-dashboard">
         <div class="stats">
             <div class="stat c1"><div class="stat-ico"><i class="fa-solid fa-film"></i></div><div class="stat-label">إجمالي المحتوى</div><div class="stat-value" id="statTotalVideos">0</div></div>
@@ -493,11 +437,23 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
             <div class="stat c4"><div class="stat-ico"><i class="fa-solid fa-tower-broadcast"></i></div><div class="stat-label">قنوات مباشرة</div><div class="stat-value" id="statTotalLive">0</div></div>
         </div>
 
-        <!-- Chart: Top viewed -->
-        <div class="card">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-chart-simple"></i> أعلى 10 محتوى مشاهدة</div>
+        <!-- NEW: Second row of stats -->
+        <div class="stats" style="grid-template-columns:repeat(2,1fr)">
+            <div class="stat c5" id="statPendingRequestsCard" style="cursor:pointer">
+                <div class="stat-ico"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="stat-label">طلبات VIP معلقة</div>
+                <div class="stat-value" id="statPendingRequests">0</div>
             </div>
+            <div class="stat c3">
+                <div class="stat-ico"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="stat-label">مشاهدات اليوم</div>
+                <div class="stat-value" id="statTodayViews">0</div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card">
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-chart-simple"></i> أعلى 10 محتوى مشاهدة</div></div>
             <div class="chart-wrap">
                 <canvas id="topViewedChart" class="chart-canvas" width="800" height="440"></canvas>
                 <div class="chart-legend" id="topViewedLegend"></div>
@@ -505,13 +461,12 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         </div>
 
         <div class="card">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-bolt"></i> إجراءات سريعة</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-bolt"></i> إجراءات سريعة</div></div>
             <div style="display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
                 <button class="btn block" data-goto="add"><i class="fa-solid fa-plus"></i> محتوى جديد</button>
                 <button class="btn live block" id="btnQuickLive"><i class="fa-solid fa-tower-broadcast"></i> قناة مباشرة</button>
                 <button class="btn gold block" id="btnQuickUser"><i class="fa-solid fa-user-plus"></i> مستخدم جديد</button>
+                <button class="btn wa block" id="btnQuickVipReq"><i class="fa-solid fa-crown"></i> طلبات VIP</button>
                 <button class="btn ghost block" id="btnQuickBackup"><i class="fa-solid fa-cloud-arrow-down"></i> نسخة احتياطية</button>
             </div>
         </div>
@@ -527,7 +482,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         </div>
     </section>
 
-    <!-- MEDIA -->
+    <!-- MEDIA (unchanged) -->
     <section class="section" id="sec-media">
         <div class="card">
             <div class="card-head">
@@ -546,7 +501,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         </div>
     </section>
 
-    <!-- ADD MEDIA -->
+    <!-- ADD MEDIA (unchanged + server test in rows) -->
     <section class="section" id="sec-add">
         <div class="card">
             <div class="card-head"><div class="card-title"><i class="fa-solid fa-circle-plus"></i> إضافة محتوى جديد</div></div>
@@ -555,12 +510,14 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
                     <div class="fg"><label><i class="fa-solid fa-heading"></i> العنوان</label><input type="text" id="addTitle" placeholder="فيلم، مسلسل..." required></div>
                     <div class="fg"><label><i class="fa-solid fa-layer-group"></i> التصنيف</label><select id="addCategory"></select></div>
                     <div class="fg"><label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
-                        <select id="addIsVip">
-                            <option value="false">مجاني للجميع</option>
-                            <option value="true">👑 VIP مميز</option>
-                        </select>
+                        <select id="addIsVip"><option value="false">مجاني للجميع</option><option value="true">👑 VIP مميز</option></select>
                     </div>
-                    <div class="fg"><label><i class="fa-solid fa-image"></i> رابط البوستر</label><input type="url" id="addThumbnail" placeholder="https://..."></div>
+                    <div class="fg"><label><i class="fa-solid fa-image"></i> رابط البوستر</label>
+                        <div class="input-copy-wrap">
+                            <input type="url" id="addThumbnail" placeholder="https://...">
+                            <button type="button" class="copy-btn" data-copy-target="addThumbnail" title="نسخ"><i class="fa-solid fa-copy"></i></button>
+                        </div>
+                    </div>
                     <div class="fg full"><label><i class="fa-solid fa-align-right"></i> الوصف</label><textarea id="addDescription" placeholder="وصف مختصر..."></textarea></div>
                 </div>
 
@@ -575,11 +532,17 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
                     <div class="dl-paths">
                         <div class="dl-path vip-path">
                             <div class="dl-path-head"><i class="fa-solid fa-crown vip" style="font-size:1.1rem"></i><div><strong>تحميل مباشر (VIP)</strong><small>للمشتركين فقط، بدون إعلان</small></div></div>
-                            <input type="url" id="addDownloadUrl" placeholder="https://... رابط مباشر">
+                            <div class="input-copy-wrap">
+                                <input type="url" id="addDownloadUrl" placeholder="https://... رابط مباشر">
+                                <button type="button" class="copy-btn" data-copy-target="addDownloadUrl" title="نسخ"><i class="fa-solid fa-copy"></i></button>
+                            </div>
                         </div>
                         <div class="dl-path free-path">
                             <div class="dl-path-head"><i class="fa-solid fa-play free" style="font-size:1.1rem"></i><div><strong>تحميل مجاني (بإعلان)</strong><small>يظهر للزوار بعد إعلان</small></div></div>
-                            <input type="url" id="addAdDownloadUrl" placeholder="https://... رابط التحميل المجاني">
+                            <div class="input-copy-wrap">
+                                <input type="url" id="addAdDownloadUrl" placeholder="https://... رابط التحميل المجاني">
+                                <button type="button" class="copy-btn" data-copy-target="addAdDownloadUrl" title="نسخ"><i class="fa-solid fa-copy"></i></button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -592,7 +555,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         </div>
     </section>
 
-    <!-- LIVE -->
+    <!-- LIVE (unchanged) -->
     <section class="section" id="sec-live">
         <div class="stats" style="grid-template-columns:repeat(2,1fr)">
             <div class="stat c4"><div class="stat-ico"><i class="fa-solid fa-tv"></i></div><div class="stat-label">إجمالي القنوات</div><div class="stat-value" id="liveStatChannels">0</div></div>
@@ -600,9 +563,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         </div>
 
         <div class="card live-card-head">
-            <div class="card-head">
-                <div class="card-title"><i class="fa-solid fa-folder-plus"></i> إضافة تصنيف للبث</div>
-            </div>
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-folder-plus"></i> إضافة تصنيف للبث</div></div>
             <form id="addLiveCatForm">
                 <div class="form-grid">
                     <div class="fg"><label><i class="fa-solid fa-tag"></i> اسم التصنيف</label><input type="text" id="newLiveCatName" placeholder="رياضة، أخبار..." required></div>
@@ -633,7 +594,32 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         </div>
     </section>
 
-    <!-- CATEGORIES -->
+    <!-- NEW: VIP REQUESTS SECTION -->
+    <section class="section" id="sec-viprequests">
+        <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+            <div class="stat c5"><div class="stat-ico"><i class="fa-solid fa-hourglass-half"></i></div><div class="stat-label">معلقة</div><div class="stat-value" id="vrStatPending">0</div></div>
+            <div class="stat c1"><div class="stat-ico"><i class="fa-solid fa-circle-check"></i></div><div class="stat-label">مقبولة</div><div class="stat-value" id="vrStatApproved">0</div></div>
+            <div class="stat c4"><div class="stat-ico"><i class="fa-solid fa-circle-xmark"></i></div><div class="stat-label">مرفوضة</div><div class="stat-value" id="vrStatRejected">0</div></div>
+        </div>
+
+        <div class="card warn-card-head">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-crown"></i> طلبات الاشتراك VIP</div>
+                <div class="card-tools">
+                    <select id="vrFilter">
+                        <option value="pending">المعلقة</option>
+                        <option value="all">الكل</option>
+                        <option value="approved">المقبولة</option>
+                        <option value="rejected">المرفوضة</option>
+                    </select>
+                    <input type="text" id="vrSearch" placeholder="ابحث باسم أو بريد...">
+                </div>
+            </div>
+            <div class="dl" id="vipRequestsList" style="gap:12px"></div>
+        </div>
+    </section>
+
+    <!-- CATEGORIES (unchanged) -->
     <section class="section" id="sec-categories">
         <div class="card">
             <div class="card-head"><div class="card-title"><i class="fa-solid fa-folder-plus"></i> إضافة تصنيف (VOD)</div></div>
@@ -653,7 +639,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         </div>
     </section>
 
-    <!-- USERS -->
+    <!-- USERS (unchanged) -->
     <section class="section" id="sec-users">
         <div class="card gold">
             <div class="card-head">
@@ -673,7 +659,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         </div>
     </section>
 
-    <!-- SETTINGS -->
+    <!-- SETTINGS (unchanged + WhatsApp Number + New section) -->
     <section class="section" id="sec-settings">
         <div class="card blue">
             <div class="card-head"><div class="card-title"><i class="fa-solid fa-palette"></i> تخصيص المظهر</div></div>
@@ -683,9 +669,25 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
                 <div class="fg"><label><i class="fa-solid fa-droplet"></i> اللون الرئيسي</label><input type="color" id="settingAccentColor" value="#ff0b37"></div>
                 <div class="fg"><label><i class="fa-solid fa-crown"></i> لون VIP</label><input type="color" id="settingVipColor" value="#f59e0b"></div>
                 <div class="fg full"><label><i class="fa-solid fa-comment-dots"></i> إعلان منبثق (يظهر مرة واحدة)</label><textarea id="settingPopupBanner" placeholder="نص يظهر للمستخدم عند فتح الموقع..."></textarea></div>
-                <div class="fg full"><label><i class="fa-brands fa-whatsapp" style="color:#25D366"></i> رابط واتساب/تواصل</label><input type="url" id="settingWhatsappLink" placeholder="https://wa.me/..."></div>
+                <!-- NEW: WhatsApp Number separate from link -->
+                <div class="fg full"><label><i class="fa-brands fa-whatsapp" style="color:#25D366"></i> رابط واتساب (كامل)</label><input type="url" id="settingWhatsappLink" placeholder="https://wa.me/201234567890"></div>
+                <div class="fg full"><label><i class="fa-solid fa-phone"></i> أو رقم واتساب فقط (بديل)</label><input type="text" id="settingWhatsappNumber" placeholder="201234567890 (بدون + أو مسافات)"></div>
             </div>
             <button class="btn green block" id="btnSaveSettings" style="margin-top:14px"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>
+        </div>
+
+        <!-- NEW: Notification / Broadcast to users -->
+        <div class="card warn-card-head">
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-bullhorn"></i> بث إشعار للمستخدمين</div></div>
+            <div class="fg">
+                <label><i class="fa-solid fa-comment"></i> نص الإشعار</label>
+                <textarea id="settingBroadcastMsg" placeholder="اكتب إشعاراً يظهر للمستخدمين في واجهتهم..."></textarea>
+                <div class="hint">يُخزَّن في <code>settings/broadcastMessage</code> ويقرأه موقع المستخدم.</div>
+            </div>
+            <div style="display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-top:8px">
+                <button class="btn green block" id="btnSaveBroadcast"><i class="fa-solid fa-paper-plane"></i> حفظ وبث</button>
+                <button class="btn red block" id="btnClearBroadcast"><i class="fa-solid fa-xmark"></i> إلغاء البث</button>
+            </div>
         </div>
 
         <div class="card">
@@ -704,18 +706,23 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
                 <button class="btn ghost block" id="btnBackupSettings"><i class="fa-solid fa-cloud-arrow-down"></i> تصدير JSON</button>
                 <button class="btn ghost block" id="btnImportJSON"><i class="fa-solid fa-cloud-arrow-up"></i> استيراد JSON</button>
                 <button class="btn ghost block" id="btnChangePin"><i class="fa-solid fa-key"></i> تغيير الرمز</button>
+                <button class="btn ghost block" id="btnExportCSV"><i class="fa-solid fa-file-csv"></i> تصدير CSV (المحتوى)</button>
             </div>
             <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none">
         </div>
     </section>
 </main>
 
-<!-- FAB -->
+<!-- FAB (unchanged + VIP requests quick access) -->
 <div class="fab-wrap" id="fabWrap">
-    <button class="fab-main" id="fabMain"><i class="fa-solid fa-bolt"></i></button>
+    <button class="fab-main" id="fabMain">
+        <i class="fa-solid fa-bolt"></i>
+        <span class="fab-badge" id="fabVipBadge" style="display:none">0</span>
+    </button>
     <div class="fab-list">
         <button class="fab-i" data-tip="محتوى جديد" data-goto="add"><i class="fa-solid fa-plus"></i></button>
         <button class="fab-i" data-tip="قناة مباشرة" id="fabNewLive"><i class="fa-solid fa-tower-broadcast"></i></button>
+        <button class="fab-i" data-tip="طلبات VIP" data-goto="viprequests"><i class="fa-solid fa-crown"></i></button>
         <button class="fab-i" data-tip="استيراد M3U" id="fabM3U"><i class="fa-solid fa-file-import"></i></button>
         <button class="fab-i" data-tip="المستخدمون" data-goto="users"><i class="fa-solid fa-users"></i></button>
         <button class="fab-i" data-tip="نسخة احتياطية" id="fabBackup"><i class="fa-solid fa-download"></i></button>
@@ -723,8 +730,9 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
-<!-- ============ MODALS ============ -->
+<!-- ============ MODALS (all existing + new) ============ -->
 
+<!-- EDIT MEDIA (unchanged + copy buttons) -->
 <div class="modal" id="mEdit">
     <div class="modal-box">
         <div class="modal-grab"></div>
@@ -739,7 +747,12 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
                 <div class="fg"><label>العنوان</label><input type="text" id="editTitle" required></div>
                 <div class="fg"><label>التصنيف</label><select id="editCategory"></select></div>
                 <div class="fg"><label>نوع الوصول</label><select id="editIsVip"><option value="false">مجاني</option><option value="true">VIP</option></select></div>
-                <div class="fg"><label>رابط البوستر</label><input type="url" id="editThumbnail"></div>
+                <div class="fg"><label>رابط البوستر</label>
+                    <div class="input-copy-wrap">
+                        <input type="url" id="editThumbnail">
+                        <button type="button" class="copy-btn" data-copy-target="editThumbnail"><i class="fa-solid fa-copy"></i></button>
+                    </div>
+                </div>
                 <div class="fg full"><label>الوصف</label><textarea id="editDescription"></textarea></div>
             </div>
             <div class="fg" style="margin-top:12px">
@@ -752,11 +765,17 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
                 <div class="dl-paths">
                     <div class="dl-path vip-path">
                         <div class="dl-path-head"><i class="fa-solid fa-crown vip"></i><div><strong>تحميل VIP</strong><small>بدون إعلان</small></div></div>
-                        <input type="url" id="editDownloadUrl" placeholder="https://...">
+                        <div class="input-copy-wrap">
+                            <input type="url" id="editDownloadUrl" placeholder="https://...">
+                            <button type="button" class="copy-btn" data-copy-target="editDownloadUrl"><i class="fa-solid fa-copy"></i></button>
+                        </div>
                     </div>
                     <div class="dl-path free-path">
                         <div class="dl-path-head"><i class="fa-solid fa-play free"></i><div><strong>تحميل مجاني (إعلان)</strong><small>للزوار</small></div></div>
-                        <input type="url" id="editAdDownloadUrl" placeholder="https://...">
+                        <div class="input-copy-wrap">
+                            <input type="url" id="editAdDownloadUrl" placeholder="https://...">
+                            <button type="button" class="copy-btn" data-copy-target="editAdDownloadUrl"><i class="fa-solid fa-copy"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -768,6 +787,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
+<!-- LIVE CHANNEL MODAL (unchanged) -->
 <div class="modal" id="mLiveChannel">
     <div class="modal-box">
         <div class="modal-grab"></div>
@@ -781,8 +801,19 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
             <div class="form-grid">
                 <div class="fg"><label>اسم القناة</label><input type="text" id="liveChName" required></div>
                 <div class="fg"><label>التصنيف</label><select id="liveChCategory"></select></div>
-                <div class="fg full"><label>شعار القناة (URL)</label><input type="url" id="liveChLogo"></div>
-                <div class="fg full"><label>رابط البث (m3u8 / mpd / iframe)</label><input type="text" id="liveChUrl" required></div>
+                <div class="fg full"><label>شعار القناة (URL)</label>
+                    <div class="input-copy-wrap">
+                        <input type="url" id="liveChLogo">
+                        <button type="button" class="copy-btn" data-copy-target="liveChLogo"><i class="fa-solid fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="fg full"><label>رابط البث (m3u8 / mpd / iframe)</label>
+                    <div class="input-copy-wrap">
+                        <input type="text" id="liveChUrl" required>
+                        <button type="button" class="copy-btn" data-copy-target="liveChUrl"><i class="fa-solid fa-copy"></i></button>
+                        <button type="button" class="copy-btn" id="liveChTestBtn" title="اختبار الرابط"><i class="fa-solid fa-flask"></i></button>
+                    </div>
+                </div>
                 <div class="fg"><label>نوع الوصول</label><select id="liveChIsVip"><option value="false">مجاني</option><option value="true">VIP</option></select></div>
                 <div class="fg"><label>الترتيب</label><input type="number" id="liveChOrder" value="0" min="0"></div>
                 <div class="fg full"><label>وصف</label><textarea id="liveChDescription"></textarea></div>
@@ -795,6 +826,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
+<!-- LIVE CAT MODAL (unchanged) -->
 <div class="modal" id="mLiveCat">
     <div class="modal-box" style="max-width:480px">
         <div class="modal-grab"></div>
@@ -815,6 +847,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
+<!-- PREVIEW MEDIA (unchanged) -->
 <div class="modal" id="mPreview">
     <div class="modal-box">
         <div class="modal-grab"></div>
@@ -833,6 +866,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
+<!-- USER MODAL (unchanged) -->
 <div class="modal" id="mUser">
     <div class="modal-box">
         <div class="modal-grab"></div>
@@ -861,6 +895,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
+<!-- CAT MODAL (unchanged) -->
 <div class="modal" id="mCat">
     <div class="modal-box" style="max-width:480px">
         <div class="modal-grab"></div>
@@ -881,7 +916,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
-<!-- M3U IMPORT -->
+<!-- M3U IMPORT (unchanged) -->
 <div class="modal" id="mM3U">
     <div class="modal-box" style="max-width:640px">
         <div class="modal-grab"></div>
@@ -917,7 +952,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
-<!-- CONFIRM -->
+<!-- CONFIRM (unchanged) -->
 <div class="modal" id="mConfirm">
     <div class="modal-box confirm-box">
         <div class="modal-grab"></div>
@@ -933,7 +968,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
-<!-- PIN CHANGE -->
+<!-- PIN CHANGE (unchanged) -->
 <div class="modal" id="mPin">
     <div class="modal-box" style="max-width:440px">
         <div class="modal-grab"></div>
@@ -953,10 +988,75 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
+<!-- NEW: VIP REQUEST DETAILS MODAL -->
+<div class="modal" id="mVRDetails">
+    <div class="modal-box" style="max-width:520px">
+        <div class="modal-grab"></div>
+        <div class="modal-head gold">
+            <div class="mi"><i class="fa-solid fa-crown"></i></div>
+            <div class="mh-text"><h3>تفاصيل طلب VIP</h3><p id="vrDetailsSub">—</p></div>
+            <button class="modal-close" data-close="mVRDetails"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="vrDetailsBody"></div>
+        <div class="modal-foot" style="flex-direction:column">
+            <button class="btn green block" id="vrApproveBtn"><i class="fa-solid fa-check"></i> قبول الطلب</button>
+            <button class="btn red block" id="vrRejectBtn"><i class="fa-solid fa-xmark"></i> رفض الطلب</button>
+            <button class="btn wa block" id="vrWhatsappBtn"><i class="fa-brands fa-whatsapp"></i> تواصل عبر واتساب</button>
+            <button class="btn ghost block" data-close="mVRDetails">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<!-- NEW: SERVER TEST RESULT MODAL -->
+<div class="modal" id="mTestResult">
+    <div class="modal-box" style="max-width:560px">
+        <div class="modal-grab"></div>
+        <div class="modal-head">
+            <div class="mi"><i class="fa-solid fa-flask"></i></div>
+            <div class="mh-text"><h3>نتيجة اختبار السيرفر</h3><p id="testResultUrl">—</p></div>
+            <button class="modal-close" data-close="mTestResult"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="testResultBody" class="test-result"></div>
+        <div class="modal-foot">
+            <button class="btn ghost block" data-close="mTestResult">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<!-- NEW: NOTIFICATIONS MODAL -->
+<div class="modal" id="mNotifications">
+    <div class="modal-box" style="max-width:520px">
+        <div class="modal-grab"></div>
+        <div class="modal-head warn">
+            <div class="mi"><i class="fa-solid fa-bell"></i></div>
+            <div class="mh-text"><h3>الإشعارات</h3><p>أحدث الأحداث في المنصة</p></div>
+            <button class="modal-close" data-close="mNotifications"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="dl" id="notifList"></div>
+        <div class="modal-foot">
+            <button class="btn ghost block" id="btnClearNotifs"><i class="fa-solid fa-eraser"></i> مسح الكل</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast-wrap" id="toasts"></div>
 
+<!-- SCRIPT CONTINUES IN PART 2 -->
 <script>
-/* ============ FIREBASE ============ */
+/* =========================================================
+   SCRIPT PART 1/2
+   - Firebase init
+   - helpers
+   - toast, confirm, modal controller
+   - PIN login
+   - navigation (with new viprequests section)
+   - FAB
+   - activity log
+   - server rows (with test button)
+   - copy buttons
+   - theme toggle
+   ========================================================= */
+
 const firebaseConfig = {
     apiKey:"AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
     authDomain:"voip17.firebaseapp.com",
@@ -970,12 +1070,24 @@ const firebaseConfig = {
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* ============ HELPERS ============ */
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const debounce = (fn,ms=220)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}) : '—';
+const fmtTime = ts => ts ? new Date(ts).toLocaleString('ar-EG',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+const timeAgo = ts => {
+    if(!ts) return '—';
+    const d = Date.now() - ts;
+    const m = Math.floor(d/60000);
+    if(m < 1) return 'الآن';
+    if(m < 60) return `منذ ${m} دقيقة`;
+    const h = Math.floor(m/60);
+    if(h < 24) return `منذ ${h} ساعة`;
+    const days = Math.floor(h/24);
+    if(days < 30) return `منذ ${days} يوم`;
+    return fmtDate(ts);
+};
 const userExpire = u => (u && (u.vipExpireDate || u.expireAt || 0)) || 0;
 const userIsBanned = u => !!(u && (u.isBanned === true || u.isBlocked === true));
 const userIsVipNow = u => {
@@ -1007,6 +1119,7 @@ function askConfirm({title='تأكيد',msg='هل أنت متأكد؟',okText='�
         ib.className = 'mi';
         if(type==='gold') ib.classList.add('gold');
         if(type==='green') ib.classList.add('green');
+        if(type==='warn') ib.classList.add('warn');
         openModal('mConfirm');
         confirmResolver = res;
     });
@@ -1028,7 +1141,7 @@ document.addEventListener('keydown',e=>{
     }
 });
 
-/* ============ PIN LOGIN (FIXED) ============ */
+/* ============ PIN LOGIN ============ */
 let SECURITY_PIN = '171002';
 let pinValue = '';
 const isAuthed = ()=> sessionStorage.getItem('adm_authed')==='1';
@@ -1042,25 +1155,18 @@ function renderPinDots(){
         d.textContent = i < pinValue.length ? '●' : '';
     });
 }
-
-// Focus pin input on tap anywhere on the pin-wrap
 pinWrap.addEventListener('click', () => pinInput.focus());
-// On login overlay, tap anywhere focuses input
 $('#loginOverlay').addEventListener('click', e => {
-    // don't refocus if user clicked an interactive element
     if(e.target.closest('button') && e.target.id !== 'pinBtn') return;
     if(e.target.closest('input')) return;
     pinInput.focus();
 });
-
-// Sync input value to dots
 pinInput.addEventListener('input', () => {
     pinValue = pinInput.value.replace(/\D/g,'').slice(0,6);
     pinInput.value = pinValue;
     renderPinDots();
     if(pinValue.length === 6) setTimeout(verifyPin, 200);
 });
-// Handle paste
 pinInput.addEventListener('paste', () => {
     setTimeout(() => {
         pinValue = pinInput.value.replace(/\D/g,'').slice(0,6);
@@ -1069,7 +1175,6 @@ pinInput.addEventListener('paste', () => {
         if(pinValue.length === 6) setTimeout(verifyPin, 200);
     }, 10);
 });
-// Enter key
 pinInput.addEventListener('keydown', e => { if(e.key === 'Enter') verifyPin(); });
 
 async function verifyPin(){
@@ -1092,18 +1197,11 @@ async function verifyPin(){
         pinInput.focus();
     }
 }
-
 $('#pinBtn').addEventListener('click', verifyPin);
 $('#pinBtn').addEventListener('click', (e) => e.stopPropagation());
-
 function bootLogin(){
-    if(isAuthed()){
-        $('#loginOverlay').classList.add('hidden');
-    }else{
-        $('#loginOverlay').classList.remove('hidden');
-        // Auto focus once on mount
-        setTimeout(() => pinInput.focus(), 300);
-    }
+    if(isAuthed()) $('#loginOverlay').classList.add('hidden');
+    else{ $('#loginOverlay').classList.remove('hidden'); setTimeout(() => pinInput.focus(), 300); }
     renderPinDots();
 }
 bootLogin();
@@ -1118,8 +1216,12 @@ $('#btnLogout').addEventListener('click',async()=>{
     if(ok) logout();
 });
 
-/* ============ NAV ============ */
-const secTitles = {dashboard:'لوحة القيادة',media:'إدارة المحتوى',add:'إضافة محتوى',live:'البث المباشر',categories:'التصنيفات',users:'المستخدمون',settings:'الإعدادات'};
+/* ============ NAV (with new viprequests) ============ */
+const secTitles = {
+    dashboard:'لوحة القيادة',media:'إدارة المحتوى',add:'إضافة محتوى',
+    live:'البث المباشر',viprequests:'طلبات VIP',categories:'التصنيفات',
+    users:'المستخدمون',settings:'الإعدادات'
+};
 function go(sec){
     if(!secTitles[sec]) sec = 'dashboard';
     $$('.section').forEach(s=>s.classList.toggle('active', s.id==='sec-'+sec));
@@ -1144,6 +1246,7 @@ $('#btnBackupSettings').addEventListener('click',exportBackup);
 $('#btnRefresh').addEventListener('click',()=>location.reload());
 $('#fabNewLive').addEventListener('click',()=>openLiveChannelModal());
 $('#btnQuickLive').addEventListener('click',()=>{go('live');setTimeout(openLiveChannelModal,300);});
+$('#btnQuickVipReq').addEventListener('click',()=>go('viprequests'));
 $('#fabM3U').addEventListener('click',()=>openModal('mM3U'));
 $('#btnImportM3U').addEventListener('click',()=>openModal('mM3U'));
 
@@ -1166,7 +1269,7 @@ $('#btnClearLog').addEventListener('click',async()=>{
 });
 renderActivity();
 
-/* ============ SERVER ROWS ============ */
+/* ============ SERVER ROWS (with test button) ============ */
 function serverRow(name='',val='',type='url'){
     const div = document.createElement('div');
     div.className = 'server-row';
@@ -1174,8 +1277,14 @@ function serverRow(name='',val='',type='url'){
         <input class="srv-name" placeholder="اسم السيرفر" value="${esc(name)}">
         <select class="srv-type"><option value="url" ${type==='url'?'selected':''}>رابط</option><option value="embed" ${type==='embed'?'selected':''}>كود HTML</option></select>
         <input class="srv-val" placeholder="الرابط أو كود iframe" value="${esc(val)}">
+        <button type="button" class="test-btn" title="اختبار الرابط"><i class="fa-solid fa-flask"></i></button>
         <button type="button" class="rm"><i class="fa-solid fa-trash"></i></button>`;
     div.querySelector('.rm').addEventListener('click',()=>div.remove());
+    div.querySelector('.test-btn').addEventListener('click', (e)=>{
+        const val = div.querySelector('.srv-val').value.trim();
+        if(!val){ toast('أدخل الرابط أولاً','','warn'); return; }
+        testServerUrl(val, e.currentTarget);
+    });
     return div;
 }
 function collectServers(sel){
@@ -1203,6 +1312,168 @@ $('#addServerBtn').addEventListener('click',()=>$('#addServers').appendChild(ser
 $('#editAddServer').addEventListener('click',()=>$('#editServers').appendChild(serverRow()));
 $('#addServers').appendChild(serverRow('سيرفر رئيسي'));
 fillServers('#editServers',[]);
+
+/* ============ NEW: SERVER TEST ============ */
+async function testServerUrl(url, btnEl){
+    if(!url) return;
+    if(btnEl) btnEl.classList.add('testing');
+    $('#testResultUrl').textContent = url;
+    $('#testResultBody').innerHTML = '<div style="text-align:center;padding:20px"><div class="skel" style="height:20px;width:80%;margin:0 auto 8px;border-radius:6px;background:linear-gradient(90deg,#1a1d26 25%,#242833 50%,#1a1d26 75%);background-size:200% 100%;animation:skel 1.4s infinite"></div><p style="color:var(--text-3);font-size:.8rem;margin-top:10px">جاري الاختبار...</p></div>';
+    openModal('mTestResult');
+
+    const start = performance.now();
+    let result = {};
+
+    // Determine type
+    const isM3U8 = /\.m3u8(\?|$)/i.test(url);
+    const isMPD = /\.mpd(\?|$)/i.test(url);
+    const isVideo = /\.(mp4|mkv|webm|mov|ts|flv|m4v)(\?|$)/i.test(url);
+    const isIframe = !isM3U8 && !isMPD && !isVideo;
+    result.type = isM3U8 ? 'HLS (m3u8)' : isMPD ? 'DASH (mpd)' : isVideo ? 'Video File' : 'Embed/Iframe/HTML';
+    result.protocol = url.startsWith('https://') ? 'HTTPS' : url.startsWith('http://') ? 'HTTP' : 'Other';
+    result.domain = (()=>{ try { return new URL(url).hostname; } catch(e){ return '—'; } })();
+
+    try{
+        // Use no-cors mode to just check reachability without CORS issues
+        const ctrl = new AbortController();
+        const timer = setTimeout(()=>ctrl.abort(), 8000);
+        const res = await fetch(url, { method:'HEAD', mode:'no-cors', signal: ctrl.signal, cache:'no-store' });
+        clearTimeout(timer);
+        const elapsed = Math.round(performance.now() - start);
+        result.status = res.status === 0 ? 'OK (opaque)' : res.status;
+        result.statusText = res.statusText || 'Reachable';
+        result.latency = elapsed + ' ms';
+        result.reachable = true;
+        result.contentType = res.headers.get('content-type') || '(hidden by CORS)';
+    }catch(err){
+        const elapsed = Math.round(performance.now() - start);
+        result.reachable = false;
+        result.latency = elapsed + ' ms';
+        result.error = err.name === 'AbortError' ? 'انتهت مهلة الاتصال (8 ثواني)' : err.message;
+    }
+
+    if(btnEl) btnEl.classList.remove('testing');
+
+    // Build result HTML
+    const reachClass = result.reachable ? 'ok' : 'fail';
+    const reachText = result.reachable ? '✓ الرابط قابل للوصول' : '✗ تعذّر الوصول';
+    $('#testResultBody').innerHTML = `
+        <div style="margin-bottom:12px">
+            <div style="font-size:.82rem;font-weight:800;color:${result.reachable?'var(--success)':'var(--danger)'}">${reachText}</div>
+        </div>
+        <div style="display:grid;gap:6px;font-size:.8rem">
+            <div><span style="color:var(--text-3)">النوع:</span> <span style="color:var(--info);font-weight:800">${esc(result.type)}</span></div>
+            <div><span style="color:var(--text-3)">النطاق:</span> ${esc(result.domain)}</div>
+            <div><span style="color:var(--text-3)">البروتوكول:</span> ${esc(result.protocol)}</div>
+            <div><span style="color:var(--text-3)">زمن الاستجابة:</span> ${esc(result.latency)}</div>
+            ${result.status ? `<div><span style="color:var(--text-3)">Status:</span> ${result.status} ${esc(result.statusText||'')}</div>`:''}
+            ${result.contentType ? `<div><span style="color:var(--text-3)">Content-Type:</span> ${esc(result.contentType)}</div>`:''}
+            ${result.error ? `<div class="${reachClass}" style="margin-top:6px">${esc(result.error)}</div>`:''}
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:.72rem;color:var(--text-3)">
+            ملاحظة: متصفح اللوحة يخضع لسياسة CORS، فقد ينجح التست هنا ويفشل في موقع المستخدم أو العكس. للتحقق النهائي، افتح الرابط في تبويب جديد.
+        </div>
+        <div style="margin-top:10px">
+            <a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="btn ghost sm" style="width:100%;justify-content:center">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الرابط
+            </a>
+        </div>`;
+}
+
+/* NEW: Live channel test button */
+$('#liveChTestBtn').addEventListener('click', (e) => {
+    const url = $('#liveChUrl').value.trim();
+    if(!url){ toast('أدخل الرابط أولاً','','warn'); return; }
+    testServerUrl(url, e.currentTarget);
+});
+
+/* ============ NEW: COPY BUTTONS ============ */
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.copy-btn[data-copy-target]');
+    if(!btn) return;
+    const target = document.getElementById(btn.dataset.copyTarget);
+    if(!target || !target.value) { toast('لا يوجد محتوى للنسخ','','warn'); return; }
+    try{
+        await navigator.clipboard.writeText(target.value);
+        btn.classList.add('copied');
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = origHtml; }, 1500);
+    }catch(err){
+        // Fallback
+        target.select(); target.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        toast('تم النسخ','','ok');
+    }
+});
+
+/* ============ NEW: THEME TOGGLE ============ */
+(function initTheme(){
+    const saved = localStorage.getItem('adm_theme');
+    if(saved === 'light') document.body.classList.add('light-theme');
+    updateThemeIcon();
+})();
+function updateThemeIcon(){
+    const btn = $('#btnThemeToggle');
+    const isLight = document.body.classList.contains('light-theme');
+    btn.innerHTML = `<i class="fa-solid fa-${isLight?'sun':'moon'}"></i>`;
+}
+$('#btnThemeToggle').addEventListener('click', ()=>{
+    document.body.classList.toggle('light-theme');
+    localStorage.setItem('adm_theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+    updateThemeIcon();
+    toast('تم التبديل', document.body.classList.contains('light-theme') ? 'الوضع الفاتح' : 'الوضع الداكن','','1500');
+});
+
+/* ============ NEW: NOTIFICATIONS PANEL ============ */
+$('#btnNotifications').addEventListener('click', ()=>{
+    renderNotifications();
+    openModal('mNotifications');
+});
+function renderNotifications(){
+    const box = $('#notifList');
+    const items = [];
+    // Pending VIP requests
+    const pending = (window.__allVipRequests || []).filter(r=>r.status === 'pending');
+    pending.slice(0,10).forEach(r=>{
+        items.push({
+            icon:'fa-crown', color:'var(--vip)',
+            title:`طلب VIP من ${r.name || r.email || 'مستخدم'}`,
+            sub: timeAgo(r.createdAt),
+            action:()=>{ closeModal('mNotifications'); go('viprequests'); }
+        });
+    });
+    // Recent users (last 24h)
+    const recentUsers = (window.__allUsers || []).filter(u => u.createdAt && (Date.now() - u.createdAt) < 86400000);
+    recentUsers.slice(0,5).forEach(u=>{
+        items.push({
+            icon:'fa-user-plus', color:'var(--info)',
+            title:`مستخدم جديد: ${u.name || u.email}`,
+            sub: timeAgo(u.createdAt)
+        });
+    });
+    if(!items.length){
+        box.innerHTML = `<div class="empty"><i class="fa-solid fa-bell-slash"></i><p>لا توجد إشعارات</p></div>`;
+        return;
+    }
+    box.innerHTML = items.map(i=>`
+        <div class="dl-row" style="grid-template-columns:44px 1fr auto;align-items:center;cursor:${i.action?'pointer':'default'}" data-action="${i.action?'1':''}">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:${i.color};font-size:1.1rem"><i class="fa-solid ${i.icon}"></i></div>
+            <div class="dl-cell"><span class="v">${esc(i.title)}</span></div>
+            <span style="font-size:.7rem;color:var(--text-3);font-weight:700">${esc(i.sub)}</span>
+        </div>`).join('');
+}
+$('#btnClearNotifs').addEventListener('click', ()=>{
+    closeModal('mNotifications');
+    toast('تم','لا توجد إشعارات جديدة','ok');
+});
+</script>
+
+
+<script>
+    
+    window.__allUsers = [];
+window.__allVipRequests = [];
 
 /* ============ VOD CATEGORIES ============ */
 const DEFAULT_CATS = ['أفلام','مسلسلات','رياضة','عام','محتوى VIP شركات'];
@@ -1356,6 +1627,7 @@ function renderLiveChannelsList(){
             <div class="dl-cell"><span class="k">الترتيب</span><span class="v">${c.order||0}</span></div>
             <div class="dl-actions">
                 <button class="btn ghost sm" onclick="editLiveChannel('${esc(c.id)}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn ghost sm" onclick="testServerUrl('${esc((c.url||'').replace(/'/g,"\\'"))}',null)" title="اختبار"><i class="fa-solid fa-flask"></i></button>
                 <button class="btn red sm" onclick="delLiveChannel('${esc(c.id)}','${esc(c.name||'')}')"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`).join('');
@@ -1439,7 +1711,6 @@ function parseM3U(){
     for(const line of lines){
         if(line.startsWith('#EXTM3U')) continue;
         if(line.startsWith('#EXTINF')){
-            // Parse attributes
             const info = line.substring(line.indexOf(':')+1);
             const commaIdx = info.lastIndexOf(',');
             const attrsPart = commaIdx >= 0 ? info.substring(0, commaIdx) : info;
@@ -1454,9 +1725,8 @@ function parseM3U(){
                 category: getAttr('group-title') || 'عام'
             };
         }else if(line.startsWith('#')){
-            // skip other directives
+            // skip
         }else{
-            // URL line
             if(current){
                 current.url = line;
                 out.push(current);
@@ -1484,14 +1754,14 @@ $('#m3uImportBtn').addEventListener('click', async ()=>{
     if(!parsedM3U.length){ toast('لا توجد قنوات','اضغط على معاينة أولاً أو الصق محتوى','err'); return; }
     const isVip = $('#m3uVip').value === 'true';
     const autoCat = $('#m3uAutoCat').value === 'true';
+    const count = parsedM3U.length;
 
-    const ok = await askConfirm({title:'استيراد قنوات',msg:`استيراد ${parsedM3U.length} قناة؟`,okText:'استيراد',type:'gold'});
+    const ok = await askConfirm({title:'استيراد قنوات',msg:`استيراد ${count} قناة؟`,okText:'استيراد',type:'gold'});
     if(!ok) return;
 
     try{
-        // Collect unique categories
-        const catsNeeded = new Set();
         if(autoCat){
+            const catsNeeded = new Set();
             parsedM3U.forEach(c => { if(c.category) catsNeeded.add(c.category); });
             const existingCats = new Set(allLiveCats.map(c=>c.name));
             for(const cat of catsNeeded){
@@ -1500,7 +1770,6 @@ $('#m3uImportBtn').addEventListener('click', async ()=>{
                 }
             }
         }
-        // Batch insert channels
         const updates = {};
         parsedM3U.forEach((c,i) => {
             const key = db.ref('liveChannels').push().key;
@@ -1519,8 +1788,8 @@ $('#m3uImportBtn').addEventListener('click', async ()=>{
         closeModal('mM3U');
         $('#m3uText').value = ''; parsedM3U = [];
         $('#m3uPreview').style.display = 'none';
-        logActivity(`استيراد ${parsedM3U.length} قناة من M3U`);
-        toast('تم الاستيراد', `${Object.keys(updates).length} قناة`, 'ok');
+        logActivity(`استيراد ${count} قناة من M3U`);
+        toast('تم الاستيراد', `${count} قناة`, 'ok');
     }catch(err){ toast('خطأ',err.message,'err'); }
 });
 
@@ -1550,7 +1819,8 @@ $('#addForm').addEventListener('submit',async e=>{
         servers: collectServers('#addServers'),
         downloadUrl: $('#addDownloadUrl').value.trim(),
         adDownloadUrl: $('#addAdDownloadUrl').value.trim(),
-        views: 0, createdAt: Date.now()
+        views: 0,
+        createdAt: Date.now()
     };
     try{
         await db.ref('videos').push(data);
@@ -1568,12 +1838,19 @@ function loadMedia(){
         snap.forEach(c=>allItems.push({id:c.key,...c.val()}));
         const total = allItems.length;
         const vip = allItems.filter(i=>i.isVip).length;
+        const totalViews = allItems.reduce((s,i)=>s+(i.views||0),0);
+        // "Today's views" — approximate by summing items created today views
+        const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+        const todayViews = allItems.filter(i => (i.createdAt||0) >= startOfToday.getTime()).reduce((s,i)=>s+(i.views||0),0);
+
         $('#statTotalVideos').textContent = total.toLocaleString('ar-EG');
         $('#statVipVideos').textContent = vip.toLocaleString('ar-EG');
+        $('#statTodayViews').textContent = todayViews.toLocaleString('ar-EG');
         renderMedia();
         renderTopViewedChart();
     });
 }
+
 function renderMedia(){
     const q = ($('#qMedia').value||'').toLowerCase().trim();
     const f = $('#filterVip').value;
@@ -1627,6 +1904,7 @@ async function editItem(id){
     openModal('mEdit');
 }
 window.editItem = editItem;
+
 $('#editForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const id = $('#editId').value;
@@ -1700,7 +1978,6 @@ function renderTopViewedChart(){
     const gap = 6;
     const barW = (W - padding.l - padding.r - gap*(top.length-1)) / top.length;
 
-    // Draw baseline
     ctx.strokeStyle = 'rgba(255,255,255,.05)';
     ctx.lineWidth = 1;
     for(let i=0; i<=4; i++){
@@ -1719,13 +1996,11 @@ function renderTopViewedChart(){
         const x = padding.l + i*(barW + gap);
         const y = H - padding.b - barH;
 
-        // Gradient fill
         const g = ctx.createLinearGradient(0, y, 0, H - padding.b);
         g.addColorStop(0, colors[i % colors.length]);
         g.addColorStop(1, colors[i % colors.length] + '22');
         ctx.fillStyle = g;
 
-        // Rounded bars
         const r = Math.min(6, barW/2, barH/2);
         ctx.beginPath();
         ctx.moveTo(x, H - padding.b);
@@ -1737,7 +2012,6 @@ function renderTopViewedChart(){
         ctx.closePath();
         ctx.fill();
 
-        // Value on top
         if(barW > 30){
             ctx.fillStyle = '#f1f5f9';
             ctx.font = '700 10px Cairo, sans-serif';
@@ -1746,7 +2020,6 @@ function renderTopViewedChart(){
         }
     });
 
-    // Legend
     legend.innerHTML = top.slice(0,5).map((it,i)=>`
         <div class="lg-item">
             <span class="lg-dot" style="background:${colors[i % colors.length]}"></span>
@@ -1762,6 +2035,7 @@ function loadUsers(){
     db.ref('users').on('value', snap=>{
         allUsers = [];
         snap.forEach(c=>allUsers.push({id:c.key,...c.val()}));
+        window.__allUsers = allUsers;
         $('#statTotalUsers').textContent = allUsers.length.toLocaleString('ar-EG');
         renderUsers();
     });
@@ -1878,17 +2152,312 @@ async function delUser(id,name){
 }
 window.delUser = delUser;
 
+/* =========================================================
+   ⭐ VIP REQUESTS MANAGEMENT (NEW)
+   ========================================================= */
+let allVr = [];
+let currentVrId = null;
+
+function loadVipRequests(){
+    db.ref('vipRequests').on('value', snap=>{
+        allVr = [];
+        if(snap.exists()){
+            snap.forEach(c=>allVr.push({id:c.key, ...c.val()}));
+        }
+        // Sort by createdAt desc
+        allVr.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+        window.__allVipRequests = allVr;
+
+        // Stats
+        const pending  = allVr.filter(r=>r.status === 'pending').length;
+        const approved = allVr.filter(r=>r.status === 'approved').length;
+        const rejected = allVr.filter(r=>r.status === 'rejected').length;
+        $('#vrStatPending').textContent  = pending.toLocaleString('ar-EG');
+        $('#vrStatApproved').textContent = approved.toLocaleString('ar-EG');
+        $('#vrStatRejected').textContent = rejected.toLocaleString('ar-EG');
+
+        // Badges (nav + FAB + dashboard)
+        const navBadge = $('#navVipCount');
+        const fabBadge = $('#fabVipBadge');
+        const bnDot    = $('#bnVipDot');
+        $('#statPendingRequests').textContent = pending.toLocaleString('ar-EG');
+        if(pending > 0){
+            navBadge.style.display = ''; navBadge.textContent = pending;
+            fabBadge.style.display = ''; fabBadge.textContent = pending;
+            bnDot.style.display = '';
+        }else{
+            navBadge.style.display = 'none';
+            fabBadge.style.display = 'none';
+            bnDot.style.display = 'none';
+        }
+
+        // Notifications icon badge
+        const notifBtn = $('#btnNotifications');
+        if(pending > 0){
+            notifBtn.classList.add('warn-active');
+            notifBtn.dataset.count = pending;
+        }else{
+            notifBtn.classList.remove('warn-active');
+        }
+
+        renderVipRequests();
+    });
+}
+
+function renderVipRequests(){
+    const q = ($('#vrSearch')?.value||'').toLowerCase().trim();
+    const f = $('#vrFilter')?.value || 'pending';
+    const box = $('#vipRequestsList');
+    if(!box) return;
+
+    let list = allVr.filter(r=>{
+        if(f !== 'all' && r.status !== f) return false;
+        if(q){
+            const n = (r.name||'').toLowerCase();
+            const e = (r.email||'').toLowerCase();
+            if(!n.includes(q) && !e.includes(q)) return false;
+        }
+        return true;
+    });
+
+    if(!list.length){
+        box.innerHTML = `<div class="empty"><i class="fa-solid fa-crown"></i><p>لا توجد طلبات مطابقة</p></div>`;
+        return;
+    }
+
+    box.innerHTML = list.map(r=>{
+        const status = r.status || 'pending';
+        const statusBadge = status === 'pending'
+            ? `<span class="badge warn"><i class="fa-solid fa-hourglass-half"></i> معلق</span>`
+            : status === 'approved'
+            ? `<span class="badge ok"><i class="fa-solid fa-circle-check"></i> مقبول</span>`
+            : `<span class="badge block"><i class="fa-solid fa-circle-xmark"></i> مرفوض</span>`;
+
+        const initial = (r.name || r.email || '?').trim().charAt(0).toUpperCase();
+        return `
+        <div class="vr-row ${status}">
+            <div class="vr-head">
+                <div class="vr-avatar">${esc(initial)}</div>
+                <div class="vr-info">
+                    <div class="vr-name">${esc(r.name || 'بدون اسم')}</div>
+                    <div class="vr-email">${esc(r.email || '—')}</div>
+                </div>
+                ${statusBadge}
+            </div>
+            <div class="vr-meta">
+                <span><i class="fa-regular fa-clock"></i> ${timeAgo(r.createdAt)}</span>
+                <span><i class="fa-solid fa-fingerprint"></i> <code style="font-size:.7rem">${esc((r.uid||'').slice(0,10))}...</code></span>
+                ${r.approvedAt ? `<span><i class="fa-solid fa-check"></i> قُبل: ${timeAgo(r.approvedAt)}</span>` : ''}
+            </div>
+            ${r.note ? `<div class="vr-note"><i class="fa-solid fa-note-sticky"></i> ${esc(r.note)}</div>` : ''}
+            <div class="vr-actions">
+                <button class="btn ghost sm" onclick="openVrDetails('${esc(r.id)}')"><i class="fa-solid fa-eye"></i> تفاصيل</button>
+                ${status === 'pending' ? `
+                    <button class="btn green sm" onclick="approveVipRequest('${esc(r.id)}')"><i class="fa-solid fa-check"></i> قبول</button>
+                    <button class="btn red sm" onclick="rejectVipRequest('${esc(r.id)}')"><i class="fa-solid fa-xmark"></i> رفض</button>
+                ` : ''}
+                <button class="btn wa sm" onclick="openVrWhatsApp('${esc(r.id)}')"><i class="fa-brands fa-whatsapp"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+if($('#vrFilter')) $('#vrFilter').addEventListener('change', renderVipRequests);
+if($('#vrSearch')) $('#vrSearch').addEventListener('input', debounce(renderVipRequests, 220));
+if($('#statPendingRequestsCard')) $('#statPendingRequestsCard').addEventListener('click', () => go('viprequests'));
+
+/* Open details modal */
+function openVrDetails(id){
+    const r = allVr.find(x => x.id === id);
+    if(!r) return;
+    currentVrId = id;
+    $('#vrDetailsSub').textContent = `${r.name || 'بدون اسم'} • ${r.email || '—'}`;
+    const status = r.status || 'pending';
+    const statusText = status === 'pending' ? 'معلق' : status === 'approved' ? 'مقبول' : 'مرفوض';
+    const statusColor = status === 'pending' ? 'var(--warning)' : status === 'approved' ? 'var(--success)' : 'var(--danger)';
+
+    $('#vrDetailsBody').innerHTML = `
+        <div style="display:grid;gap:10px;font-size:.85rem">
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--text-3)">الاسم</span><strong>${esc(r.name||'—')}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--text-3)">البريد</span><strong style="word-break:break-all">${esc(r.email||'—')}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--text-3)">الحالة</span><strong style="color:${statusColor}">${statusText}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--text-3)">تاريخ الطلب</span><strong>${fmtTime(r.createdAt)}</strong>
+            </div>
+            ${r.approvedAt ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--text-3)">تاريخ الموافقة</span><strong>${fmtTime(r.approvedAt)}</strong>
+            </div>` : ''}
+            ${r.rejectReason ? `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--text-3);display:block;margin-bottom:6px">سبب الرفض</span>
+                <strong style="color:var(--danger)">${esc(r.rejectReason)}</strong>
+            </div>` : ''}
+            <div style="display:flex;justify-content:space-between;padding:8px 0">
+                <span style="color:var(--text-3)">UID المستخدم</span><code style="font-size:.72rem;color:var(--info)">${esc(r.uid||'—')}</code>
+            </div>
+        </div>
+    `;
+
+    // Show/hide action buttons depending on status
+    $('#vrApproveBtn').style.display = status === 'pending' ? '' : 'none';
+    $('#vrRejectBtn').style.display = status === 'pending' ? '' : 'none';
+    $('#vrApproveBtn').onclick = () => approveVipRequest(id);
+    $('#vrRejectBtn').onclick = () => rejectVipRequest(id);
+    $('#vrWhatsappBtn').onclick = () => openVrWhatsApp(id);
+    openModal('mVRDetails');
+}
+window.openVrDetails = openVrDetails;
+
+/* Approve request */
+async function approveVipRequest(id){
+    const r = allVr.find(x => x.id === id);
+    if(!r) return;
+    if(r.status === 'approved') { toast('مقبول بالفعل','','warn'); return; }
+
+    // Ask for duration
+    const daysStr = prompt('مدة الاشتراك بالأيام (افتراضي 30):', '30');
+    if(daysStr === null) return;
+    const days = Math.max(1, parseInt(daysStr) || 30);
+
+    const ok = await askConfirm({
+        title:'قبول الطلب',
+        msg:`سيتم ترقية ${r.name || r.email} إلى VIP لمدة ${days} يوم.`,
+        okText:'قبول',
+        type:'green'
+    });
+    if(!ok) return;
+
+    try{
+        const now = Date.now();
+        const expireAt = now + days * 86400000;
+
+        // Update request
+        await db.ref('vipRequests/' + id).update({
+            status:'approved',
+            approvedAt: now,
+            approvedBy: 'admin',
+            durationDays: days
+        });
+
+        // Update the user
+        if(r.uid){
+            const userSnap = await db.ref('users/' + r.uid).once('value');
+            const prev = userSnap.val() || {};
+            const prevExp = userExpire(prev);
+            const baseTime = prevExp > now ? prevExp : now;
+            const newExp = baseTime + days * 86400000;
+            await db.ref('users/' + r.uid).update({
+                isVip: true,
+                expireAt: newExp,
+                vipExpireDate: newExp,
+                updatedAt: now
+            });
+        }
+
+        // Also update lastVipRequest on user
+        if(r.uid){
+            await db.ref('users/' + r.uid + '/lastVipRequest').update({
+                status:'approved',
+                approvedAt: now
+            });
+        }
+
+        closeModal('mVRDetails');
+        logActivity(`قبول طلب VIP: ${r.name || r.email}`);
+        toast('تم القبول', `تم ترقية الحساب لمدة ${days} يوم`,'ok');
+    }catch(err){
+        console.error(err);
+        toast('خطأ','فشل قبول الطلب: ' + err.message,'err');
+    }
+}
+window.approveVipRequest = approveVipRequest;
+
+/* Reject request */
+async function rejectVipRequest(id){
+    const r = allVr.find(x => x.id === id);
+    if(!r) return;
+    if(r.status === 'rejected') { toast('مرفوض بالفعل','','warn'); return; }
+
+    const reason = prompt('سبب الرفض (اختياري):', '');
+    if(reason === null) return;
+
+    const ok = await askConfirm({
+        title:'رفض الطلب',
+        msg:`رفض طلب ${r.name || r.email}${reason ? ' — ' + reason : ''}؟`,
+        okText:'رفض',
+        type:'red'
+    });
+    if(!ok) return;
+
+    try{
+        const now = Date.now();
+        await db.ref('vipRequests/' + id).update({
+            status:'rejected',
+            rejectedAt: now,
+            rejectReason: reason || 'لم يتم تحديد سبب'
+        });
+
+        if(r.uid){
+            await db.ref('users/' + r.uid + '/lastVipRequest').update({
+                status:'rejected',
+                rejectedAt: now,
+                rejectReason: reason || ''
+            });
+        }
+
+        closeModal('mVRDetails');
+        logActivity(`رفض طلب VIP: ${r.name || r.email}`);
+        toast('تم الرفض','','ok');
+    }catch(err){
+        toast('خطأ',err.message,'err');
+    }
+}
+window.rejectVipRequest = rejectVipRequest;
+
+/* Open WhatsApp for a request */
+function openVrWhatsApp(id){
+    const r = allVr.find(x => x.id === id);
+    if(!r) return;
+    // Get WhatsApp from settings (cached in siteSettings — we'll load it in loadSettings)
+    const link = (window.__siteSettings?.whatsappLink || '').trim();
+    const num = (window.__siteSettings?.whatsappNumber || '').replace(/\D/g,'');
+    let base = '';
+    if(link && /^https?:\/\//i.test(link)) base = link;
+    else if(num) base = `https://wa.me/${num}`;
+    else if(link) base = `https://wa.me/${link.replace(/\D/g,'')}`;
+
+    if(!base){
+        toast('لم يتم إضافة رقم واتساب','أضفه من الإعدادات أولاً','warn');
+        return;
+    }
+
+    const msg = `السلام عليكم، بخصوص طلب الاشتراك VIP على منصة ${window.__siteSettings?.siteName || 'FARESFLIX'}
+الاسم: ${r.name || '—'}
+البريد: ${r.email || '—'}`;
+    const url = base.includes('?') ? `${base}&text=${encodeURIComponent(msg)}` : `${base}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank', 'noopener');
+}
+window.openVrWhatsApp = openVrWhatsApp;
+
 /* ============ SETTINGS ============ */
 function loadSettings(){
     db.ref('settings').on('value', snap=>{
-        if(!snap.exists()) return;
+        if(!snap.exists()){ window.__siteSettings = {}; return; }
         const s = snap.val();
+        window.__siteSettings = s;
         if(s.siteName){ $('#settingSiteName').value = s.siteName; $('#sideBrandName').textContent = s.siteName; }
         if(s.tickerText) $('#settingTickerText').value = s.tickerText;
         if(s.accentColor) $('#settingAccentColor').value = s.accentColor;
         if(s.vipColor) $('#settingVipColor').value = s.vipColor;
         if(s.popupBanner) $('#settingPopupBanner').value = s.popupBanner;
         if(s.whatsappLink) $('#settingWhatsappLink').value = s.whatsappLink;
+        if(s.whatsappNumber) $('#settingWhatsappNumber').value = s.whatsappNumber;
+        if(s.broadcastMessage) $('#settingBroadcastMsg').value = s.broadcastMessage;
     });
 }
 $('#btnSaveSettings').addEventListener('click',async()=>{
@@ -1903,12 +2472,40 @@ $('#btnSaveSettings').addEventListener('click',async()=>{
             vipColor: $('#settingVipColor').value,
             popupBanner: $('#settingPopupBanner').value.trim(),
             whatsappLink: $('#settingWhatsappLink').value.trim(),
+            whatsappNumber: $('#settingWhatsappNumber').value.trim().replace(/\D/g,''),
             updatedAt: Date.now()
         });
         logActivity('تحديث الإعدادات');
         toast('تم الحفظ','','ok');
     }catch(err){toast('خطأ',err.message,'err');}
 });
+
+/* Broadcast message */
+$('#btnSaveBroadcast').addEventListener('click', async ()=>{
+    const msg = $('#settingBroadcastMsg').value.trim();
+    if(!msg){ toast('اكتب نص الإشعار','','warn'); return; }
+    try{
+        await db.ref('settings/broadcastMessage').set({
+            text: msg,
+            createdAt: Date.now(),
+            active: true
+        });
+        logActivity('بث إشعار جديد');
+        toast('تم البث','سيظهر للمستخدمين في واجهتهم','ok');
+    }catch(err){ toast('خطأ',err.message,'err'); }
+});
+$('#btnClearBroadcast').addEventListener('click', async ()=>{
+    const ok = await askConfirm({title:'إلغاء البث', msg:'إزالة الإشعار الحالي من واجهة المستخدمين؟', okText:'إلغاء البث'});
+    if(!ok) return;
+    try{
+        await db.ref('settings/broadcastMessage').remove();
+        $('#settingBroadcastMsg').value = '';
+        logActivity('إلغاء بث الإشعار');
+        toast('تم الإلغاء','','ok');
+    }catch(err){ toast('خطأ',err.message,'err'); }
+});
+
+/* Download ad */
 function loadDownloadAd(){
     db.ref('ads/downloadAd').on('value', snap=>{
         $('#settingDownloadAd').value = snap.exists() ? (snap.val()||'') : '';
@@ -1972,6 +2569,35 @@ $('#jsonFileInput').addEventListener('change', async e=>{
     e.target.value = '';
 });
 
+/* ============ ⭐ CSV EXPORT (NEW) ============ */
+$('#btnExportCSV').addEventListener('click', () => {
+    if(!allItems.length){ toast('لا يوجد محتوى','','warn'); return; }
+    try{
+        const headers = ['ID','العنوان','التصنيف','VIP','المشاهدات','عدد السيرفرات','رابط VIP','رابط مجاني','تاريخ الإنشاء'];
+        const rows = allItems.map(i => [
+            i.id,
+            (i.title||'').replace(/"/g, '""'),
+            (i.category||'').replace(/"/g, '""'),
+            i.isVip ? 'نعم' : 'لا',
+            i.views||0,
+            (i.servers||[]).length,
+            i.downloadUrl||'',
+            i.adDownloadUrl||'',
+            i.createdAt ? new Date(i.createdAt).toISOString().slice(0,10) : ''
+        ]);
+        const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `vip_media_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        logActivity('تصدير CSV');
+        toast('تم التصدير', `${allItems.length} عنصر`,'ok');
+    }catch(err){ toast('خطأ', err.message, 'err'); }
+});
+
 /* ============ PREVIEW LINK ============ */
 (function(){
     $('#previewLink').href = new URL('play.html', location.href).href;
@@ -1984,6 +2610,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     loadLiveChannels();
     loadMedia();
     loadUsers();
+    loadVipRequests();
     loadSettings();
     loadDownloadAd();
     renderTopViewedChart();
