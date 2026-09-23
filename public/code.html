@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
-<title>لوحة الإدارة v7.1 | VIP Media Engine</title>
+<title>لوحة الإدارة v8.0 | VIP Media Engine</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
 :root{
@@ -194,6 +195,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 .btn.sm{padding:7px 10px;font-size:.75rem;border-radius:9px}
 .btn.block{width:100%}
 .btn.wa{background:linear-gradient(135deg,#25D366,#128C7E);box-shadow:0 5px 16px rgba(37,211,102,.3)}
+.btn.info{background:linear-gradient(135deg,var(--info),#0891b2);box-shadow:0 5px 16px rgba(6,182,212,.3)}
 
 .servers-box{background:#08080e;border:1px dashed var(--border-strong);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:9px}
 .server-row{background:#0d0d15;border:1px solid var(--border);border-radius:11px;padding:10px;display:grid;gap:7px;grid-template-columns:1fr;position:relative}
@@ -327,6 +329,73 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
 .test-result .ok{color:var(--success)}
 .test-result .fail{color:var(--danger)}
 
+/* ========== M3U TABS & PREVIEW (NEW) ========== */
+.m3u-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.m3u-tab{
+    flex:1;min-width:90px;padding:8px 10px;border-radius:10px;
+    background:#181b24;color:var(--text-2);border:1px solid var(--border);
+    font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit;
+    transition:var(--fast);display:inline-flex;align-items:center;justify-content:center;gap:6px;
+}
+.m3u-tab:hover{border-color:var(--border-strong);color:#fff}
+.m3u-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.m3u-tab[data-m3u-tab="working"].active{background:var(--success);border-color:var(--success);color:#fff}
+.m3u-tab[data-m3u-tab="broken"].active{background:var(--danger);border-color:var(--danger);color:#fff}
+.m3u-tab[data-m3u-tab="untested"].active{background:var(--warning);border-color:var(--warning);color:#000}
+.m3u-tab .m3u-count{background:rgba(0,0,0,.25);padding:1px 7px;border-radius:20px;font-size:.7rem;font-weight:900}
+.m3u-tab.active .m3u-count{background:rgba(0,0,0,.3)}
+
+.m3u-channel-row{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 10px;background:rgba(255,255,255,.02);
+    border:1px solid transparent;border-radius:10px;
+    transition:var(--fast);
+}
+.m3u-channel-row:hover{background:rgba(255,255,255,.05);border-color:var(--border)}
+.m3u-channel-row.working{border-left:3px solid var(--success)}
+.m3u-channel-row.broken{border-left:3px solid var(--danger);opacity:.65}
+.m3u-channel-row.testing{border-left:3px solid var(--info);animation:pulse 1s infinite}
+.m3u-channel-row.untested{border-left:3px solid var(--text-3)}
+
+.m3u-ch-logo{
+    width:36px;height:26px;border-radius:6px;flex-shrink:0;
+    background:#0f0f15;object-fit:contain;padding:2px;
+    border:1px solid var(--border);
+}
+.m3u-ch-info{flex:1;min-width:0}
+.m3u-ch-name{
+    color:#fff;font-weight:800;font-size:.8rem;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    display:flex;align-items:center;gap:6px;
+}
+.m3u-ch-url{
+    color:var(--text-3);font-size:.65rem;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font-family:monospace;direction:ltr;text-align:left;margin-top:2px;
+}
+.m3u-ch-status{
+    font-size:.65rem;font-weight:800;padding:3px 8px;border-radius:20px;
+    display:inline-flex;align-items:center;gap:4px;flex-shrink:0;
+}
+.m3u-ch-status.working{background:rgba(16,185,129,.15);color:var(--success);border:1px solid rgba(16,185,129,.4)}
+.m3u-ch-status.broken{background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.4)}
+.m3u-ch-status.testing{background:rgba(6,182,212,.15);color:var(--info);border:1px solid rgba(6,182,212,.4)}
+.m3u-ch-status.untested{background:rgba(148,163,184,.15);color:var(--text-2);border:1px solid var(--border)}
+.m3u-ch-cat{
+    font-size:.62rem;background:rgba(255,255,255,.05);color:var(--text-2);
+    padding:2px 7px;border-radius:5px;flex-shrink:0;font-weight:700;
+}
+.m3u-ch-actions{display:flex;gap:4px;flex-shrink:0}
+.m3u-ch-btn{
+    width:30px;height:30px;border-radius:8px;border:1px solid var(--border);
+    background:rgba(255,255,255,.03);color:var(--text-2);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:.75rem;
+    transition:var(--fast);font-family:inherit;
+}
+.m3u-ch-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,11,55,.05)}
+.m3u-ch-btn.test:hover{border-color:var(--info);color:var(--info);background:rgba(6,182,212,.05)}
+.m3u-ch-btn.test.testing{animation:spin .8s linear infinite;color:var(--info)}
+
 @media (max-width:639px){
     .dl-row .dl-cell{padding:3px 0}
     .dl-cell{display:flex;justify-content:space-between;align-items:center}
@@ -336,6 +405,9 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     .vr-head{flex-direction:column;align-items:flex-start}
     .vr-actions{width:100%}
     .vr-actions .btn{flex:1}
+    .m3u-ch-cat{display:none}
+    .m3u-ch-url{font-size:.6rem}
+    .m3u-tab{font-size:.72rem;padding:7px 8px;min-width:70px}
 }
 </style>
 </head>
@@ -366,7 +438,7 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
         <div class="side-brand-icon"><i class="fa-solid fa-sliders"></i></div>
         <div class="side-brand-text">
             <span id="sideBrandName">VIP Media</span>
-            <small>Admin v7.1</small>
+            <small>Admin v8.0</small>
         </div>
     </div>
     <button class="nav-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i> لوحة القيادة</button>
@@ -871,38 +943,101 @@ input[type="color"]{padding:4px;height:42px;cursor:pointer}
     </div>
 </div>
 
+<!-- M3U IMPORT — ENHANCED -->
 <div class="modal" id="mM3U">
-    <div class="modal-box" style="max-width:640px">
+    <div class="modal-box" style="max-width:820px">
         <div class="modal-grab"></div>
         <div class="modal-head live">
             <div class="mi"><i class="fa-solid fa-file-import"></i></div>
-            <div class="mh-text"><h3>استيراد قنوات M3U</h3><p>يدعم السطور المتعددة أو الملتصقة</p></div>
+            <div class="mh-text">
+                <h3>استيراد قنوات M3U</h3>
+                <p>الصق الملف واضغط "اختبار الكل" لفرز الشغالة من المعطلة</p>
+            </div>
             <button class="modal-close" data-close="mM3U"><i class="fa-solid fa-xmark"></i></button>
         </div>
+
         <div class="fg">
             <label><i class="fa-solid fa-file-arrow-up"></i> تحميل ملف M3U</label>
             <input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain">
         </div>
         <div class="fg" style="margin-top:10px">
             <label><i class="fa-solid fa-paste"></i> أو الصق محتوى M3U هنا</label>
-            <textarea id="m3uText" placeholder="#EXTM3U&#10;#EXTINF:-1 tvg-logo=&quot;...&quot; group-title=&quot;رياضة&quot;,beIN 1&#10;https://...m3u8" style="min-height:200px;font-family:monospace;font-size:.75rem"></textarea>
+            <textarea id="m3uText" placeholder="#EXTM3U&#10;#EXTINF:-1 tvg-logo=&quot;...&quot; group-title=&quot;رياضة&quot;,beIN 1&#10;https://...m3u8" style="min-height:140px;font-family:monospace;font-size:.72rem"></textarea>
         </div>
+
         <div class="form-grid" style="margin-top:10px">
             <div class="fg">
-                <label><i class="fa-solid fa-gem"></i> نوع الوصول للقنوات المستوردة</label>
+                <label><i class="fa-solid fa-gem"></i> نوع الوصول للقنوات</label>
                 <select id="m3uVip"><option value="false">مجاني</option><option value="true">VIP</option></select>
             </div>
             <div class="fg">
-                <label><i class="fa-solid fa-folder-plus"></i> إنشاء تصنيفات جديدة تلقائياً</label>
+                <label><i class="fa-solid fa-folder-plus"></i> إنشاء تصنيفات جديدة</label>
                 <select id="m3uAutoCat"><option value="true">نعم</option><option value="false">لا</option></select>
             </div>
         </div>
-        <div id="m3uPreview" style="margin-top:12px;max-height:220px;overflow-y:auto;background:#08080e;border:1px solid var(--border);border-radius:12px;padding:10px;font-size:.78rem;display:none"></div>
-        <div class="modal-foot">
-            <button type="button" class="btn ghost" id="m3uParseBtn"><i class="fa-solid fa-eye"></i> معاينة</button>
-            <button type="button" class="btn live" id="m3uImportBtn"><i class="fa-solid fa-cloud-arrow-up"></i> استيراد</button>
-            <button type="button" class="btn ghost" id="m3uClearBtn" title="تفريغ المحتوى"><i class="fa-solid fa-eraser"></i> تفريغ</button>
-            <button type="button" class="btn ghost" data-close="mM3U">إلغاء</button>
+
+        <div id="m3uProgressWrap" style="display:none;margin-top:12px;background:#0a0a10;border:1px solid var(--border);border-radius:12px;padding:12px">
+            <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:800;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+                <span id="m3uProgressLabel" style="color:var(--info)"><i class="fa-solid fa-flask"></i> جارٍ اختبار القنوات...</span>
+                <span id="m3uProgressCount" style="color:var(--text-2);font-family:monospace">0 / 0</span>
+            </div>
+            <div style="height:8px;background:#050508;border-radius:8px;overflow:hidden">
+                <div id="m3uProgressBar" style="height:100%;background:linear-gradient(90deg,var(--info),var(--success));width:0%;transition:width .25s ease;border-radius:8px"></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:8px;font-size:.72rem;flex-wrap:wrap">
+                <span style="color:var(--success)"><i class="fa-solid fa-circle-check"></i> يعمل: <strong id="m3uStatWork">0</strong></span>
+                <span style="color:var(--danger)"><i class="fa-solid fa-circle-xmark"></i> لا يعمل: <strong id="m3uStatFail">0</strong></span>
+                <span style="color:var(--text-3)"><i class="fa-solid fa-clock"></i> المتبقي: <strong id="m3uStatRemain">0</strong></span>
+            </div>
+        </div>
+
+        <div id="m3uTabs" class="m3u-tabs" style="display:none">
+            <button class="m3u-tab active" data-m3u-tab="all">
+                <i class="fa-solid fa-layer-group"></i> الكل <span class="m3u-count" id="m3uCntAll">0</span>
+            </button>
+            <button class="m3u-tab" data-m3u-tab="working" style="color:var(--success)">
+                <i class="fa-solid fa-circle-check"></i> يعمل <span class="m3u-count" id="m3uCntWork">0</span>
+            </button>
+            <button class="m3u-tab" data-m3u-tab="broken" style="color:var(--danger)">
+                <i class="fa-solid fa-circle-xmark"></i> لا يعمل <span class="m3u-count" id="m3uCntFail">0</span>
+            </button>
+            <button class="m3u-tab" data-m3u-tab="untested" style="color:var(--warning)">
+                <i class="fa-solid fa-clock"></i> لم يُختبَر <span class="m3u-count" id="m3uCntUntested">0</span>
+            </button>
+        </div>
+
+        <div id="m3uPreview" style="margin-top:10px;max-height:340px;overflow-y:auto;background:#08080e;border:1px solid var(--border);border-radius:12px;padding:8px;font-size:.78rem;display:none"></div>
+
+        <div class="modal-foot" style="flex-wrap:wrap">
+            <button type="button" class="btn ghost" id="m3uParseBtn">
+                <i class="fa-solid fa-eye"></i> معاينة
+            </button>
+            <button type="button" class="btn info" id="m3uTestBtn">
+                <i class="fa-solid fa-flask"></i> اختبار الكل
+            </button>
+            <button type="button" class="btn green" id="m3uImportWorkingBtn">
+                <i class="fa-solid fa-circle-check"></i> استيراد العامل فقط
+            </button>
+            <button type="button" class="btn live" id="m3uImportBtn">
+                <i class="fa-solid fa-cloud-arrow-up"></i> استيراد الكل
+            </button>
+            <button type="button" class="btn ghost" id="m3uClearBtn" title="تفريغ">
+                <i class="fa-solid fa-eraser"></i>
+            </button>
+            <button type="button" class="btn ghost" data-close="mM3U">إغلاق</button>
+        </div>
+
+        <div id="m3uPlayer" style="display:none;margin-top:12px;background:#000;border-radius:12px;overflow:hidden">
+            <div style="position:relative;width:100%;padding-top:56.25%">
+                <video id="m3uPlayerVideo" controls playsinline autoplay muted
+                       style="position:absolute;inset:0;width:100%;height:100%;background:#000"></video>
+            </div>
+            <div style="padding:8px 12px;background:#0b0b12;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <span id="m3uPlayerLabel" style="color:#fff;font-size:.78rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                <button type="button" class="btn red sm" onclick="closeM3uPlayer()">
+                    <i class="fa-solid fa-stop"></i> إيقاف
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -1168,7 +1303,6 @@ $$('[data-goto]').forEach(b=>b.addEventListener('click',()=>{go(b.dataset.goto);
 window.addEventListener('hashchange',()=>go(location.hash.replace('#','')));
 go(location.hash.replace('#','')||'dashboard');
 
-/* ============ FAB — FIXED ============ */
 $('#fabMain').addEventListener('click',()=>$('#fabWrap').classList.toggle('open'));
 $('#fabTop').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
 $('#fabBackup').addEventListener('click',()=>exportBackup());
@@ -1388,7 +1522,7 @@ $('#btnClearNotifs').addEventListener('click', ()=>{
 <script>
 /* =========================================================
    SCRIPT PART 2 — Data / Categories / Live / Media / Users
-                   VIP Requests / Settings / M3U (ENHANCED)
+                   VIP Requests / Settings / M3U + TEST ENGINE
    ========================================================= */
 window.__allUsers = [];
 window.__allVipRequests = [];
@@ -1607,31 +1741,60 @@ async function delLiveChannel(id,name){
 window.delLiveChannel = delLiveChannel;
 
 /* =========================================================
-   M3U IMPORT — ENHANCED (supports glued channels)
+   M3U IMPORT + AUTO-TEST + FILTER ENGINE
    ========================================================= */
-let parsedM3U = [];
+let parsedM3U = [];       // [{name,logo,category,url,tvgId,country,channelNo,status,reason,tested}]
+let m3uCurrentTab = 'all';
+let m3uTesting = false;
+let m3uStopFlag = false;
+let m3uPlayerHls = null;
 
+/* ---- File input ---- */
 $('#m3uFile').addEventListener('change', e=>{
     const f = e.target.files[0];
     if(!f) return;
     const r = new FileReader();
-    r.onload = ev => { $('#m3uText').value = ev.target.result; parseM3U(); };
+    r.onload = ev => {
+        $('#m3uText').value = ev.target.result;
+        parseM3U();
+        toast('تم التحميل', `${parsedM3U.length} قناة — اضغط "اختبار الكل"`,'ok');
+    };
     r.readAsText(f);
 });
-$('#m3uParseBtn').addEventListener('click', parseM3U);
+
+$('#m3uParseBtn').addEventListener('click', () => {
+    parseM3U();
+    if(parsedM3U.length) toast('تم التحليل', `${parsedM3U.length} قناة`,'ok');
+});
+
 $('#m3uText').addEventListener('input', debounce(() => {
     if(($('#m3uText').value || '').length > 30) parseM3U();
 }, 600));
 
+/* ---- Tab switching (event delegation) ---- */
+document.addEventListener('click', e => {
+    const tab = e.target.closest('.m3u-tab');
+    if(!tab) return;
+    m3uCurrentTab = tab.dataset.m3uTab;
+    $$('.m3u-tab').forEach(t => t.classList.toggle('active', t.dataset.m3uTab === m3uCurrentTab));
+    renderM3UPreview();
+});
+
+/* ---- Parse M3U (supports glued channels) ---- */
 function parseM3U(){
     let text = $('#m3uText').value || '';
     text = text.replace(/\r/g, '\n').trim();
-    if(!text){ parsedM3U = []; $('#m3uPreview').style.display='none'; return; }
+    if(!text){
+        parsedM3U = [];
+        $('#m3uPreview').style.display = 'none';
+        $('#m3uTabs').style.display = 'none';
+        $('#m3uProgressWrap').style.display = 'none';
+        return;
+    }
 
-    // SMART SPLIT: handles glued channels on one line
     let entries = [];
     if(text.includes('#EXTINF')){
-        let normalized = text.replace(/#EXTINF/g, '\n#EXTINF').trim();
+        const normalized = text.replace(/#EXTINF/g, '\n#EXTINF').trim();
         entries = normalized.split(/\n+/).map(s => s.trim()).filter(Boolean);
     } else {
         entries = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
@@ -1646,7 +1809,6 @@ function parseM3U(){
         if(line.startsWith('#EXTM3U')) continue;
 
         if(line.startsWith('#EXTINF')){
-            // save pending
             if(current && current.url) out.push(current);
 
             const info = line.substring(line.indexOf(':') + 1);
@@ -1654,7 +1816,6 @@ function parseM3U(){
             const attrsPart = commaIdx >= 0 ? info.substring(0, commaIdx) : info;
             const tailAfterComma = commaIdx >= 0 ? info.substring(commaIdx + 1).trim() : '';
 
-            // extract URL from tail if present
             let name = tailAfterComma;
             let embeddedUrl = '';
             const urlMatch = name.match(/(https?:\/\/[^\s]+)/);
@@ -1675,119 +1836,408 @@ function parseM3U(){
                 tvgId: getAttr('tvg-id'),
                 country: getAttr('tvg-country'),
                 channelNo: getAttr('tvg-chno'),
-                url: embeddedUrl || ''
+                url: embeddedUrl || '',
+                status: 'untested',
+                reason: '',
+                tested: false
             };
             continue;
         }
 
         if(line.startsWith('#')) continue;
 
-        // URL line
         if(current){
             if(!current.url) current.url = line;
             out.push(current);
             current = null;
         } else {
-            out.push({ name: 'قناة', url: line, logo: '', category: 'عام' });
+            out.push({
+                name: 'قناة',
+                url: line,
+                logo: '',
+                category: 'عام',
+                status: 'untested',
+                reason: '',
+                tested: false
+            });
         }
     }
     if(current && current.url) out.push(current);
 
-    parsedM3U = out.filter(c => c.url && c.url.startsWith('http'));
+    // Preserve test results across re-parses
+    const oldMap = new Map(parsedM3U.map(c => [c.url, c]));
+    parsedM3U = out
+        .filter(c => c.url && c.url.startsWith('http'))
+        .map(c => {
+            const old = oldMap.get(c.url);
+            if(old && old.tested){
+                return { ...c, status: old.status, reason: old.reason, tested: true };
+            }
+            return c;
+        });
 
-    const preview = $('#m3uPreview');
-    preview.style.display = 'block';
-    if(!parsedM3U.length){
-        preview.innerHTML = `
-            <div style="text-align:center;color:var(--danger);padding:14px;font-weight:700">
-                <i class="fa-solid fa-circle-exclamation"></i> لم يتم العثور على قنوات صالحة
-            </div>
-            <div style="text-align:center;color:var(--text-3);font-size:.72rem;padding:0 10px">
-                تأكد من أن النص يحتوي على <code>#EXTINF</code> وروابط <code>http</code>
-            </div>`;
-        return;
-    }
-
-    const catsMap = {};
-    parsedM3U.forEach(c => {
-        const cat = c.category || 'عام';
-        catsMap[cat] = (catsMap[cat] || 0) + 1;
-    });
-    const totalCats = Object.keys(catsMap).length;
-
-    preview.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-            <div style="font-weight:900;color:var(--live);font-size:.9rem">
-                <i class="fa-solid fa-tower-broadcast"></i> ${parsedM3U.length} قناة • ${totalCats} تصنيف
-            </div>
-            <div style="font-size:.72rem;color:var(--text-3)">جاهزة للاستيراد</div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-bottom:10px">
-            ${Object.entries(catsMap).slice(0,6).map(([cat,count])=>`
-                <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:.72rem;display:flex;justify-content:space-between;gap:6px">
-                    <span style="color:var(--text-2);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cat)}</span>
-                    <span style="color:var(--live);font-weight:900">${count}</span>
-                </div>
-            `).join('')}
-            ${totalCats > 6 ? `<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:.72rem;text-align:center;color:var(--text-3)">+${totalCats - 6} آخرين</div>` : ''}
-        </div>
-        <div style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:5px">
-            ${parsedM3U.slice(0,80).map((c,i)=>`
-                <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(255,255,255,.02);border-radius:8px">
-                    ${c.logo
-                        ? `<img src="${esc(c.logo)}" style="width:28px;height:20px;object-fit:contain;border-radius:4px;background:#000;flex-shrink:0" onerror="this.style.display='none'">`
-                        : `<div style="width:28px;height:20px;border-radius:4px;background:rgba(255,255,255,.05);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--text-3)"><i class="fa-solid fa-tv"></i></div>`}
-                    <div style="flex:1;min-width:0">
-                        <div style="color:#fff;font-weight:700;font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</div>
-                        <div style="color:var(--text-3);font-size:.65rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.url)}</div>
-                    </div>
-                    <span style="color:var(--text-3);font-size:.65rem;background:rgba(255,255,255,.04);padding:2px 6px;border-radius:4px;flex-shrink:0">${esc(c.category)}</span>
-                </div>
-            `).join('')}
-            ${parsedM3U.length > 80 ? `<div style="text-align:center;color:var(--text-3);font-size:.72rem;padding:8px">+ ${parsedM3U.length - 80} قناة أخرى...</div>` : ''}
-        </div>
-    `;
+    $('#m3uTabs').style.display = parsedM3U.length ? 'flex' : 'none';
+    updateM3UCounter();
+    renderM3UPreview();
 }
 
-$('#m3uImportBtn').addEventListener('click', async ()=>{
+/* ---- Update counters ---- */
+function updateM3UCounter(){
+    const all = parsedM3U.length;
+    const work = parsedM3U.filter(c => c.status === 'working').length;
+    const fail = parsedM3U.filter(c => c.status === 'broken').length;
+    const unt  = parsedM3U.filter(c => c.status === 'untested' || c.status === 'testing').length;
+
+    $('#m3uCntAll').textContent = all;
+    $('#m3uCntWork').textContent = work;
+    $('#m3uCntFail').textContent = fail;
+    $('#m3uCntUntested').textContent = unt;
+
+    $('#m3uStatWork').textContent = work;
+    $('#m3uStatFail').textContent = fail;
+    $('#m3uStatRemain').textContent = unt;
+}
+
+/* ---- Render list (filtered by tab) ---- */
+function renderM3UPreview(){
+    const preview = $('#m3uPreview');
+    preview.style.display = 'block';
+
     if(!parsedM3U.length){
-        toast('لا توجد قنوات','اضغط على "معاينة" أولاً','err');
+        preview.innerHTML = `<div style="text-align:center;color:var(--danger);padding:20px;font-weight:800">
+            <i class="fa-solid fa-circle-exclamation"></i> لم يتم العثور على قنوات صالحة
+        </div>`;
         return;
     }
+
+    let list = parsedM3U;
+    if(m3uCurrentTab === 'working')   list = parsedM3U.filter(c => c.status === 'working');
+    if(m3uCurrentTab === 'broken')    list = parsedM3U.filter(c => c.status === 'broken');
+    if(m3uCurrentTab === 'untested')  list = parsedM3U.filter(c => c.status === 'untested' || c.status === 'testing');
+
+    if(!list.length){
+        preview.innerHTML = `<div style="text-align:center;color:var(--text-3);padding:20px">
+            <i class="fa-solid fa-inbox" style="font-size:2rem;opacity:.4;display:block;margin-bottom:8px"></i>
+            <p style="font-weight:700">لا توجد قنوات في هذا التصنيف</p>
+        </div>`;
+        return;
+    }
+
+    preview.innerHTML = list.map((c) => {
+        const statusInfo = getStatusInfo(c.status);
+        const globalIdx = parsedM3U.indexOf(c);
+        const isTesting = c.status === 'testing';
+
+        return `
+        <div class="m3u-channel-row ${c.status}" data-idx="${globalIdx}">
+            ${c.logo
+                ? `<img class="m3u-ch-logo" src="${esc(c.logo)}" onerror="this.style.display='none'">`
+                : `<div class="m3u-ch-logo" style="display:flex;align-items:center;justify-content:center;color:var(--text-3)"><i class="fa-solid fa-tv"></i></div>`}
+
+            <div class="m3u-ch-info">
+                <div class="m3u-ch-name">
+                    <span style="overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</span>
+                    <span class="m3u-ch-status ${c.status}" title="${esc(c.reason||'')}">
+                        <i class="fa-solid ${statusInfo.icon}${isTesting?' fa-spin':''}"></i>
+                        ${statusInfo.label}
+                    </span>
+                </div>
+                <div class="m3u-ch-url">${esc(c.url)}</div>
+            </div>
+
+            <span class="m3u-ch-cat">${esc(c.category)}</span>
+
+            <div class="m3u-ch-actions">
+                <button class="m3u-ch-btn test ${isTesting?'testing':''}"
+                        data-m3u-action="test-one"
+                        data-idx="${globalIdx}"
+                        title="اختبار">
+                    <i class="fa-solid fa-${isTesting?'spinner':'flask'}${isTesting?' fa-spin':''}"></i>
+                </button>
+                <button class="m3u-ch-btn"
+                        data-m3u-action="play"
+                        data-idx="${globalIdx}"
+                        title="تشغيل معاينة">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    preview.querySelectorAll('[data-m3u-action]').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.idx);
+            const action = btn.dataset.m3uAction;
+            if(action === 'test-one') testOneChannel(idx);
+            if(action === 'play') playM3uPreview(idx);
+        });
+    });
+}
+
+function getStatusInfo(status){
+    switch(status){
+        case 'working':  return { icon:'fa-circle-check', label:'يعمل' };
+        case 'broken':   return { icon:'fa-circle-xmark', label:'لا يعمل' };
+        case 'testing':  return { icon:'fa-circle-notch', label:'جاري الاختبار' };
+        default:         return { icon:'fa-clock', label:'لم يُختبَر' };
+    }
+}
+
+/* ---- HLS-based test engine ---- */
+async function testChannel(url){
+    return new Promise(resolve => {
+        if(!url || !/^https?:\/\//i.test(url)){
+            return resolve({ ok: false, reason: 'invalid_url' });
+        }
+
+        if(/youtube\.com|youtu\.be|twitch\.tv|ok\.ru\/video\//i.test(url)){
+            return resolve({ ok: true, reason: 'embed_page' });
+        }
+
+        // Direct video files → HEAD check
+        if(/\.(mp4|mkv|webm|mov|ts|flv|m4v)(\?|$)/i.test(url)){
+            fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-store' })
+                .then(() => resolve({ ok: true, reason: 'reachable' }))
+                .catch(() => resolve({ ok: false, reason: 'network_error' }));
+            return;
+        }
+
+        // m3u8 → HLS.js
+        if(/\.m3u8(\?|$)/i.test(url) || /m3u8/i.test(url)){
+            if(!window.Hls || !Hls.isSupported()){
+                // Fallback: fetch check
+                fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-store' })
+                    .then(() => resolve({ ok: true, reason: 'no_hls_lib' }))
+                    .catch(() => resolve({ ok: false, reason: 'no_hls_lib' }));
+                return;
+            }
+
+            const video = document.createElement('video');
+            video.muted = true;
+            video.preload = 'none';
+
+            let hls;
+            let finished = false;
+            const finish = (ok, reason) => {
+                if(finished) return;
+                finished = true;
+                try { if(hls) hls.destroy(); } catch(e){}
+                resolve({ ok, reason });
+            };
+
+            try {
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: false,
+                    autoStartLoad: true,
+                    manifestLoadingTimeOut: 6000,
+                    manifestLoadingMaxRetry: 0,
+                    levelLoadingTimeOut: 6000,
+                    levelLoadingMaxRetry: 0,
+                    fragLoadingTimeOut: 6000,
+                    fragLoadingMaxRetry: 0
+                });
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => finish(true, 'manifest_ok'));
+                hls.on(Hls.Events.ERROR, (evt, data) => {
+                    if(data.fatal) finish(false, data.details || data.type || 'fatal_error');
+                });
+
+                hls.loadSource(url);
+                hls.attachMedia(video);
+            } catch(err){
+                finish(false, err.message || 'load_error');
+            }
+
+            setTimeout(() => finish(false, 'timeout'), 7000);
+            return;
+        }
+
+        // Fallback: try fetch
+        fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-store' })
+            .then(() => resolve({ ok: true, reason: 'reachable' }))
+            .catch(() => resolve({ ok: false, reason: 'network_error' }));
+    });
+}
+
+async function testOneChannel(idx){
+    if(idx < 0 || idx >= parsedM3U.length) return;
+    const c = parsedM3U[idx];
+    c.status = 'testing';
+    renderM3UPreview();
+    updateM3UCounter();
+
+    const result = await testChannel(c.url);
+    c.status = result.ok ? 'working' : 'broken';
+    c.reason = result.reason || '';
+    c.tested = true;
+
+    updateM3UCounter();
+    renderM3UPreview();
+}
+
+/* ---- Test all (concurrency 6) ---- */
+$('#m3uTestBtn').addEventListener('click', async () => {
+    if(!parsedM3U.length){ toast('لا توجد قنوات','الصق محتوى أولاً','warn'); return; }
+    if(m3uTesting){ toast('الاختبار جارٍ بالفعل','','warn'); return; }
+
+    m3uTesting = true;
+    m3uStopFlag = false;
+
+    const total = parsedM3U.length;
+    let done = 0, work = 0, fail = 0;
+
+    $('#m3uProgressWrap').style.display = 'block';
+    $('#m3uProgressBar').style.width = '0%';
+    $('#m3uProgressCount').textContent = `0 / ${total}`;
+    $('#m3uProgressLabel').innerHTML = `<i class="fa-solid fa-flask"></i> جارٍ اختبار القنوات...`;
+    updateM3UCounter();
+
+    const testBtn = $('#m3uTestBtn');
+    const oldHtml = testBtn.innerHTML;
+    testBtn.disabled = true;
+    testBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الاختبار...';
+
+    // Reset
+    parsedM3U.forEach(c => { c.status = 'untested'; c.reason = ''; c.tested = false; });
+    renderM3UPreview();
+
+    const CONCURRENCY = 6;
+    let cursor = 0;
+
+    const worker = async () => {
+        while(cursor < total && !m3uStopFlag){
+            const myIdx = cursor++;
+            const c = parsedM3U[myIdx];
+            if(!c) continue;
+
+            c.status = 'testing';
+            if(done % 3 === 0) renderM3UPreview();
+
+            const result = await testChannel(c.url);
+            c.status = result.ok ? 'working' : 'broken';
+            c.reason = result.reason || '';
+            c.tested = true;
+
+            done++;
+            if(result.ok) work++; else fail++;
+
+            $('#m3uProgressBar').style.width = ((done/total)*100).toFixed(1) + '%';
+            $('#m3uProgressCount').textContent = `${done} / ${total}`;
+            $('#m3uStatWork').textContent = work;
+            $('#m3uStatFail').textContent = fail;
+            $('#m3uStatRemain').textContent = total - done;
+        }
+    };
+
+    const workers = Array.from({ length: Math.min(CONCURRENCY, total) }, worker);
+    await Promise.all(workers);
+
+    m3uTesting = false;
+    testBtn.disabled = false;
+    testBtn.innerHTML = oldHtml;
+
+    updateM3UCounter();
+    renderM3UPreview();
+
+    $('#m3uProgressLabel').innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--success)"></i> اكتمل الاختبار`;
+    toast('تم الاختبار', `يعمل: ${work} • لا يعمل: ${fail}`,'ok');
+
+    // Auto-switch to "working" tab
+    m3uCurrentTab = 'working';
+    $$('.m3u-tab').forEach(t => t.classList.toggle('active', t.dataset.m3uTab === 'working'));
+    renderM3UPreview();
+});
+
+/* ---- Inline preview player ---- */
+function playM3uPreview(idx){
+    const c = parsedM3U[idx];
+    if(!c) return;
+
+    const wrap = $('#m3uPlayer');
+    const video = $('#m3uPlayerVideo');
+    const label = $('#m3uPlayerLabel');
+
+    if(m3uPlayerHls){ try{ m3uPlayerHls.destroy(); }catch(e){} m3uPlayerHls = null; }
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+
+    wrap.style.display = 'block';
+    label.textContent = c.name || 'قناة';
+    wrap.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+    if(/\.m3u8(\?|$)/i.test(c.url) || /m3u8/i.test(c.url)){
+        if(window.Hls && Hls.isSupported()){
+            m3uPlayerHls = new Hls({ enableWorker:true, lowLatencyMode:false });
+            m3uPlayerHls.loadSource(c.url);
+            m3uPlayerHls.attachMedia(video);
+            m3uPlayerHls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
+            m3uPlayerHls.on(Hls.Events.ERROR, (e, data) => {
+                if(data.fatal) toast('تعذّر تشغيل القناة','تحقق من الرابط','err');
+            });
+        } else if(video.canPlayType('application/vnd.apple.mpegurl')){
+            video.src = c.url;
+            video.play().catch(()=>{});
+        } else {
+            toast('متصفحك لا يدعم HLS','','err');
+        }
+    } else {
+        video.src = c.url;
+        video.play().catch(()=>{});
+    }
+}
+window.playM3uPreview = playM3uPreview;
+
+function closeM3uPlayer(){
+    const wrap = $('#m3uPlayer');
+    const video = $('#m3uPlayerVideo');
+    if(m3uPlayerHls){ try{ m3uPlayerHls.destroy(); }catch(e){} m3uPlayerHls = null; }
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    wrap.style.display = 'none';
+}
+window.closeM3uPlayer = closeM3uPlayer;
+
+/* ---- Import function ---- */
+async function importChannels(list, label){
+    if(!list.length){ toast('لا توجد قنوات للاستيراد','','warn'); return; }
+
     const isVip = $('#m3uVip').value === 'true';
     const autoCat = $('#m3uAutoCat').value === 'true';
-    const count = parsedM3U.length;
 
     const ok = await askConfirm({
-        title:'استيراد قنوات',
-        msg:`سيتم استيراد ${count} قناة${autoCat ? ' مع إنشاء التصنيفات الناقصة' : ''}. متابعة؟`,
-        okText:'استيراد الآن',
+        title:`استيراد ${label}`,
+        msg:`سيتم إضافة ${list.length} قناة إلى قاعدة البيانات${autoCat ? ' مع إنشاء التصنيفات' : ''}.`,
+        okText:'استيراد',
         type:'gold'
     });
     if(!ok) return;
 
-    const importBtn = $('#m3uImportBtn');
-    const oldHtml = importBtn.innerHTML;
-    importBtn.disabled = true;
-    importBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الاستيراد...';
+    const btn = label.includes('العامل') ? $('#m3uImportWorkingBtn') : $('#m3uImportBtn');
+    const oldHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
 
     try{
         if(autoCat){
             const catsNeeded = new Set();
-            parsedM3U.forEach(c => { if(c.category) catsNeeded.add(c.category); });
-            const existingCats = new Set(allLiveCats.map(c=>c.name));
-            const catPromises = [];
+            list.forEach(c => { if(c.category) catsNeeded.add(c.category); });
+            const existing = new Set(allLiveCats.map(c => c.name));
+            const promises = [];
             for(const cat of catsNeeded){
-                if(!existingCats.has(cat)){
-                    catPromises.push(db.ref('liveCategories').push({name: cat, icon: 'fa-tv', createdAt: Date.now()}));
+                if(!existing.has(cat)){
+                    promises.push(db.ref('liveCategories').push({ name: cat, icon:'fa-tv', createdAt: Date.now() }));
                 }
             }
-            if(catPromises.length) await Promise.all(catPromises);
+            if(promises.length) await Promise.all(promises);
         }
 
         const updates = {};
         const now = Date.now();
-        parsedM3U.forEach((c, i) => {
+        list.forEach((c, i) => {
             const key = db.ref('liveChannels').push().key;
             updates[`liveChannels/${key}`] = {
                 name: c.name,
@@ -1800,6 +2250,7 @@ $('#m3uImportBtn').addEventListener('click', async ()=>{
                 tvgId: c.tvgId || '',
                 country: c.country || '',
                 channelNo: c.channelNo || '',
+                testStatus: c.status || 'untested',
                 createdAt: now
             };
         });
@@ -1812,7 +2263,7 @@ $('#m3uImportBtn').addEventListener('click', async ()=>{
                 const chunk = {};
                 entries.slice(i, i + 300).forEach(([k, v]) => chunk[k] = v);
                 await db.ref().update(chunk);
-                importBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${Math.min(i + 300, entries.length)} / ${entries.length}`;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${Math.min(i+300, entries.length)} / ${entries.length}`;
             }
         }
 
@@ -1820,24 +2271,43 @@ $('#m3uImportBtn').addEventListener('click', async ()=>{
         $('#m3uText').value = '';
         parsedM3U = [];
         $('#m3uPreview').style.display = 'none';
-        logActivity(`استيراد ${count} قناة من M3U`);
-        toast('تم الاستيراد بنجاح', `${count} قناة أُضيفت`, 'ok');
+        $('#m3uTabs').style.display = 'none';
+        $('#m3uProgressWrap').style.display = 'none';
+        closeM3uPlayer();
+
+        logActivity(`استيراد ${list.length} قناة (${label})`);
+        toast('تم الاستيراد بنجاح', `${list.length} قناة`, 'ok');
     }catch(err){
         console.error(err);
         toast('خطأ في الاستيراد', err.message, 'err');
     }finally{
-        importBtn.disabled = false;
-        importBtn.innerHTML = oldHtml;
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
     }
+}
+
+$('#m3uImportBtn').addEventListener('click', () => importChannels(parsedM3U, 'كل القنوات'));
+
+$('#m3uImportWorkingBtn').addEventListener('click', () => {
+    const working = parsedM3U.filter(c => c.status === 'working');
+    if(!working.length){
+        toast('لا توجد قنوات عاملة','اضغط "اختبار الكل" أولاً','warn');
+        return;
+    }
+    importChannels(working, 'القنوات العاملة');
 });
 
-/* NEW: Clear M3U button */
 $('#m3uClearBtn').addEventListener('click', () => {
     $('#m3uText').value = '';
     $('#m3uFile').value = '';
     parsedM3U = [];
+    m3uCurrentTab = 'all';
     $('#m3uPreview').style.display = 'none';
     $('#m3uPreview').innerHTML = '';
+    $('#m3uTabs').style.display = 'none';
+    $('#m3uProgressWrap').style.display = 'none';
+    closeM3uPlayer();
+    $$('.m3u-tab').forEach(t => t.classList.toggle('active', t.dataset.m3uTab === 'all'));
     toast('تم التفريغ','','ok');
 });
 
