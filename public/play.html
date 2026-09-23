@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">جاري تحميل الفيديو...</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background-color: #0b0f19; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
+        .container { width: 100%; max-width: 960px; background: #151c2c; border-radius: 12px; overflow: hidden; border: 1px solid #232d42; }
+        .header { padding: 15px 20px; background: #1e293b; border-bottom: 1px solid #232d42; }
+        .video-wrapper { position: relative; width: 100%; padding-top: 56.25%; background-color: #000; }
+        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .error-msg { padding: 50px; text-align: center; color: #ef4444; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="playerBox">
+            <div class="header">
+                <h1 id="videoTitle">جاري التحميل...</h1>
+            </div>
+            <div class="video-wrapper">
+                <video id="player" controls autoplay></video>
+            </div>
+        </div>
+        <div id="errorBox" class="error-msg">
+            <h2>عذراً، الفيديو غير موجود أو تم حذفه!</h2>
+        </div>
+    </div>
+
+    <script>
+        const DB_URL = "https://voip17-default-rtdb.firebaseio.com/videos";
+
+        // استخراج vid من URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const vid = urlParams.get('vid');
+
+        async function initPlayer() {
+            if (!vid) {
+                showError();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${DB_URL}/${vid}.json`);
+                const videoData = await res.json();
+
+                if (!videoData) {
+                    showError();
+                    return;
+                }
+
+                document.getElementById('videoTitle').innerText = videoData.title;
+                document.getElementById('pageTitle').innerText = videoData.title;
+
+                const video = document.getElementById('player');
+                const streamUrl = videoData.streamUrl;
+
+                if (Hls.isSupported()) {
+                    const hls = new Hls({ debug: false });
+                    hls.loadSource(streamUrl);
+                    hls.attachMedia(video);
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = streamUrl;
+                }
+            } catch (err) {
+                showError();
+            }
+        }
+
+        function showError() {
+            document.getElementById('playerBox').style.display = 'none';
+            document.getElementById('errorBox').style.display = 'block';
+        }
+
+        initPlayer();
+    </script>
+
+</body>
+</html>
