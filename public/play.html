@@ -3,16 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">جاري تحميل الفيديو...</title>
+    <title id="pageTitle">جاري تحميل المشغل...</title>
+    
+    <!-- HLS.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         body { background-color: #0b0f19; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
-        .container { width: 100%; max-width: 960px; background: #151c2c; border-radius: 12px; overflow: hidden; border: 1px solid #232d42; }
+        .container { width: 100%; max-width: 960px; background: #151c2c; border-radius: 12px; overflow: hidden; border: 1px solid #232d42; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .header { padding: 15px 20px; background: #1e293b; border-bottom: 1px solid #232d42; }
+        .header h1 { font-size: 1.2rem; color: #f1f5f9; }
         .video-wrapper { position: relative; width: 100%; padding-top: 56.25%; background-color: #000; }
         video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        
+        .servers-bar { padding: 15px 20px; background: #0f172a; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border-top: 1px solid #232d42; }
+        .servers-bar span { font-size: 0.9rem; color: #94a3b8; font-weight: 600; }
+        .server-btn { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: 0.2s; }
+        .server-btn:hover, .server-btn.active { background: #0284c7; color: #fff; border-color: #38bdf8; }
+
         .error-msg { padding: 50px; text-align: center; color: #ef4444; display: none; }
     </style>
 </head>
@@ -21,64 +30,115 @@
     <div class="container">
         <div id="playerBox">
             <div class="header">
-                <h1 id="videoTitle">جاري التحميل...</h1>
+                <h1 id="videoTitle">جاري تحميل اسم الفيديو...</h1>
             </div>
+            
             <div class="video-wrapper">
                 <video id="player" controls autoplay></video>
             </div>
+
+            <!-- أزرار خيارات السيرفرات -->
+            <div class="servers-bar" id="serversBar">
+                <span>سيرفرات المشاهدة:</span>
+                <div id="serversButtons" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+            </div>
         </div>
+
         <div id="errorBox" class="error-msg">
-            <h2>عذراً، الفيديو غير موجود أو تم حذفه!</h2>
+            <h2>عذراً، الفيديو غير موجود أو تم حذفه من السيرفر!</h2>
         </div>
     </div>
 
-    <script>
-        const DB_URL = "https://voip17-default-rtdb.firebaseio.com/videos";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // استخراج vid من URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const vid = urlParams.get('vid');
+    const firebaseConfig = {
+        apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
+        authDomain: "voip17.firebaseapp.com",
+        databaseURL: "https://voip17-default-rtdb.firebaseio.com",
+        projectId: "voip17",
+        storageBucket: "voip17.firebasestorage.app",
+        messagingSenderId: "608379006778",
+        appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
+        measurementId: "G-GZNJZLM701"
+    };
 
-        async function initPlayer() {
-            if (!vid) {
-                showError();
-                return;
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const vid = urlParams.get('vid');
+    let hls = null;
+
+    async function initPlayer() {
+        if (!vid) { showError(); return; }
+
+        try {
+            const snapshot = await get(ref(db, 'videos/' + vid));
+            if (!snapshot.exists()) { showError(); return; }
+
+            const videoData = snapshot.val();
+            document.getElementById('videoTitle').innerText = videoData.title;
+            document.getElementById('pageTitle').innerText = videoData.title;
+
+            if (videoData.poster) {
+                document.getElementById('player').poster = videoData.poster;
             }
 
-            try {
-                const res = await fetch(`${DB_URL}/${vid}.json`);
-                const videoData = await res.json();
+            const servers = videoData.servers || [];
+            const buttonsContainer = document.getElementById('serversButtons');
 
-                if (!videoData) {
-                    showError();
-                    return;
-                }
+            if (servers.length > 0) {
+                servers.forEach((srv, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `server-btn ${index === 0 ? 'active' : ''}`;
+                    btn.innerText = srv.name;
+                    btn.onclick = () => {
+                        document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        playStream(srv.url);
+                    };
+                    buttonsContainer.appendChild(btn);
+                });
 
-                document.getElementById('videoTitle').innerText = videoData.title;
-                document.getElementById('pageTitle').innerText = videoData.title;
-
-                const video = document.getElementById('player');
-                const streamUrl = videoData.streamUrl;
-
-                if (Hls.isSupported()) {
-                    const hls = new Hls({ debug: false });
-                    hls.loadSource(streamUrl);
-                    hls.attachMedia(video);
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = streamUrl;
-                }
-            } catch (err) {
+                // تشغيل السيرفر الأول تلقائياً
+                playStream(servers[0].url);
+            } else {
                 showError();
             }
+
+        } catch (err) {
+            showError();
+        }
+    }
+
+    function playStream(url) {
+        const video = document.getElementById('player');
+
+        if (hls) {
+            hls.destroy();
         }
 
-        function showError() {
-            document.getElementById('playerBox').style.display = 'none';
-            document.getElementById('errorBox').style.display = 'block';
+        if (Hls.isSupported()) {
+            hls = new Hls({ debug: false });
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+        } 
+        else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.addEventListener('loadedmetadata', () => video.play());
         }
+    }
 
-        initPlayer();
-    </script>
+    function showError() {
+        document.getElementById('playerBox').style.display = 'none';
+        document.getElementById('errorBox').style.display = 'block';
+    }
+
+    initPlayer();
+</script>
 
 </body>
 </html>
