@@ -1,1683 +1,1911 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لوحة التحكم والإدارة الفائقة الشاملة v3.0 | VIP Media Engine</title>
-    
-    <!-- الخطوط والأيقونات الخارجية -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-
-    <!-- مكتبات Firebase 10.7.1 Compat -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-
-    <style>
-        /* ==========================================================================
-           1. متغيرات النظام والأنماط الأساسية (Global Root & Design Tokens)
-           ========================================================================== */
-        :root {
-            --bg-color: #08080a;
-            --card-bg: rgba(22, 22, 28, 0.85);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent-color: #ff0b37;
-            --accent-hover: #d90429;
-            --accent-glow: rgba(255, 11, 55, 0.4);
-            --vip-gold: #f59e0b;
-            --vip-gold-hover: #d97706;
-            --vip-glow: rgba(245, 158, 11, 0.4);
-            --text-color: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border-color: #27272a;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --info-color: #06b6d4;
-            --sidebar-width: 280px;
-            --radius-lg: 20px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
-            --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            --glass-bg: rgba(18, 18, 24, 0.75);
-            --glass-blur: blur(16px);
-            --font-main: 'Cairo', 'Tajawal', sans-serif;
-        }
-
-        /* تخصيص السكرول بار */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #09090b;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #27272a;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-color);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-main);
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(255, 11, 55, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.04) 0%, transparent 40%);
-            background-attachment: fixed;
-            padding-bottom: 100px;
-        }
-
-        /* ==========================================================================
-           2. شاشة الحماية والتحقق الأمني (Secure Pin Lock Screen)
-           ========================================================================== */
-        #loginOverlay {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(5, 5, 8, 0.95);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-card {
-            background: rgba(20, 20, 28, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 24px;
-            padding: 40px 30px;
-            width: 100%;
-            max-width: 440px;
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 40px rgba(255, 11, 55, 0.15);
-            animation: pulseGlow 4s infinite alternate;
-        }
-
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,11,55,0.1); }
-            100% { box-shadow: 0 25px 50px rgba(0,0,0,0.9), 0 0 35px rgba(245,158,11,0.2); }
-        }
-
-        .login-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--accent-color), var(--vip-gold));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px auto;
-            font-size: 2.2rem;
-            color: #fff;
-            box-shadow: 0 10px 25px var(--accent-glow);
-        }
-
-        .pin-input {
-            width: 100%;
-            font-size: 2.2rem;
-            letter-spacing: 16px;
-            text-align: center;
-            padding: 16px;
-            background: #0d0d12;
-            border: 2px solid var(--border-color);
-            border-radius: 16px;
-            color: var(--vip-gold);
-            margin: 25px 0;
-            outline: none;
-            transition: var(--transition-fast);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .pin-input:focus {
-            border-color: var(--vip-gold);
-            box-shadow: 0 0 20px var(--vip-glow), inset 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        /* ==========================================================================
-           3. الهيدر وشريط الملاحة العلوي (Navbar & Top Controls)
-           ========================================================================== */
-        .navbar {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            padding: 16px 30px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--card-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .navbar-brand {
-            font-size: 1.4rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, #fff 30%, var(--vip-gold));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand-badge {
-            background: var(--accent-color);
-            color: #fff;
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            -webkit-text-fill-color: initial;
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* ==========================================================================
-           4. الحاوية الرئيسية والبطاقات (Container & Cards)
-           ========================================================================== */
-        .container {
-            max-width: 1400px;
-            width: 100%;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        /* شبكة الإحصائيات الفائقة */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 35px;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-            transition: var(--transition-smooth);
-            backdrop-filter: blur(10px);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0; right: 0; width: 4px; height: 100%;
-            background: var(--accent-color);
-        }
-
-        .stat-card.gold::before { background: var(--vip-gold); }
-        .stat-card.blue::before { background: var(--info-color); }
-        .stat-card.green::before { background: var(--success-color); }
-
-        .stat-info h4 {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .stat-info .stat-number {
-            font-size: 2.1rem;
-            font-weight: 900;
-            letter-spacing: -1px;
-        }
-
-        .stat-icon {
-            font-size: 2.5rem;
-            opacity: 0.85;
-            transition: var(--transition-smooth);
-        }
-
-        .stat-card:hover .stat-icon {
-            transform: scale(1.15) rotate(-5deg);
-        }
-
-        /* البطاقات العامة */
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            padding: 28px;
-            border: 1px solid var(--card-border);
-            margin-bottom: 35px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-            transition: var(--transition-fast);
-        }
-
-        .card-header {
-            font-size: 1.25rem;
-            font-weight: 800;
-            margin-bottom: 25px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .card-header.vip-header { border-bottom-color: var(--vip-gold); }
-        .card-header.blue-header { border-bottom-color: var(--info-color); }
-
-        /* الشبكة والاستمارات */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group.full-width {
-            grid-column: 1 / -1;
-        }
-
-        label {
-            display: block;
-            font-size: 0.92rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #e2e8f0;
-        }
-
-        input[type="text"], input[type="url"], input[type="password"], input[type="email"], input[type="number"], input[type="date"], input[type="color"], select, textarea {
-            width: 100%;
-            padding: 13px 16px;
-            background: #0f0f15;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            color: #fff;
-            font-size: 0.98rem;
-            outline: none;
-            transition: var(--transition-fast);
-        }
-
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 12px var(--accent-glow);
-            background: #14141d;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        /* صندوق السيرفرات المتحرك */
-        .servers-box {
-            background: #0a0a0f;
-            padding: 20px;
-            border-radius: var(--radius-md);
-            border: 1px dashed var(--border-color);
-            margin-bottom: 15px;
-        }
-
-        .server-row {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 12px;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .server-row input {
-            margin-bottom: 0;
-        }
-
-        /* ==========================================================================
-           5. الأزرار وأنماط الأزرار العائمة (Buttons & Floating Action Hub)
-           ========================================================================== */
-        .btn {
-            background-color: var(--accent-color);
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 800;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: var(--transition-fast);
-            text-decoration: none;
-            box-shadow: 0 4px 15px var(--accent-glow);
-        }
-
-        .btn:hover {
-            background-color: var(--accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px var(--accent-glow);
-        }
-
-        .btn-vip {
-            background: linear-gradient(135deg, var(--vip-gold), #d97706);
-            color: #000;
-            box-shadow: 0 4px 15px var(--vip-glow);
-        }
-
-        .btn-vip:hover {
-            background: linear-gradient(135deg, #fbbf24, #b45309);
-            box-shadow: 0 8px 25px var(--vip-glow);
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background-color: #27272a;
-            color: #e4e4e7;
-            box-shadow: none;
-        }
-
-        .btn-secondary:hover {
-            background-color: #3f3f46;
-            color: #fff;
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-        }
-
-        .btn-danger:hover {
-            background-color: #dc2626;
-        }
-
-        .btn-success {
-            background-color: var(--success-color);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-success:hover {
-            background-color: #059669;
-        }
-
-        .btn-sm {
-            padding: 8px 14px;
-            font-size: 0.85rem;
-            border-radius: var(--radius-sm);
-        }
-
-        /* 🎈 مركز الأزرار العائمة المتحركة (Floating Hub) */
-        .floating-hub {
-            position: fixed;
-            bottom: 35px;
-            left: 35px;
-            z-index: 9990;
-            display: flex;
-            flex-direction: column-reverse;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .floating-main-btn {
-            width: 65px;
-            height: 65px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-color), var(--vip-gold));
-            color: #fff;
-            border: none;
-            font-size: 1.8rem;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(255, 11, 55, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition-smooth);
-            animation: pulseFloating 3s infinite;
-        }
-
-        @keyframes pulseFloating {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 11, 55, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(255, 11, 55, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 11, 55, 0); }
-        }
-
-        .floating-main-btn:hover {
-            transform: rotate(90deg) scale(1.1);
-        }
-
-        .floating-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(20px) scale(0.8);
-            transition: var(--transition-smooth);
-        }
-
-        .floating-hub.active .floating-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0) scale(1);
-        }
-
-        .floating-item {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-            transition: var(--transition-fast);
-            position: relative;
-            text-decoration: none;
-        }
-
-        .floating-item:hover {
-            transform: scale(1.15);
-            background: var(--accent-color);
-            color: #fff;
-        }
-
-        .floating-item::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            right: 60px;
-            background: #000;
-            color: #fff;
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: var(--transition-fast);
-            font-weight: 700;
-        }
-
-        .floating-item:hover::after {
-            opacity: 1;
-        }
-
-        /* ==========================================================================
-           6. الجداول والتصميم المتجاوب (Responsive Tables & Badges)
-           ========================================================================== */
-        .table-responsive {
-            overflow-x: auto;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--card-border);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        th, td {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--card-border);
-            font-size: 0.95rem;
-        }
-
-        th {
-            background-color: #0b0b10;
-            color: var(--text-secondary);
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-        }
-
-        tbody tr {
-            transition: var(--transition-fast);
-        }
-
-        tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.02);
-        }
-
-        td img {
-            width: 55px;
-            height: 35px;
-            object-fit: cover;
-            border-radius: 6px;
-            vertical-align: middle;
-            border: 1px solid var(--card-border);
-        }
-
-        .badge {
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            color: #bbb;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 700;
-            background: rgba(255,255,255,0.05);
-        }
-
-        .badge-vip {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--vip-gold);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-        }
-
-        .badge-blocked {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--danger-color);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-        }
-
-        .badge-active {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success-color);
-            border: 1px solid rgba(16, 185, 129, 0.4);
-        }
-
-        .badge-expired {
-            background: rgba(148, 163, 184, 0.15);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-        }
-
-        .actions-cell {
-            display: flex;
-            gap: 8px;
-            flex-wrap: nowrap;
-        }
-
-        /* ==========================================================================
-           7. النوافذ المنبثقة (Modals System)
-           ========================================================================== */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.88);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            backdrop-filter: blur(8px);
-            animation: fadeIn 0.3s ease;
-        }
-
-        .modal.active { display: flex; }
-
-        .modal-content {
-            background: #14141d;
-            width: 100%;
-            max-width: 750px;
-            max-height: 90vh;
-            overflow-y: auto;
-            border-radius: var(--radius-lg);
-            padding: 30px;
-            border: 1px solid var(--card-border);
-            position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255,255,255,0.05);
-            border: none;
-            color: #aaa;
-            width: 36px; height: 36px;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition-fast);
-        }
-
-        .close-modal:hover {
-            background: var(--accent-color);
-            color: #fff;
-        }
-
-        /* Responsive Media Queries */
-        @media (max-width: 768px) {
-            .container { padding: 0 12px; margin: 15px auto; }
-            .navbar { padding: 12px 15px; }
-            .card { padding: 18px; }
-            .server-row { flex-direction: column; }
-            .floating-hub { bottom: 20px; left: 20px; }
-            .stat-card { padding: 18px; }
-            .stat-info .stat-number { font-size: 1.7rem; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<title>لوحة الإدارة الفائقة v4.0 | VIP Media Engine</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<style>
+/* =========================================================
+   DESIGN TOKENS
+   ========================================================= */
+:root{
+    --bg:#07070b;
+    --bg-2:#0b0b12;
+    --surface:rgba(20,20,28,.75);
+    --surface-2:rgba(28,28,38,.85);
+    --border:rgba(255,255,255,.08);
+    --border-strong:rgba(255,255,255,.14);
+    --accent:#ff0b37;
+    --accent-2:#ff4d6d;
+    --accent-glow:rgba(255,11,55,.35);
+    --vip:#f59e0b;
+    --vip-2:#fbbf24;
+    --vip-glow:rgba(245,158,11,.35);
+    --success:#10b981;
+    --danger:#ef4444;
+    --warning:#f59e0b;
+    --info:#06b6d4;
+    --text:#f1f5f9;
+    --text-2:#94a3b8;
+    --text-3:#64748b;
+    --radius-xl:24px;
+    --radius-lg:18px;
+    --radius-md:14px;
+    --radius-sm:10px;
+    --fast:.18s cubic-bezier(.4,0,.2,1);
+    --smooth:.35s cubic-bezier(.4,0,.2,1);
+    --font:'Cairo','Tajawal',sans-serif;
+    --safe-b: env(safe-area-inset-bottom,0px);
+    --safe-t: env(safe-area-inset-top,0px);
+    --nav-h: 62px;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:var(--font);-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+    background:var(--bg);color:var(--text);min-height:100dvh;
+    background-image:
+        radial-gradient(1200px 800px at 10% -10%,rgba(255,11,55,.08),transparent 60%),
+        radial-gradient(900px 700px at 110% 20%,rgba(245,158,11,.06),transparent 60%),
+        radial-gradient(700px 500px at 50% 120%,rgba(6,182,212,.05),transparent 60%);
+    background-attachment:fixed;
+    overflow-x:hidden;
+    padding-bottom:calc(var(--nav-h) + var(--safe-b) + 20px);
+}
+@media (min-width:1024px){
+    body{padding-bottom:20px;padding-left:260px}
+}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#050508}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#27272a,#18181b);border-radius:20px;border:2px solid #050508}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--accent),var(--accent-2))}
+
+/* =========================================================
+   LOGIN OVERLAY
+   ========================================================= */
+#loginOverlay{
+    position:fixed;inset:0;z-index:99999;
+    background:rgba(3,3,7,.97);
+    backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.login-card{
+    background:linear-gradient(160deg,rgba(26,26,36,.95),rgba(16,16,24,.95));
+    border:1px solid var(--border-strong);
+    border-radius:28px;padding:38px 26px;width:100%;max-width:420px;text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,.9),0 0 60px rgba(255,11,55,.12);
+    position:relative;overflow:hidden;
+    animation:zoomIn .6s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes zoomIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
+.login-card::before{
+    content:'';position:absolute;top:-2px;left:-2px;right:-2px;height:3px;
+    background:linear-gradient(90deg,transparent,var(--accent),var(--vip),transparent);
+    animation:slideGlow 3s linear infinite;
+}
+@keyframes slideGlow{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.login-logo{
+    width:88px;height:88px;border-radius:24px;margin:0 auto 20px;
+    background:linear-gradient(135deg,var(--accent),var(--vip));
+    display:flex;align-items:center;justify-content:center;
+    font-size:2.3rem;color:#fff;
+    box-shadow:0 15px 40px var(--accent-glow),inset 0 -3px 10px rgba(0,0,0,.3);
+    position:relative;
+}
+.login-logo::after{
+    content:'';position:absolute;inset:-6px;border-radius:30px;
+    border:1px dashed rgba(255,255,255,.15);animation:spin 20s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pin-wrap{display:flex;gap:8px;justify-content:center;margin:26px 0 8px;direction:ltr}
+.pin-dot{
+    width:52px;height:60px;border-radius:14px;
+    background:#0a0a12;border:2px solid #1f1f2b;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.6rem;color:var(--vip);font-weight:900;
+    transition:var(--fast);
+}
+.pin-dot.filled{border-color:var(--vip);background:rgba(245,158,11,.1);box-shadow:0 0 15px var(--vip-glow)}
+.pin-dot.active{border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}
+#pinRealInput{position:absolute;opacity:0;pointer-events:none}
+
+/* =========================================================
+   APP SHELL — SIDEBAR (desktop) / BOTTOM NAV (mobile)
+   ========================================================= */
+.sidebar{
+    position:fixed;top:0;right:0;bottom:0;width:260px;
+    background:linear-gradient(180deg,#0b0b12,#08080d);
+    border-left:1px solid var(--border);
+    padding:24px 16px;z-index:100;
+    display:none;flex-direction:column;gap:6px;
+}
+@media (min-width:1024px){.sidebar{display:flex}}
+.side-brand{
+    display:flex;align-items:center;gap:12px;padding:8px 12px 22px;
+    border-bottom:1px solid var(--border);margin-bottom:14px;
+}
+.side-brand-icon{
+    width:44px;height:44px;border-radius:14px;
+    background:linear-gradient(135deg,var(--accent),var(--vip));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;
+    box-shadow:0 8px 24px var(--accent-glow);flex-shrink:0;
+}
+.side-brand-text{font-size:1.05rem;font-weight:900;line-height:1.1}
+.side-brand-text small{display:block;font-size:.68rem;color:var(--text-3);font-weight:600;letter-spacing:.5px;margin-top:2px}
+
+.nav-item{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;border-radius:var(--radius-md);
+    color:var(--text-2);font-weight:700;font-size:.92rem;
+    cursor:pointer;transition:var(--fast);text-decoration:none;
+    position:relative;border:none;background:transparent;width:100%;text-align:right;
+}
+.nav-item i{width:20px;text-align:center;font-size:1rem;transition:var(--fast)}
+.nav-item:hover{background:rgba(255,255,255,.04);color:#fff}
+.nav-item.active{
+    background:linear-gradient(90deg,rgba(255,11,55,.15),rgba(255,11,55,.02));
+    color:#fff;
+}
+.nav-item.active::before{
+    content:'';position:absolute;right:0;top:20%;bottom:20%;width:3px;border-radius:3px;
+    background:linear-gradient(180deg,var(--accent),var(--vip));
+    box-shadow:0 0 12px var(--accent-glow);
+}
+.nav-item.active i{color:var(--accent)}
+.nav-badge{margin-right:auto;background:var(--accent);color:#fff;font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:800}
+
+.side-footer{margin-top:auto;padding-top:14px;border-top:1px solid var(--border)}
+.side-footer .nav-item{color:var(--danger)}
+.side-footer .nav-item:hover{background:rgba(239,68,68,.1);color:var(--danger)}
+
+/* Bottom Nav mobile */
+.bottom-nav{
+    position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + var(--safe-b));
+    background:rgba(11,11,18,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-top:1px solid var(--border);
+    display:flex;align-items:flex-start;justify-content:space-around;
+    padding:6px 6px calc(var(--safe-b) + 4px);z-index:100;
+}
+@media (min-width:1024px){.bottom-nav{display:none}}
+.bottom-nav .bn-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:8px 4px;border-radius:14px;color:var(--text-3);
+    font-size:.68rem;font-weight:700;cursor:pointer;transition:var(--fast);border:none;background:transparent;
+}
+.bottom-nav .bn-item i{font-size:1.15rem;transition:var(--fast)}
+.bottom-nav .bn-item.active{color:var(--accent)}
+.bottom-nav .bn-item.active i{transform:translateY(-2px) scale(1.1);filter:drop-shadow(0 4px 8px var(--accent-glow))}
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
+.topbar{
+    position:sticky;top:0;z-index:90;
+    background:rgba(7,7,11,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.topbar-title{font-size:1.05rem;font-weight:900;display:flex;align-items:center;gap:10px}
+.topbar-title .dot{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 10px var(--success);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.topbar-actions{display:flex;gap:8px}
+.icon-btn{
+    width:40px;height:40px;border-radius:12px;border:1px solid var(--border);
+    background:var(--surface);color:var(--text);cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    transition:var(--fast);font-size:1rem;text-decoration:none;
+}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+
+/* =========================================================
+   MAIN CONTAINER
+   ========================================================= */
+.main{max-width:1400px;margin:0 auto;padding:20px 16px}
+.section{display:none;animation:fadeSlide .35s ease}
+.section.active{display:block}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* Stats */
+.stats{
+    display:grid;gap:14px;margin-bottom:24px;
+    grid-template-columns:repeat(2,1fr);
+}
+@media (min-width:640px){.stats{grid-template-columns:repeat(4,1fr);gap:18px}}
+.stat{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:18px;position:relative;overflow:hidden;
+    backdrop-filter:blur(14px);transition:var(--smooth);
+}
+.stat:hover{transform:translateY(-4px);border-color:var(--border-strong);box-shadow:0 20px 40px rgba(0,0,0,.5)}
+.stat::after{
+    content:'';position:absolute;top:0;right:0;width:60px;height:60px;
+    border-radius:50%;filter:blur(30px);opacity:.4;
+}
+.stat.c1::after{background:var(--accent)}
+.stat.c2::after{background:var(--vip)}
+.stat.c3::after{background:var(--info)}
+.stat.c4::after{background:var(--success)}
+.stat-ico{
+    width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-size:1.1rem;color:#fff;margin-bottom:14px;position:relative;z-index:1;
+}
+.stat.c1 .stat-ico{background:linear-gradient(135deg,var(--accent),#ff4d6d);box-shadow:0 8px 20px var(--accent-glow)}
+.stat.c2 .stat-ico{background:linear-gradient(135deg,var(--vip),#d97706);box-shadow:0 8px 20px var(--vip-glow)}
+.stat.c3 .stat-ico{background:linear-gradient(135deg,var(--info),#0891b2);box-shadow:0 8px 20px rgba(6,182,212,.35)}
+.stat.c4 .stat-ico{background:linear-gradient(135deg,var(--success),#059669);box-shadow:0 8px 20px rgba(16,185,129,.35)}
+.stat-label{font-size:.78rem;color:var(--text-3);font-weight:700;margin-bottom:4px}
+.stat-value{font-size:1.7rem;font-weight:900;letter-spacing:-1px;line-height:1}
+@media (min-width:640px){.stat-value{font-size:2rem}}
+
+/* Cards */
+.card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-xl);padding:20px;
+    margin-bottom:22px;backdrop-filter:blur(14px);
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    transition:var(--fast);
+}
+@media (min-width:640px){.card{padding:26px}}
+.card-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);
+    position:relative;
+}
+.card-head::after{
+    content:'';position:absolute;bottom:-1px;right:0;width:60px;height:2px;
+    background:linear-gradient(90deg,var(--accent),var(--vip));border-radius:2px;
+}
+.card-title{font-size:1.05rem;font-weight:800;display:flex;align-items:center;gap:10px}
+.card-title i{color:var(--accent)}
+.card.gold .card-head::after{background:linear-gradient(90deg,var(--vip),var(--vip-2))}
+.card.gold .card-title i{color:var(--vip)}
+.card.blue .card-head::after{background:linear-gradient(90deg,var(--info),#0891b2)}
+.card.blue .card-title i{color:var(--info)}
+
+.card-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%}
+@media (min-width:640px){.card-tools{width:auto}}
+.card-tools input[type="text"]{
+    flex:1;min-width:0;padding:8px 12px;font-size:.82rem;
+    background:#0a0a10;border:1px solid var(--border);border-radius:10px;color:#fff;outline:none;
+}
+.card-tools select{padding:8px 10px;font-size:.82rem;background:#0a0a10;border:1px solid var(--border);border-radius:10px;color:#fff;outline:none}
+.card-tools input:focus,.card-tools select:focus{border-color:var(--accent)}
+
+/* Forms */
+.form-grid{display:grid;gap:14px;grid-template-columns:1fr}
+@media (min-width:640px){.form-grid{grid-template-columns:repeat(2,1fr);gap:18px}}
+.form-grid .full{grid-column:1/-1}
+@media (min-width:640px){.form-grid .full{grid-column:1/-1}}
+.fg{margin-bottom:0}
+.fg label{
+    display:flex;align-items:center;gap:8px;
+    font-size:.82rem;font-weight:700;color:#cbd5e1;margin-bottom:8px;
+}
+.fg label i{color:var(--accent);font-size:.85rem;width:14px;text-align:center}
+input[type="text"],input[type="url"],input[type="password"],input[type="email"],
+input[type="number"],input[type="date"],input[type="color"],select,textarea{
+    width:100%;padding:12px 14px;
+    background:#0a0a10;border:1px solid var(--border);border-radius:12px;
+    color:#fff;font-size:.92rem;outline:none;transition:var(--fast);font-family:var(--font);
+}
+input:focus,select:focus,textarea:focus{
+    border-color:var(--accent);background:#10101a;
+    box-shadow:0 0 0 4px rgba(255,11,55,.08);
+}
+textarea{resize:vertical;min-height:90px;line-height:1.5}
+input[type="color"]{padding:4px;height:44px;cursor:pointer}
+
+/* Buttons */
+.btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:11px 18px;border-radius:12px;border:none;cursor:pointer;
+    font-size:.88rem;font-weight:800;font-family:var(--font);
+    transition:var(--fast);text-decoration:none;white-space:nowrap;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+    box-shadow:0 6px 18px var(--accent-glow);
+}
+.btn:active{transform:scale(.97)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px var(--accent-glow)}
+.btn.gold{background:linear-gradient(135deg,var(--vip),#d97706);color:#000;box-shadow:0 6px 18px var(--vip-glow)}
+.btn.gold:hover{box-shadow:0 10px 24px var(--vip-glow)}
+.btn.green{background:linear-gradient(135deg,var(--success),#059669);box-shadow:0 6px 18px rgba(16,185,129,.3)}
+.btn.red{background:linear-gradient(135deg,var(--danger),#b91c1c);box-shadow:0 6px 18px rgba(239,68,68,.3)}
+.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text);box-shadow:none}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,11,55,.05)}
+.btn.sm{padding:8px 12px;font-size:.78rem;border-radius:10px}
+.btn.block{width:100%}
+
+/* Server rows */
+.servers-box{
+    background:#08080e;border:1px dashed var(--border-strong);
+    border-radius:14px;padding:14px;margin-bottom:12px;
+    display:flex;flex-direction:column;gap:10px;
+}
+.server-row{
+    background:#0d0d15;border:1px solid var(--border);border-radius:12px;padding:12px;
+    display:grid;gap:8px;grid-template-columns:1fr;position:relative;
+    animation:fadeSlide .25s ease;
+}
+@media (min-width:640px){
+    .server-row{grid-template-columns:1.2fr 1fr 2.5fr auto;align-items:center;gap:10px}
+}
+.server-row input,.server-row select{padding:9px 12px;font-size:.85rem}
+.server-row .rm{
+    width:38px;height:38px;border-radius:10px;border:none;
+    background:rgba(239,68,68,.15);color:var(--danger);cursor:pointer;font-size:.9rem;
+    display:flex;align-items:center;justify-content:center;transition:var(--fast);
+}
+.server-row .rm:hover{background:var(--danger);color:#fff}
+
+/* Data list (tables → cards on mobile) */
+.dl{display:flex;flex-direction:column;gap:10px}
+.dl-row{
+    background:#0b0b12;border:1px solid var(--border);border-radius:14px;
+    padding:12px;display:grid;gap:8px;grid-template-columns:1fr;position:relative;
+    transition:var(--fast);
+}
+.dl-row:hover{border-color:var(--border-strong);background:#0e0e16}
+@media (min-width:640px){
+    .dl-row{grid-template-columns:70px 1.8fr 1fr .8fr .8fr .6fr auto;align-items:center;gap:14px;padding:10px 14px}
+}
+.dl-cell{display:flex;align-items:center;gap:8px;font-size:.88rem;min-width:0}
+.dl-cell .k{display:block;font-size:.7rem;color:var(--text-3);font-weight:700;margin-bottom:2px}
+@media (min-width:640px){.dl-cell .k{display:none}}
+.dl-cell .v{font-weight:700;word-break:break-word;overflow:hidden;text-overflow:ellipsis}
+.dl-thumb{width:56px;height:36px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex-shrink:0}
+.dl-thumb-lg{width:100%;height:auto;max-height:120px;object-fit:cover;border-radius:10px}
+.dl-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start}
+@media (min-width:640px){.dl-actions{justify-content:flex-end}}
+.dl-actions .btn{padding:6px 10px;font-size:.75rem}
+
+/* Badges */
+.badge{
+    display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
+    border-radius:20px;font-size:.72rem;font-weight:800;
+    background:rgba(255,255,255,.06);color:var(--text-2);white-space:nowrap;
+}
+.badge.vip{background:rgba(245,158,11,.14);color:var(--vip);border:1px solid rgba(245,158,11,.3)}
+.badge.ok{background:rgba(16,185,129,.14);color:var(--success);border:1px solid rgba(16,185,129,.3)}
+.badge.block{background:rgba(239,68,68,.14);color:var(--danger);border:1px solid rgba(239,68,68,.3)}
+.badge.exp{background:rgba(148,163,184,.14);color:var(--text-2);border:1px solid var(--border)}
+.badge.info{background:rgba(6,182,212,.14);color:var(--info);border:1px solid rgba(6,182,212,.3)}
+
+/* =========================================================
+   MODAL SYSTEM — FANCY
+   ========================================================= */
+.modal{
+    position:fixed;inset:0;z-index:10000;
+    background:rgba(3,3,7,.82);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    display:none;align-items:flex-end;justify-content:center;
+    padding:0;overflow-y:auto;
+}
+.modal.active{display:flex;animation:modalFade .25s ease}
+@media (min-width:640px){
+    .modal{align-items:center;padding:20px}
+}
+@keyframes modalFade{from{opacity:0}to{opacity:1}}
+
+.modal-box{
+    background:linear-gradient(180deg,#14141c,#0f0f16);
+    border:1px solid var(--border-strong);
+    width:100%;max-width:680px;
+    border-radius:24px 24px 0 0;
+    padding:22px;
+    max-height:92vh;overflow-y:auto;
+    position:relative;
+    animation:sheetUp .35s cubic-bezier(.34,1.4,.64,1);
+    box-shadow:0 -20px 60px rgba(0,0,0,.7);
+}
+@media (min-width:640px){
+    .modal-box{border-radius:24px;max-height:88vh;padding:26px;animation:popIn .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 30px 80px rgba(0,0,0,.8),0 0 40px rgba(255,11,55,.08)}
+}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
+
+.modal-box::before{
+    content:'';position:absolute;top:0;right:16px;left:16px;height:3px;
+    background:linear-gradient(90deg,transparent,var(--accent),var(--vip),transparent);
+    border-radius:0 0 3px 3px;opacity:.9;
+}
+.modal-grab{width:40px;height:4px;border-radius:4px;background:rgba(255,255,255,.15);margin:0 auto 16px}
+@media (min-width:640px){.modal-grab{display:none}}
+
+.modal-head{
+    display:flex;align-items:flex-start;gap:12px;
+    padding-bottom:16px;margin-bottom:18px;border-bottom:1px solid var(--border);
+}
+.modal-head .mi{
+    width:44px;height:44px;border-radius:12px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.15rem;
+    box-shadow:0 8px 22px var(--accent-glow);
+}
+.modal-head.gold .mi{background:linear-gradient(135deg,var(--vip),#d97706);color:#000;box-shadow:0 8px 22px var(--vip-glow)}
+.modal-head.red .mi{background:linear-gradient(135deg,var(--danger),#b91c1c);box-shadow:0 8px 22px rgba(239,68,68,.4)}
+.modal-head.green .mi{background:linear-gradient(135deg,var(--success),#059669);box-shadow:0 8px 22px rgba(16,185,129,.35)}
+.modal-head .mh-text{flex:1;min-width:0}
+.modal-head h3{font-size:1.05rem;font-weight:900;margin-bottom:2px}
+.modal-head p{font-size:.78rem;color:var(--text-3);line-height:1.4}
+.modal-close{
+    width:36px;height:36px;border-radius:12px;border:1px solid var(--border);
+    background:rgba(255,255,255,.03);color:var(--text-2);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:var(--fast);flex-shrink:0;
+}
+.modal-close:hover{background:var(--danger);color:#fff;border-color:var(--danger);transform:rotate(90deg)}
+
+.modal-foot{
+    display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);
+    flex-wrap:wrap;
+}
+.modal-foot .btn{flex:1;min-width:120px}
+
+/* Big player preview modal */
+.preview-thumb{
+    width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;
+    border:1px solid var(--border);margin-bottom:14px;background:#000;
+}
+.preview-servers{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.preview-servers .srv-pill{
+    padding:6px 12px;border-radius:20px;font-size:.78rem;font-weight:700;
+    background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text-2);
+}
+.preview-servers .srv-pill:hover{background:var(--accent);color:#fff;border-color:var(--accent);cursor:pointer}
+
+/* Confirm modal */
+.confirm-box{max-width:440px;text-align:center}
+.confirm-box .modal-head{flex-direction:column;align-items:center;text-align:center}
+.confirm-box .modal-head .mi{width:64px;height:64px;font-size:1.7rem}
+.confirm-msg{font-size:.95rem;color:var(--text-2);line-height:1.6;margin:8px 0 4px}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+.toast-wrap{
+    position:fixed;top:calc(16px + var(--safe-t));left:50%;transform:translateX(-50%);
+    z-index:100000;display:flex;flex-direction:column;gap:8px;pointer-events:none;
+    width:calc(100% - 32px);max-width:420px;
+}
+.toast{
+    background:linear-gradient(135deg,#14141c,#0e0e16);
+    border:1px solid var(--border-strong);border-radius:14px;
+    padding:12px 14px;display:flex;align-items:flex-start;gap:10px;
+    box-shadow:0 15px 40px rgba(0,0,0,.7);
+    animation:toastIn .35s cubic-bezier(.34,1.56,.64,1);
+    pointer-events:auto;position:relative;overflow:hidden;
+}
+@keyframes toastIn{from{opacity:0;transform:translateY(-20px) scale(.95)}to{opacity:1;transform:none}}
+.toast::before{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.toast.ok::before{background:var(--success)}
+.toast.err::before{background:var(--danger)}
+.toast.warn::before{background:var(--warning)}
+.toast-i{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.toast.ok .toast-i{background:linear-gradient(135deg,var(--success),#059669)}
+.toast.err .toast-i{background:linear-gradient(135deg,var(--danger),#b91c1c)}
+.toast.warn .toast-i{background:linear-gradient(135deg,var(--warning),#d97706)}
+.toast-body{flex:1;min-width:0}
+.toast-title{font-size:.85rem;font-weight:800;margin-bottom:1px}
+.toast-msg{font-size:.78rem;color:var(--text-2);line-height:1.4}
+
+/* =========================================================
+   FLOATING HUB
+   ========================================================= */
+.fab-wrap{
+    position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);left:16px;z-index:99;
+    display:flex;flex-direction:column-reverse;align-items:center;gap:12px;
+}
+@media (min-width:1024px){.fab-wrap{bottom:24px;left:24px}}
+.fab-main{
+    width:58px;height:58px;border-radius:20px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--vip));
+    color:#fff;font-size:1.3rem;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 12px 30px var(--accent-glow);
+    transition:var(--smooth);position:relative;
+}
+.fab-main:hover{transform:rotate(90deg) scale(1.05)}
+.fab-main::after{
+    content:'';position:absolute;inset:-4px;border-radius:24px;
+    border:2px solid var(--accent);opacity:.4;animation:fabPulse 2s infinite;
+}
+@keyframes fabPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.3);opacity:0}}
+.fab-list{
+    display:flex;flex-direction:column;gap:10px;
+    opacity:0;visibility:hidden;transform:translateY(20px);transition:var(--smooth);
+}
+.fab-wrap.open .fab-list{opacity:1;visibility:visible;transform:none}
+.fab-i{
+    width:46px;height:46px;border-radius:14px;
+    background:var(--surface-2);border:1px solid var(--border-strong);
+    color:var(--text);cursor:pointer;font-size:1rem;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 20px rgba(0,0,0,.5);transition:var(--fast);
+    text-decoration:none;position:relative;
+}
+.fab-i:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.1)}
+.fab-i::after{
+    content:attr(data-tip);position:absolute;right:56px;top:50%;transform:translateY(-50%) translateX(10px);
+    background:#000;color:#fff;padding:5px 10px;border-radius:8px;font-size:.75rem;white-space:nowrap;
+    opacity:0;pointer-events:none;transition:var(--fast);font-weight:700;
+}
+.fab-i:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
+
+/* Empty state */
+.empty{
+    text-align:center;padding:40px 20px;color:var(--text-3);
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.empty i{font-size:2.5rem;opacity:.4}
+.empty p{font-size:.9rem;font-weight:600}
+
+/* Loading */
+.skel{
+    background:linear-gradient(90deg,#0d0d15 25%,#15151f 50%,#0d0d15 75%);
+    background-size:200% 100%;animation:skel 1.2s infinite;
+    border-radius:10px;height:20px;
+}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Scroll snap on small screens */
+@media (max-width:639px){
+    .dl-row .dl-cell{padding:4px 0;border-bottom:1px dashed rgba(255,255,255,.04)}
+    .dl-row .dl-cell:last-child{border-bottom:none}
+    .dl-cell{display:flex;justify-content:space-between;align-items:center}
+    .dl-cell .k{display:block;font-size:.72rem;color:var(--text-3);font-weight:700}
+    .dl-actions{margin-top:6px;padding-top:10px;border-top:1px solid var(--border)}
+}
+</style>
 </head>
 <body>
 
-    <!-- 🔐 شاشة قفل الأمان المتقدمة بالرمز 171002 -->
-    <div id="loginOverlay">
-        <div class="login-card animate__animated animate__zoomIn">
-            <div class="login-icon">
-                <i class="fa-solid fa-user-shield"></i>
-            </div>
-            <h2 style="font-weight: 800; margin-bottom: 8px;">لوحة الإدارة والمراقبة</h2>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">يرجى أدخال رمز الأمان الموحد للمتابعة</p>
-            <input type="password" id="pinInput" class="pin-input" maxlength="6" placeholder="******" autofocus autocomplete="off">
-            <button class="btn btn-vip" style="width: 100%; padding: 14px; font-size: 1rem;" onclick="verifyPin()">
-                <i class="fa-solid fa-lock-open"></i> تأكيد وهيكلة الدخول
-            </button>
-            <p id="loginError" style="color: var(--danger-color); margin-top: 15px; display: none; font-weight: bold;"></p>
+<!-- =========================================================
+     LOGIN (PIN)
+     ========================================================= -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <div class="login-logo"><i class="fa-solid fa-shield-halved"></i></div>
+        <h2 style="font-weight:900;margin-bottom:6px;font-size:1.3rem">لوحة الإدارة الفائقة</h2>
+        <p style="color:var(--text-3);font-size:.85rem;line-height:1.5">أدخل رمز الأمان الموحد للمتابعة إلى لوحة التحكم</p>
+
+        <div class="pin-wrap" id="pinWrap">
+            <div class="pin-dot" data-i="0"></div>
+            <div class="pin-dot" data-i="1"></div>
+            <div class="pin-dot" data-i="2"></div>
+            <div class="pin-dot" data-i="3"></div>
+            <div class="pin-dot" data-i="4"></div>
+            <div class="pin-dot" data-i="5"></div>
+        </div>
+        <input type="password" id="pinReal" maxlength="6" inputmode="numeric" style="position:absolute;opacity:0;pointer-events:none" autocomplete="off">
+        <p id="pinErr" style="color:var(--danger);font-size:.85rem;font-weight:700;min-height:20px;margin-top:10px"></p>
+        <button class="btn gold block" id="pinBtn" style="padding:14px;font-size:.95rem;margin-top:6px">
+            <i class="fa-solid fa-lock-open"></i> تأكيد الدخول
+        </button>
+        <p style="color:var(--text-3);font-size:.72rem;margin-top:16px">
+            <i class="fa-solid fa-circle-info"></i> الجلسة آمنة وتُقفل تلقائياً عند إغلاق المتصفح
+        </p>
+    </div>
+</div>
+
+<!-- =========================================================
+     SIDEBAR (Desktop)
+     ========================================================= -->
+<aside class="sidebar">
+    <div class="side-brand">
+        <div class="side-brand-icon"><i class="fa-solid fa-sliders"></i></div>
+        <div class="side-brand-text">
+            <span id="sideBrandName">VIP Media</span>
+            <small>Admin Panel v4.0</small>
         </div>
     </div>
 
-    <!-- 🌐 الهيدر الرئيسي للمنصة -->
-    <nav class="navbar">
-        <a href="#" class="navbar-brand">
-            <i class="fa-solid fa-sliders"></i> 
-            <span id="navSiteTitle">منصة VIP الإدارية</span>
-            <span class="brand-badge">PRO v3.0</span>
-        </a>
-        <div class="nav-actions">
-            <a href="index.html" target="_blank" class="btn btn-secondary btn-sm">
-                <i class="fa-solid fa-tv"></i> المعاينة المباشرة
-            </a>
-            <button class="btn btn-danger btn-sm" onclick="logout()">
-                <i class="fa-solid fa-power-off"></i> قفل
-            </button>
+    <button class="nav-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i> لوحة القيادة</button>
+    <button class="nav-item" data-sec="media"><i class="fa-solid fa-film"></i> إدارة المحتوى</button>
+    <button class="nav-item" data-sec="add"><i class="fa-solid fa-circle-plus"></i> إضافة محتوى</button>
+    <button class="nav-item" data-sec="categories"><i class="fa-solid fa-folder-tree"></i> التصنيفات</button>
+    <button class="nav-item" data-sec="users"><i class="fa-solid fa-users-gear"></i> المستخدمون</button>
+    <button class="nav-item" data-sec="settings"><i class="fa-solid fa-palette"></i> المظهر والإعدادات</button>
+
+    <div class="side-footer">
+        <a class="nav-item" id="previewLink" target="_blank"><i class="fa-solid fa-tv"></i> معاينة الموقع</a>
+        <button class="nav-item" id="btnLogout"><i class="fa-solid fa-power-off"></i> قفل وتسجيل خروج</button>
+    </div>
+</aside>
+
+<!-- =========================================================
+     BOTTOM NAV (Mobile)
+     ========================================================= -->
+<nav class="bottom-nav">
+    <button class="bn-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i><span>الرئيسية</span></button>
+    <button class="bn-item" data-sec="media"><i class="fa-solid fa-film"></i><span>المحتوى</span></button>
+    <button class="bn-item" data-sec="add"><i class="fa-solid fa-circle-plus"></i><span>إضافة</span></button>
+    <button class="bn-item" data-sec="users"><i class="fa-solid fa-users"></i><span>المستخدمون</span></button>
+    <button class="bn-item" data-sec="settings"><i class="fa-solid fa-gear"></i><span>الإعدادات</span></button>
+</nav>
+
+<!-- =========================================================
+     TOPBAR
+     ========================================================= -->
+<header class="topbar" style="padding-right:16px">
+    <div class="topbar-title">
+        <span class="dot"></span>
+        <span id="topTitle">لوحة القيادة</span>
+    </div>
+    <div class="topbar-actions">
+        <button class="icon-btn" id="btnRefresh" title="تحديث"><i class="fa-solid fa-rotate"></i></button>
+        <button class="icon-btn" id="btnBackup" title="نسخة احتياطية"><i class="fa-solid fa-download"></i></button>
+    </div>
+</header>
+
+<!-- =========================================================
+     MAIN
+     ========================================================= -->
+<main class="main">
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="section active" id="sec-dashboard">
+        <div class="stats">
+            <div class="stat c1">
+                <div class="stat-ico"><i class="fa-solid fa-film"></i></div>
+                <div class="stat-label">إجمالي المحتوى</div>
+                <div class="stat-value" id="statTotalVideos">0</div>
+            </div>
+            <div class="stat c2">
+                <div class="stat-ico"><i class="fa-solid fa-crown"></i></div>
+                <div class="stat-label">محتوى VIP</div>
+                <div class="stat-value" id="statVipVideos">0</div>
+            </div>
+            <div class="stat c3">
+                <div class="stat-ico"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-label">المستخدمون</div>
+                <div class="stat-value" id="statTotalUsers">0</div>
+            </div>
+            <div class="stat c4">
+                <div class="stat-ico"><i class="fa-solid fa-eye"></i></div>
+                <div class="stat-label">المشاهدات</div>
+                <div class="stat-value" id="statTotalViews">0</div>
+            </div>
         </div>
-    </nav>
 
-    <div class="container">
-        
-        <!-- 📊 كروت الإحصائيات الفائقة السريعة -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-info">
-                    <h4>إجمالي المحتوى</h4>
-                    <div class="stat-number" id="statTotalVideos">0</div>
-                </div>
-                <i class="fa-solid fa-film stat-icon" style="color: var(--accent-color);"></i>
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-bolt"></i> إجراءات سريعة</div>
             </div>
-
-            <div class="stat-card gold">
-                <div class="stat-info">
-                    <h4>محتوى VIP المميز</h4>
-                    <div class="stat-number" id="statVipVideos">0</div>
-                </div>
-                <i class="fa-solid fa-crown stat-icon" style="color: var(--vip-gold);"></i>
-            </div>
-
-            <div class="stat-card blue">
-                <div class="stat-info">
-                    <h4>إجمالي المستخدمين</h4>
-                    <div class="stat-number" id="statTotalUsers">0</div>
-                </div>
-                <i class="fa-solid fa-users stat-icon" style="color: var(--info-color);"></i>
-            </div>
-
-            <div class="stat-card green">
-                <div class="stat-info">
-                    <h4>المشاهدات الكلية</h4>
-                    <div class="stat-number" id="statTotalViews">0</div>
-                </div>
-                <i class="fa-solid fa-eye stat-icon" style="color: var(--success-color);"></i>
+            <div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+                <button class="btn block" data-goto="add"><i class="fa-solid fa-plus"></i> محتوى جديد</button>
+                <button class="btn gold block" id="btnQuickUser"><i class="fa-solid fa-user-plus"></i> مستخدم جديد</button>
+                <button class="btn green block" id="btnQuickCat"><i class="fa-solid fa-folder-plus"></i> تصنيف جديد</button>
+                <button class="btn ghost block" id="btnQuickBackup"><i class="fa-solid fa-cloud-arrow-down"></i> نسخة احتياطية</button>
             </div>
         </div>
 
-        <!-- 👑 بطاقة إضافة عنصر جديد (مع دعم المحتوى والسيرفرات) -->
-        <div class="card" id="addMediaSection">
-            <div class="card-header">
-                <span><i class="fa-solid fa-plus-circle"></i> إضافة فيديو / قناة / بث مباشر جديد</span>
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> أحدث النشاطات</div>
+                <button class="btn ghost sm" id="btnClearLog"><i class="fa-solid fa-eraser"></i> مسح</button>
+            </div>
+            <div class="dl" id="activityList">
+                <div class="empty"><i class="fa-solid fa-clock"></i><p>لا توجد نشاطات بعد</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== MEDIA ===== -->
+    <section class="section" id="sec-media">
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-list-check"></i> إدارة المحتوى</div>
+                <div class="card-tools">
+                    <input type="text" id="qMedia" placeholder="ابحث بعنوان..." />
+                    <select id="filterVip">
+                        <option value="all">الكل</option>
+                        <option value="free">مجاني</option>
+                        <option value="vip">VIP</option>
+                    </select>
+                </div>
+            </div>
+            <div class="dl" id="mediaList"></div>
+        </div>
+    </section>
+
+    <!-- ===== ADD MEDIA ===== -->
+    <section class="section" id="sec-add">
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-circle-plus"></i> إضافة محتوى جديد</div>
             </div>
             <form id="addForm">
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-heading"></i> عنوان الفيديو / القناة:</label>
-                        <input type="text" id="addTitle" placeholder="مثال: قناة الكأس 1 HD / فيلم الاكشن" required>
+                    <div class="fg">
+                        <label><i class="fa-solid fa-heading"></i> العنوان</label>
+                        <input type="text" id="addTitle" placeholder="قناة، فيلم، مسلسل..." required>
                     </div>
-
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-layer-group"></i> التصنيف / القسم:</label>
-                        <select id="addCategory">
-                            <!-- سيتم التعبئة ديناميكياً -->
+                    <div class="fg">
+                        <label><i class="fa-solid fa-layer-group"></i> التصنيف</label>
+                        <select id="addCategory"></select>
+                    </div>
+                    <div class="fg">
+                        <label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
+                        <select id="addIsVip">
+                            <option value="false">مجاني للجميع</option>
+                            <option value="true">👑 VIP مميز</option>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-gem"></i> مستوى الوصول والاشتراك:</label>
-                        <select id="addIsVip" style="border-color: var(--vip-gold);">
-                            <option value="false">عام (محتوى مجاني للجميع)</option>
-                            <option value="true">👑 VIP (حصر للمشتركين والشركات)</option>
-                        </select>
+                    <div class="fg">
+                        <label><i class="fa-solid fa-image"></i> رابط البوستر</label>
+                        <input type="url" id="addThumbnail" placeholder="https://...">
                     </div>
-
-                    <div class="form-group full-width">
-                        <label><i class="fa-solid fa-image"></i> رابط بوستر الغلاف (Poster Image URL):</label>
-                        <input type="url" id="addThumbnail" placeholder="https://domain.com/image.jpg">
-                    </div>
-
-                    <div class="form-group full-width">
-                        <label><i class="fa-solid fa-align-right"></i> الوصف والتفاصيل (اختياري):</label>
-                        <textarea id="addDescription" placeholder="اكتب وصفاً مختصراً للمحتوى هنا..."></textarea>
+                    <div class="fg full">
+                        <label><i class="fa-solid fa-align-right"></i> الوصف</label>
+                        <textarea id="addDescription" placeholder="وصف مختصر..."></textarea>
                     </div>
                 </div>
 
-                <!-- قائمة سيرفرات المشاهدة -->
-                <div class="form-group">
-                    <label><i class="fa-solid fa-server"></i> سيرفرات وروابط التشغيل (m3u8, MP4, Embed):</label>
-                    <div class="servers-box" id="addServersContainer">
-                        <div class="server-row">
-                            <input type="text" placeholder="اسم السيرفر (مثلاً: سيرفر رئيسي 1080p)" class="srv-name" required>
-                            <input type="url" placeholder="رابط البث المباشر أو الفيديو" class="srv-url" required>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btnAddServerField">
-                        <i class="fa-solid fa-plus"></i> إضافة سيرفر مشاهدة إضافي
+                <div class="fg" style="margin-top:16px">
+                    <label><i class="fa-solid fa-server"></i> السيرفرات وروابط التشغيل</label>
+                    <div class="servers-box" id="addServers"></div>
+                    <button type="button" class="btn ghost sm" id="addServerBtn">
+                        <i class="fa-solid fa-plus"></i> إضافة سيرفر
                     </button>
                 </div>
 
-                <div style="margin-top: 20px;">
-                    <button type="submit" class="btn" id="btnSubmitAdd">
-                        <i class="fa-solid fa-floppy-disk"></i> حفظ ونشر المحتوى فوراً
+                <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+                    <button type="submit" class="btn" id="btnSubmitAdd" style="flex:1;min-width:180px">
+                        <i class="fa-solid fa-floppy-disk"></i> حفظ ونشر
+                    </button>
+                    <button type="button" class="btn ghost" onclick="resetAddForm()">
+                        <i class="fa-solid fa-rotate-left"></i> تفريغ
                     </button>
                 </div>
             </form>
         </div>
+    </section>
 
-        <!-- 🎬 بطاقة جدول وإدارة المحتوى -->
+    <!-- ===== CATEGORIES ===== -->
+    <section class="section" id="sec-categories">
         <div class="card">
-            <div class="card-header">
-                <span><i class="fa-solid fa-list-check"></i> إدارة وإحصائيات المحتوى</span>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="searchVideoInput" onkeyup="filterVideosTable()" placeholder="بحث سريع..." style="padding: 6px 12px; font-size: 0.85rem; width: 160px;">
-                    <select id="filterVip" onchange="loadVideosTable()" style="padding: 6px 10px; font-size: 0.85rem; width: auto;">
-                        <option value="all">عرض الكل</option>
-                        <option value="free">المحتوى المجاني</option>
-                        <option value="vip">محتوى VIP</option>
-                    </select>
-                </div>
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-folder-plus"></i> إضافة تصنيف</div>
             </div>
-            <div class="table-responsive">
-                <table id="videosTable">
-                    <thead>
-                        <tr>
-                            <th>البوستر</th>
-                            <th>العنوان</th>
-                            <th>التصنيف</th>
-                            <th>النوع</th>
-                            <th>السيرفرات</th>
-                            <th>المشاهدات</th>
-                            <th>التحكم والعمليات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="videosTableBody">
-                        <tr>
-                            <td colspan="7" style="text-align: center; color: var(--text-secondary);">جاري الاتصال بقاعدة البيانات...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 🗂️ بطاقة إدارة الأقسام والتصنيفات -->
-        <div class="card">
-            <div class="card-header">
-                <span><i class="fa-solid fa-folder-tree"></i> إدارة أقسام وتصنيفات المنصة</span>
-            </div>
-            <form id="addCategoryForm" style="margin-bottom: 25px;">
+            <form id="addCategoryForm">
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label>اسم التصنيف الجديد:</label>
-                        <input type="text" id="newCategoryName" placeholder="مثال: أفلام 2026, مباريات اليوم..." required>
+                    <div class="fg">
+                        <label><i class="fa-solid fa-tag"></i> اسم التصنيف</label>
+                        <input type="text" id="newCategoryName" placeholder="أفلام، رياضة، مسلسلات..." required>
                     </div>
-                    <div class="form-group">
-                        <label>نوع القسم:</label>
+                    <div class="fg">
+                        <label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
                         <select id="newCategoryType">
-                            <option value="عام">عام (متاح للجميع)</option>
-                            <option value="VIP">خاص لمشتركي VIP</option>
+                            <option value="عام">عام</option>
+                            <option value="VIP">VIP</option>
                         </select>
                     </div>
-                    <div class="form-group" style="display: flex; align-items: flex-end;">
-                        <button type="submit" class="btn btn-success" style="width: 100%;">
-                            <i class="fa-solid fa-folder-plus"></i> إضافة التصنيف
-                        </button>
-                    </div>
                 </div>
-            </form>
-
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>اسم التصنيف</th>
-                            <th>نوع الوصول</th>
-                            <th>التحكم</th>
-                        </tr>
-                    </thead>
-                    <tbody id="categoriesTableBody">
-                        <!-- تعبئة ديناميكية -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 👥 بطاقة إدارة الحسابات والشركات وتعديل مدد الاشتراك بالكامل -->
-        <div class="card" id="usersSection">
-            <div class="card-header vip-header">
-                <span><i class="fa-solid fa-users-gear"></i> إدارة المستخدمين والشركات واشتراكات المدد (VIP)</span>
-                <button class="btn btn-vip btn-sm" onclick="openAddUserModal()">
-                    <i class="fa-solid fa-user-plus"></i> إضافة حساب / شركة جديدة
+                <button type="submit" class="btn green block" style="margin-top:14px">
+                    <i class="fa-solid fa-plus"></i> إضافة التصنيف
                 </button>
-            </div>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>اسم الحساب / الشركة</th>
-                            <th>المعرف / البريد</th>
-                            <th>نوع الحساب</th>
-                            <th>تاريخ الانتهاء</th>
-                            <th>الأيام المتبقية</th>
-                            <th>الحالة</th>
-                            <th>الإجراءات والتحكم</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <tr>
-                            <td colspan="7" style="text-align: center; color: var(--text-secondary);">جاري التحميل...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 🎨 بطاقة تخصيص المظهر وتعديل الشكل والموقع بالكامل -->
-        <div class="card" id="settingsSection">
-            <div class="card-header blue-header">
-                <span><i class="fa-solid fa-wand-magic-sparkles"></i> تخصيص الشكل والألوان ومظهر موقع المستخدم</span>
-                <button class="btn btn-success btn-sm" onclick="saveSiteSettings()">
-                    <i class="fa-solid fa-floppy-disk"></i> حفظ وتطبيق المظهر
-                </button>
-            </div>
-            <form id="settingsForm">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>اسم الموقع / المنصة الرئيسي:</label>
-                        <input type="text" id="settingSiteName" placeholder="منصة عرض الميديا VIP">
-                    </div>
-
-                    <div class="form-group">
-                        <label>رسالة الشريط الإخباري العلوي:</label>
-                        <input type="text" id="settingTickerText" placeholder="أهلاً بكم في المنصة الشاملة البث المباشر يعمل على مدار 24 ساعة...">
-                    </div>
-
-                    <div class="form-group">
-                        <label>اللون الرئيسي للموقع (Accent Color):</label>
-                        <input type="color" id="settingAccentColor" value="#ff0b37">
-                    </div>
-
-                    <div class="form-group">
-                        <label>اللون الذهبي لـ VIP (VIP Color):</label>
-                        <input type="color" id="settingVipColor" value="#f59e0b">
-                    </div>
-
-                    <div class="form-group full-width">
-                        <label>إعلان منبثق للمستخدمين (Pop-up Banner Text):</label>
-                        <textarea id="settingPopupBanner" placeholder="اكتب تنبيه يظهر للمستخدم عند فتح الموقع..."></textarea>
-                    </div>
-                </div>
             </form>
         </div>
 
-    </div>
-
-    <!-- 🎈 مركز الأزرار العائمة المتحركة الذكية (Floating Hub) -->
-    <div class="floating-hub" id="floatingHub">
-        <button class="floating-main-btn" onclick="toggleFloatingHub()" title="الخيارات السريعة">
-            <i class="fa-solid fa-bolt"></i>
-        </button>
-        <div class="floating-menu">
-            <a href="#addMediaSection" class="floating-item" data-tooltip="إضافة محتوى"><i class="fa-solid fa-plus"></i></a>
-            <a href="#usersSection" class="floating-item" data-tooltip="إدارة الحسابات"><i class="fa-solid fa-users"></i></a>
-            <a href="#settingsSection" class="floating-item" data-tooltip="تخصيص الشكل"><i class="fa-solid fa-palette"></i></a>
-            <div class="floating-item" onclick="exportDatabaseBackup()" data-tooltip="نسخة احتياطية"><i class="fa-solid fa-download"></i></div>
-            <div class="floating-item" onclick="window.scrollTo({top:0, behavior:'smooth'})" data-tooltip="للأعلى"><i class="fa-solid fa-arrow-up"></i></div>
-        </div>
-    </div>
-
-    <!-- ✏️ Modal تعديل المحتوى -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="card-header" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
-                <i class="fa-solid fa-pen-to-square"></i> تعديل بيانات المحتوى والسيرفرات
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-folder-tree"></i> التصنيفات الحالية</div>
             </div>
-            
-            <form id="editForm">
-                <input type="hidden" id="editId">
-                <div class="form-group">
-                    <label>العنوان:</label>
+            <div class="dl" id="catList"></div>
+        </div>
+    </section>
+
+    <!-- ===== USERS ===== -->
+    <section class="section" id="sec-users">
+        <div class="card gold">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-users-gear"></i> إدارة المستخدمين</div>
+                <button class="btn gold sm" id="btnNewUser">
+                    <i class="fa-solid fa-user-plus"></i> مستخدم جديد
+                </button>
+            </div>
+            <div class="card-tools" style="margin-bottom:14px">
+                <input type="text" id="qUser" placeholder="ابحث بالاسم أو البريد...">
+                <select id="filterUserStatus">
+                    <option value="all">الكل</option>
+                    <option value="vip">VIP فقط</option>
+                    <option value="blocked">محظورين</option>
+                    <option value="expired">منتهي الاشتراك</option>
+                </select>
+            </div>
+            <div class="dl" id="usersList"></div>
+        </div>
+    </section>
+
+    <!-- ===== SETTINGS ===== -->
+    <section class="section" id="sec-settings">
+        <div class="card blue">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-palette"></i> تخصيص المظهر</div>
+            </div>
+            <div class="form-grid">
+                <div class="fg">
+                    <label><i class="fa-solid fa-signature"></i> اسم الموقع</label>
+                    <input type="text" id="settingSiteName" placeholder="VIP Media">
+                </div>
+                <div class="fg">
+                    <label><i class="fa-solid fa-bullhorn"></i> شريط الإعلانات</label>
+                    <input type="text" id="settingTickerText" placeholder="نص الشريط الإخباري...">
+                </div>
+                <div class="fg">
+                    <label><i class="fa-solid fa-droplet"></i> اللون الرئيسي</label>
+                    <input type="color" id="settingAccentColor" value="#ff0b37">
+                </div>
+                <div class="fg">
+                    <label><i class="fa-solid fa-crown"></i> لون VIP</label>
+                    <input type="color" id="settingVipColor" value="#f59e0b">
+                </div>
+                <div class="fg full">
+                    <label><i class="fa-solid fa-comment-dots"></i> إعلان منبثق (يظهر مرة واحدة)</label>
+                    <textarea id="settingPopupBanner" placeholder="نص يظهر للمستخدم عند فتح الموقع..."></textarea>
+                </div>
+            </div>
+            <button class="btn green block" id="btnSaveSettings" style="margin-top:16px">
+                <i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><i class="fa-solid fa-database"></i> البيانات</div>
+            </div>
+            <div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+                <button class="btn ghost block" id="btnBackupSettings"><i class="fa-solid fa-cloud-arrow-down"></i> تصدير نسخة JSON</button>
+                <button class="btn ghost block" id="btnChangePin"><i class="fa-solid fa-key"></i> تغيير رمز الدخول</button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- =========================================================
+     FAB
+     ========================================================= -->
+<div class="fab-wrap" id="fabWrap">
+    <button class="fab-main" id="fabMain" title="خيارات"><i class="fa-solid fa-bolt"></i></button>
+    <div class="fab-list">
+        <button class="fab-i" data-tip="إضافة محتوى" data-goto="add"><i class="fa-solid fa-plus"></i></button>
+        <button class="fab-i" data-tip="المستخدمون" data-goto="users"><i class="fa-solid fa-users"></i></button>
+        <button class="fab-i" data-tip="التصنيفات" data-goto="categories"><i class="fa-solid fa-folder"></i></button>
+        <button class="fab-i" data-tip="نسخة احتياطية" id="fabBackup"><i class="fa-solid fa-download"></i></button>
+        <button class="fab-i" data-tip="للأعلى" id="fabTop"><i class="fa-solid fa-arrow-up"></i></button>
+    </div>
+</div>
+
+<!-- =========================================================
+     MODALS
+     ========================================================= -->
+
+<!-- EDIT MEDIA -->
+<div class="modal" id="mEdit">
+    <div class="modal-box">
+        <div class="modal-grab"></div>
+        <div class="modal-head">
+            <div class="mi"><i class="fa-solid fa-pen-to-square"></i></div>
+            <div class="mh-text">
+                <h3>تعديل المحتوى</h3>
+                <p>قم بتحديث بيانات المحتوى والسيرفرات</p>
+            </div>
+            <button class="modal-close" data-close="mEdit"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="editForm">
+            <input type="hidden" id="editId">
+            <div class="form-grid">
+                <div class="fg">
+                    <label><i class="fa-solid fa-heading"></i> العنوان</label>
                     <input type="text" id="editTitle" required>
                 </div>
-
-                <div class="form-group">
-                    <label>التصنيف:</label>
+                <div class="fg">
+                    <label><i class="fa-solid fa-layer-group"></i> التصنيف</label>
                     <select id="editCategory"></select>
                 </div>
-
-                <div class="form-group">
-                    <label>نوع الاشتراك:</label>
+                <div class="fg">
+                    <label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
                     <select id="editIsVip">
-                        <option value="false">عام (مجاني)</option>
-                        <option value="true">👑 VIP مميز</option>
+                        <option value="false">مجاني</option>
+                        <option value="true">VIP</option>
                     </select>
                 </div>
-
-                <div class="form-group">
-                    <label>رابط الصورة البوستر:</label>
+                <div class="fg">
+                    <label><i class="fa-solid fa-image"></i> رابط البوستر</label>
                     <input type="url" id="editThumbnail">
                 </div>
-
-                <div class="form-group">
-                    <label>الوصف:</label>
+                <div class="fg full">
+                    <label><i class="fa-solid fa-align-right"></i> الوصف</label>
                     <textarea id="editDescription"></textarea>
                 </div>
+            </div>
+            <div class="fg" style="margin-top:14px">
+                <label><i class="fa-solid fa-server"></i> السيرفرات</label>
+                <div class="servers-box" id="editServers"></div>
+                <button type="button" class="btn ghost sm" id="editAddServer">
+                    <i class="fa-solid fa-plus"></i> إضافة سيرفر
+                </button>
+            </div>
+            <div class="modal-foot">
+                <button type="submit" class="btn"><i class="fa-solid fa-check"></i> حفظ التعديلات</button>
+                <button type="button" class="btn ghost" data-close="mEdit">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-                <div class="form-group">
-                    <label>السيرفرات:</label>
-                    <div class="servers-box" id="editServersContainer"></div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btnEditAddServerField">
-                        <i class="fa-solid fa-plus"></i> إضافة سيرفر جديد
-                    </button>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="btn"><i class="fa-solid fa-check"></i> حفظ التحديثات</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">إلغاء</button>
-                </div>
-            </form>
+<!-- PREVIEW MEDIA -->
+<div class="modal" id="mPreview">
+    <div class="modal-box">
+        <div class="modal-grab"></div>
+        <div class="modal-head">
+            <div class="mi"><i class="fa-solid fa-circle-play"></i></div>
+            <div class="mh-text">
+                <h3 id="pvTitle">—</h3>
+                <p id="pvMeta">—</p>
+            </div>
+            <button class="modal-close" data-close="mPreview"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <img id="pvThumb" class="preview-thumb" alt="">
+        <div id="pvDesc" style="font-size:.85rem;color:var(--text-2);line-height:1.6"></div>
+        <div class="preview-servers" id="pvServers"></div>
+        <div class="modal-foot">
+            <a class="btn" id="pvOpen" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح في المشغل</a>
+            <button class="btn ghost" data-close="mPreview">إغلاق</button>
         </div>
     </div>
+</div>
 
-    <!-- 👤 Modal إضافة وتعديل الحسابات وتجديد الاشتراكات -->
-    <div id="userModal" class="modal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeUserModal()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="card-header vip-header" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
-                <i class="fa-solid fa-user-gear"></i> <span id="userModalTitle">إضافة / تعديل حساب مشترك</span>
+<!-- EDIT USER -->
+<div class="modal" id="mUser">
+    <div class="modal-box">
+        <div class="modal-grab"></div>
+        <div class="modal-head gold">
+            <div class="mi"><i class="fa-solid fa-user-gear"></i></div>
+            <div class="mh-text">
+                <h3 id="userModalTitle">مستخدم جديد</h3>
+                <p>بيانات الحساب ومدة الاشتراك</p>
             </div>
-            
-            <form id="userForm">
-                <input type="hidden" id="userId">
-                <div class="form-group">
-                    <label>اسم المستخدم / الشركة:</label>
-                    <input type="text" id="userName" placeholder="مثال: شركة النور / أحمد علي" required>
+            <button class="modal-close" data-close="mUser"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="userForm">
+            <input type="hidden" id="userId">
+            <div class="form-grid">
+                <div class="fg">
+                    <label><i class="fa-solid fa-user"></i> الاسم</label>
+                    <input type="text" id="userName" required>
                 </div>
-
-                <div class="form-group">
-                    <label>البريد الإلكتروني / اسم الدخول:</label>
-                    <input type="email" id="userEmail" placeholder="user@domain.com" required>
+                <div class="fg">
+                    <label><i class="fa-solid fa-envelope"></i> البريد الإلكتروني</label>
+                    <input type="email" id="userEmail" required>
                 </div>
-
-                <div class="form-group">
-                    <label>كلمة المرور:</label>
-                    <input type="text" id="userPassword" placeholder="كلمة السر..." required>
+                <div class="fg">
+                    <label><i class="fa-solid fa-key"></i> كلمة المرور</label>
+                    <input type="text" id="userPassword">
                 </div>
-
-                <div class="form-group">
-                    <label>نوع الحساب والترقية:</label>
+                <div class="fg">
+                    <label><i class="fa-solid fa-gem"></i> نوع الحساب</label>
                     <select id="userIsVip">
-                        <option value="false">حساب عادي (مجاني)</option>
-                        <option value="true">👑 VIP مميز (وصول كامل)</option>
+                        <option value="false">عادي</option>
+                        <option value="true">👑 VIP</option>
                     </select>
                 </div>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>مدة إضافة الاشتراك:</label>
-                        <input type="number" id="subDurationValue" value="1" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label>وحدة الوقت:</label>
-                        <select id="subDurationUnit">
-                            <option value="days">يوم / أيام</option>
-                            <option value="months" selected>شهر / أشهر</option>
-                            <option value="years">سنة / سنوات</option>
-                        </select>
-                    </div>
+                <div class="fg">
+                    <label><i class="fa-solid fa-hourglass-half"></i> مدة التمديد</label>
+                    <input type="number" id="subValue" value="1" min="1">
                 </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="btn btn-vip"><i class="fa-solid fa-floppy-disk"></i> حفظ بيانات الحساب</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeUserModal()">إلغاء</button>
+                <div class="fg">
+                    <label><i class="fa-solid fa-calendar"></i> الوحدة</label>
+                    <select id="subUnit">
+                        <option value="days">أيام</option>
+                        <option value="months" selected>أشهر</option>
+                        <option value="years">سنوات</option>
+                    </select>
                 </div>
-            </form>
+            </div>
+            <div class="modal-foot">
+                <button type="submit" class="btn gold"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
+                <button type="button" class="btn ghost" data-close="mUser">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT CATEGORY -->
+<div class="modal" id="mCat">
+    <div class="modal-box" style="max-width:520px">
+        <div class="modal-grab"></div>
+        <div class="modal-head">
+            <div class="mi"><i class="fa-solid fa-folder-pen"></i></div>
+            <div class="mh-text">
+                <h3 id="catModalTitle">تعديل التصنيف</h3>
+                <p>تحديث اسم ونوع التصنيف</p>
+            </div>
+            <button class="modal-close" data-close="mCat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="catForm">
+            <input type="hidden" id="catId">
+            <div class="fg">
+                <label><i class="fa-solid fa-tag"></i> الاسم</label>
+                <input type="text" id="catName" required>
+            </div>
+            <div class="fg" style="margin-top:12px">
+                <label><i class="fa-solid fa-gem"></i> النوع</label>
+                <select id="catType">
+                    <option value="عام">عام</option>
+                    <option value="VIP">VIP</option>
+                </select>
+            </div>
+            <div class="modal-foot">
+                <button type="submit" class="btn"><i class="fa-solid fa-check"></i> حفظ</button>
+                <button type="button" class="btn ghost" data-close="mCat">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="modal" id="mConfirm">
+    <div class="modal-box confirm-box" style="max-width:420px">
+        <div class="modal-grab"></div>
+        <div class="modal-head">
+            <div class="mi" id="cfIcon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="mh-text">
+                <h3 id="cfTitle">تأكيد</h3>
+            </div>
+        </div>
+        <p class="confirm-msg" id="cfMsg">هل أنت متأكد؟</p>
+        <div class="modal-foot">
+            <button class="btn red" id="cfYes"><i class="fa-solid fa-check"></i> تأكيد</button>
+            <button class="btn ghost" data-close="mConfirm">إلغاء</button>
         </div>
     </div>
+</div>
 
-    <!-- ==========================================================================
-       جافاسكريبت المحرك الإداري الشامل (Complete Core Engine Script)
-       ========================================================================== -->
-    <script>
-        // =========================================================
-        // 1. إعداد وتحديث إعدادات Firebase
-        // =========================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
-            authDomain: "voip17.firebaseapp.com",
-            databaseURL: "https://voip17-default-rtdb.firebaseio.com",
-            projectId: "voip17",
-            storageBucket: "voip17.firebasestorage.app",
-            messagingSenderId: "608379006778",
-            appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
-            measurementId: "G-GZNJZLM701"
-        };
+<!-- CHANGE PIN -->
+<div class="modal" id="mPin">
+    <div class="modal-box" style="max-width:480px">
+        <div class="modal-grab"></div>
+        <div class="modal-head">
+            <div class="mi"><i class="fa-solid fa-key"></i></div>
+            <div class="mh-text">
+                <h3>تغيير رمز الدخول</h3>
+                <p>سيتم تخزينه في قاعدة البيانات</p>
+            </div>
+            <button class="modal-close" data-close="mPin"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="pinForm">
+            <div class="fg">
+                <label><i class="fa-solid fa-lock"></i> الرمز الحالي</label>
+                <input type="password" id="pinOld" maxlength="6" inputmode="numeric" required>
+            </div>
+            <div class="fg" style="margin-top:12px">
+                <label><i class="fa-solid fa-lock-open"></i> الرمز الجديد</label>
+                <input type="password" id="pinNew" maxlength="6" inputmode="numeric" required>
+            </div>
+            <div class="modal-foot">
+                <button type="submit" class="btn green"><i class="fa-solid fa-check"></i> تغيير</button>
+                <button type="button" class="btn ghost" data-close="mPin">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+<!-- TOASTS -->
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- =========================================================
+     SCRIPT
+     ========================================================= -->
+<script>
+/* =========================================================
+   1. FIREBASE
+   ========================================================= */
+const firebaseConfig = {
+    apiKey:"AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
+    authDomain:"voip17.firebaseapp.com",
+    databaseURL:"https://voip17-default-rtdb.firebaseio.com",
+    projectId:"voip17",
+    storageBucket:"voip17.firebasestorage.app",
+    messagingSenderId:"608379006778",
+    appId:"1:608379006778:web:51fe8032d09fbd5b556a03",
+    measurementId:"G-GZNJZLM701"
+};
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* =========================================================
+   2. HELPERS
+   ========================================================= */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const debounce = (fn, ms=220) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
+const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}) : '—';
+
+/* === Firebase field compatibility === */
+const userExpire = u => (u && (u.vipExpireDate || u.expireAt || 0)) || 0;
+const userIsBanned = u => !!(u && (u.isBanned === true || u.isBlocked === true));
+const userIsVipNow = u => {
+    if(!u) return false;
+    const e = userExpire(u);
+    if(e > 0) return e > Date.now();
+    return u.isVip === true;
+};
+
+/* =========================================================
+   3. TOASTS
+   ========================================================= */
+function toast(title, msg='', type='', dur=3500){
+    const wrap = $('#toasts');
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    const icon = type === 'ok' ? 'fa-circle-check'
+               : type === 'err' ? 'fa-circle-exclamation'
+               : type === 'warn' ? 'fa-triangle-exclamation'
+               : 'fa-circle-info';
+    el.innerHTML = `
+        <div class="toast-i"><i class="fa-solid ${icon}"></i></div>
+        <div class="toast-body">
+            <div class="toast-title">${esc(title)}</div>
+            ${msg ? `<div class="toast-msg">${esc(msg)}</div>` : ''}
+        </div>`;
+    wrap.appendChild(el);
+    setTimeout(() => {
+        el.style.transition = 'opacity .3s, transform .3s';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-10px)';
+        setTimeout(() => el.remove(), 320);
+    }, dur);
+}
+
+/* =========================================================
+   4. CONFIRM MODAL
+   ========================================================= */
+let confirmResolver = null;
+function askConfirm({title='تأكيد', msg='هل أنت متأكد؟', okText='تأكيد', type='red'}={}){
+    return new Promise(res => {
+        $('#cfTitle').textContent = title;
+        $('#cfMsg').textContent = msg;
+        $('#cfYes').innerHTML = `<i class="fa-solid fa-check"></i> ${esc(okText)}`;
+        const iconBox = $('#cfIcon');
+        iconBox.className = 'mi';
+        if(type === 'gold') iconBox.classList.add('gold');
+        openModal('mConfirm');
+        confirmResolver = res;
+    });
+}
+$('#cfYes').addEventListener('click', () => {
+    closeModal('mConfirm');
+    if(confirmResolver){ confirmResolver(true); confirmResolver = null; }
+});
+$('#mConfirm').addEventListener('click', e => {
+    if(e.target.id === 'mConfirm' && confirmResolver){ confirmResolver(false); confirmResolver = null; }
+});
+
+/* =========================================================
+   5. MODAL CONTROLLER
+   ========================================================= */
+function openModal(id){
+    const m = document.getElementById(id);
+    if(!m) return;
+    m.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(id){
+    const m = document.getElementById(id);
+    if(!m) return;
+    m.classList.remove('active');
+    if(!$$('.modal.active').length) document.body.style.overflow = '';
+}
+$$('[data-close]').forEach(b => b.addEventListener('click', () => closeModal(b.dataset.close)));
+$$('.modal').forEach(m => m.addEventListener('click', e => {
+    if(e.target === m){
+        if(m.id === 'mConfirm' && confirmResolver){ confirmResolver(false); confirmResolver = null; }
+        closeModal(m.id);
+    }
+}));
+document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){
+        const act = $$('.modal.active').pop();
+        if(act){
+            if(act.id === 'mConfirm' && confirmResolver){ confirmResolver(false); confirmResolver = null; }
+            closeModal(act.id);
         }
-        const db = firebase.database();
+    }
+});
 
-        // =========================================================
-        // 🔒 2. نظام الأمان والتحقق التلقائي (PIN: 171002)
-        // =========================================================
-        const SECURITY_PIN = "171002";
+/* =========================================================
+   6. PIN LOGIN
+   ========================================================= */
+let SECURITY_PIN = '171002';
+let pinValue = '';
 
-        function checkAuth() {
-            if (sessionStorage.getItem('adminAuthenticated') === 'true') {
-                document.getElementById('loginOverlay').style.display = 'none';
-            } else {
-                document.getElementById('loginOverlay').style.display = 'flex';
-            }
+function isAuthed(){ return sessionStorage.getItem('adm_authed') === '1'; }
+function requireAuth(){
+    if(isAuthed()){ $('#loginOverlay').style.display = 'none'; }
+    else{ $('#loginOverlay').style.display = 'flex'; $('#pinReal').focus(); }
+}
+
+function renderPinDots(){
+    $$('#pinWrap .pin-dot').forEach((d, i) => {
+        d.classList.toggle('filled', i < pinValue.length);
+        d.classList.toggle('active', i === pinValue.length && pinValue.length < 6);
+        d.textContent = i < pinValue.length ? '●' : '';
+    });
+}
+
+function onPinInput(){
+    pinValue = pinValue.replace(/\D/g,'').slice(0,6);
+    $('#pinReal').value = pinValue;
+    renderPinDots();
+    if(pinValue.length === 6) setTimeout(verifyPin, 150);
+}
+
+async function verifyPin(){
+    $('#pinErr').textContent = '';
+    try{
+        // محاولة قراءة الرمز من DB أولاً
+        const snap = await db.ref('adminPin').once('value');
+        if(snap.exists() && snap.val() && snap.val().pin){
+            SECURITY_PIN = String(snap.val().pin);
+        }
+    }catch(_){/* fallback */}
+    if(pinValue === SECURITY_PIN){
+        sessionStorage.setItem('adm_authed','1');
+        $('#loginOverlay').style.display = 'none';
+        logActivity('تسجيل دخول للوحة الإدارة');
+        toast('مرحباً بك 👋', 'تم تسجيل الدخول بنجاح', 'ok');
+    }else{
+        $('#pinErr').textContent = '❌ رمز غير صحيح';
+        pinValue = ''; $('#pinReal').value = '';
+        renderPinDots();
+        $('#loginOverlay').animate(
+            [{transform:'translateX(-10px)'},{transform:'translateX(10px)'},{transform:'translateX(0)'}],
+            {duration:260, iterations:1}
+        );
+    }
+}
+
+$('#pinBtn').addEventListener('click', verifyPin);
+$('#pinReal').addEventListener('input', onPinInput);
+$('#loginOverlay').addEventListener('click', () => $('#pinReal').focus());
+document.addEventListener('click', e => {
+    if($('#loginOverlay').style.display !== 'none'){
+        if(!e.target.closest('.login-card')) $('#pinReal').focus();
+    }
+});
+requireAuth();
+
+/* =========================================================
+   7. LOGOUT
+   ========================================================= */
+function logout(){
+    sessionStorage.removeItem('adm_authed');
+    location.reload();
+}
+$('#btnLogout').addEventListener('click', async () => {
+    const ok = await askConfirm({title:'تسجيل الخروج', msg:'هل تريد قفل اللوحة والخروج؟', okText:'خروج'});
+    if(ok) logout();
+});
+
+/* =========================================================
+   8. NAVIGATION
+   ========================================================= */
+const secTitles = {
+    dashboard:'لوحة القيادة',
+    media:'إدارة المحتوى',
+    add:'إضافة محتوى',
+    categories:'التصنيفات',
+    users:'المستخدمون',
+    settings:'الإعدادات'
+};
+function go(sec){
+    if(!secTitles[sec]) sec = 'dashboard';
+    $$('.section').forEach(s => s.classList.toggle('active', s.id === 'sec-' + sec));
+    $$('.nav-item[data-sec]').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
+    $$('.bn-item[data-sec]').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
+    $('#topTitle').textContent = secTitles[sec];
+    window.scrollTo({top:0, behavior:'smooth'});
+    history.replaceState(null, '', '#' + sec);
+}
+$$('[data-sec]').forEach(b => b.addEventListener('click', () => go(b.dataset.sec)));
+$$('[data-goto]').forEach(b => b.addEventListener('click', () => {
+    go(b.dataset.goto);
+    if(b.dataset.goto === 'add') setTimeout(() => $('#addTitle')?.focus(), 300);
+}));
+window.addEventListener('hashchange', () => go(location.hash.replace('#','')) );
+go(location.hash.replace('#','') || 'dashboard');
+
+/* =========================================================
+   9. FAB
+   ========================================================= */
+$('#fabMain').addEventListener('click', () => $('#fabWrap').classList.toggle('open'));
+$('#fabTop').addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+$('#fabBackup').addEventListener('click', exportBackup);
+$('#btnBackup').addEventListener('click', exportBackup);
+$('#btnQuickBackup').addEventListener('click', exportBackup);
+$('#btnBackupSettings').addEventListener('click', exportBackup);
+$('#btnRefresh').addEventListener('click', () => { location.reload(); });
+
+/* =========================================================
+   10. ACTIVITY LOG
+   ========================================================= */
+function logActivity(text){
+    const list = JSON.parse(localStorage.getItem('adm_log') || '[]');
+    list.unshift({ t: Date.now(), text });
+    localStorage.setItem('adm_log', JSON.stringify(list.slice(0, 30)));
+    renderActivity();
+}
+function renderActivity(){
+    const list = JSON.parse(localStorage.getItem('adm_log') || '[]');
+    const box = $('#activityList');
+    if(!list.length){
+        box.innerHTML = `<div class="empty"><i class="fa-solid fa-clock"></i><p>لا توجد نشاطات بعد</p></div>`;
+        return;
+    }
+    box.innerHTML = list.map(x => `
+        <div class="dl-row" style="grid-template-columns:1fr auto;align-items:center">
+            <div class="dl-cell"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i><span class="v">${esc(x.text)}</span></div>
+            <span style="font-size:.72rem;color:var(--text-3);font-weight:700">${new Date(x.t).toLocaleString('ar-EG')}</span>
+        </div>`).join('');
+}
+$('#btnClearLog').addEventListener('click', async () => {
+    const ok = await askConfirm({title:'مسح السجل', msg:'حذف كل النشاطات المسجلة؟', okText:'مسح'});
+    if(ok){ localStorage.removeItem('adm_log'); renderActivity(); toast('تم المسح','','ok'); }
+});
+renderActivity();
+
+/* =========================================================
+   11. SERVER ROWS (URL / EMBED)
+   ========================================================= */
+function serverRow(name='', val='', type='url'){
+    const div = document.createElement('div');
+    div.className = 'server-row';
+    div.innerHTML = `
+        <input class="srv-name" placeholder="اسم السيرفر" value="${esc(name)}">
+        <select class="srv-type">
+            <option value="url" ${type==='url'?'selected':''}>رابط</option>
+            <option value="embed" ${type==='embed'?'selected':''}>كود HTML</option>
+        </select>
+        <input class="srv-val" placeholder="الرابط أو كود iframe/script" value="${esc(val)}">
+        <button type="button" class="rm" title="حذف"><i class="fa-solid fa-trash"></i></button>`;
+    div.querySelector('.rm').addEventListener('click', () => div.remove());
+    return div;
+}
+function collectServers(containerSel){
+    const out = [];
+    $$(containerSel + ' .server-row').forEach(r => {
+        const name = r.querySelector('.srv-name').value.trim();
+        const type = r.querySelector('.srv-type').value;
+        const val = r.querySelector('.srv-val').value.trim();
+        if(!name || !val) return;
+        out.push(type === 'embed' ? {name, script: val} : {name, url: val});
+    });
+    return out;
+}
+function fillServers(containerSel, servers){
+    const box = document.querySelector(containerSel);
+    box.innerHTML = '';
+    (servers || []).forEach(s => {
+        const val = s.url || s.script || s.embedCode || '';
+        const type = (s.script || s.embedCode) ? 'embed' : 'url';
+        box.appendChild(serverRow(s.name || 'سيرفر', val, type));
+    });
+    if(box.children.length === 0) box.appendChild(serverRow('سيرفر رئيسي'));
+}
+$('#addServerBtn').addEventListener('click', () => $('#addServers').appendChild(serverRow()));
+$('#editAddServer').addEventListener('click', () => $('#editServers').appendChild(serverRow()));
+$('#addServers').appendChild(serverRow('سيرفر رئيسي'));
+fillServers('#editServers', []);
+
+/* =========================================================
+   12. CATEGORIES
+   ========================================================= */
+const DEFAULT_CATS = ['بث مباشر','أفلام','مسلسلات','رياضة','عام','محتوى VIP شركات'];
+
+function loadCategories(){
+    db.ref('categories').on('value', snap => {
+        const addSel = $('#addCategory');
+        const editSel = $('#editCategory');
+        addSel.innerHTML = '';
+        editSel.innerHTML = '';
+
+        if(!snap.exists()){
+            DEFAULT_CATS.forEach(c => db.ref('categories').push({
+                name: c, type: c.includes('VIP') ? 'VIP' : 'عام', createdAt: Date.now()
+            }));
+            return;
         }
 
-        function verifyPin() {
-            const pin = document.getElementById('pinInput').value.trim();
-            const errEl = document.getElementById('loginError');
+        const rows = [];
+        snap.forEach(c => rows.push({ id: c.key, ...c.val() }));
 
-            if (pin === SECURITY_PIN) {
-                sessionStorage.setItem('adminAuthenticated', 'true');
-                document.getElementById('loginOverlay').style.display = 'none';
-                errEl.style.display = 'none';
-            } else {
-                errEl.innerText = "❌ رمز الأمان غير صحيح! حاول مرة أخرى.";
-                errEl.style.display = 'block';
-                document.getElementById('pinInput').value = '';
-            }
-        }
-
-        function logout() {
-            sessionStorage.removeItem('adminAuthenticated');
-            location.reload();
-        }
-
-        document.getElementById('pinInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') verifyPin();
+        rows.forEach(r => {
+            addSel.add(new Option(r.name, r.name));
+            editSel.add(new Option(r.name, r.name));
         });
 
-        checkAuth();
+        const box = $('#catList');
+        box.innerHTML = rows.map(r => `
+            <div class="dl-row" style="grid-template-columns:1fr auto auto;gap:10px;align-items:center">
+                <div class="dl-cell"><i class="fa-solid fa-folder" style="color:var(--accent)"></i><span class="v">${esc(r.name)}</span></div>
+                <span class="badge ${r.type === 'VIP' ? 'vip' : ''}">${esc(r.type || 'عام')}</span>
+                <div class="dl-actions">
+                    <button class="btn ghost sm" onclick="editCat('${esc(r.id)}','${esc(r.name)}','${esc(r.type || 'عام')}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn red sm" onclick="delCat('${esc(r.id)}','${esc(r.name)}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>`).join('') || `<div class="empty"><i class="fa-solid fa-folder-open"></i><p>لا توجد تصنيفات</p></div>`;
+    });
+}
 
-        // =========================================================
-        // 🎈 3. التحكم بالأزرار العائمة (Floating Action Hub)
-        // =========================================================
-        function toggleFloatingHub() {
-            document.getElementById('floatingHub').classList.toggle('active');
+$('#addCategoryForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('#newCategoryName').value.trim();
+    const type = $('#newCategoryType').value;
+    if(!name) return;
+    try{
+        await db.ref('categories').push({ name, type, createdAt: Date.now() });
+        $('#newCategoryName').value = '';
+        logActivity(`إضافة تصنيف: ${name}`);
+        toast('تم الإضافة', name, 'ok');
+    }catch(err){ toast('خطأ', err.message, 'err'); }
+});
+
+function editCat(id, name, type){
+    $('#catId').value = id;
+    $('#catName').value = name;
+    $('#catType').value = type;
+    openModal('mCat');
+}
+$('#catForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = $('#catId').value;
+    try{
+        await db.ref('categories/' + id).update({ name: $('#catName').value.trim(), type: $('#catType').value });
+        closeModal('mCat');
+        logActivity('تعديل تصنيف');
+        toast('تم الحفظ','','ok');
+    }catch(err){ toast('خطأ', err.message, 'err'); }
+});
+
+async function delCat(id, name){
+    const ok = await askConfirm({title:'حذف تصنيف', msg:`حذف "${name}"؟ لن يتأثر المحتوى المرتبط.`, okText:'حذف'});
+    if(!ok) return;
+    await db.ref('categories/' + id).remove();
+    logActivity(`حذف تصنيف: ${name}`);
+    toast('تم الحذف', name, 'ok');
+}
+window.editCat = editCat; window.delCat = delCat;
+
+/* =========================================================
+   13. MEDIA (ADD / LIST / EDIT / DELETE / PREVIEW)
+   ========================================================= */
+let allItems = [];
+let allUsers = [];
+
+$('#addForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('#btnSubmitAdd');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
+
+    const data = {
+        title: $('#addTitle').value.trim(),
+        category: $('#addCategory').value,
+        isVip: $('#addIsVip').value === 'true',
+        thumbnailUrl: $('#addThumbnail').value.trim(),
+        description: $('#addDescription').value.trim(),
+        servers: collectServers('#addServers'),
+        views: 0,
+        createdAt: Date.now()
+    };
+    try{
+        await db.ref('videos').push(data);
+        logActivity(`إضافة محتوى: ${data.title}`);
+        toast('تم النشر', data.title, 'ok');
+        resetAddForm();
+        go('media');
+    }catch(err){
+        toast('خطأ في الحفظ', err.message, 'err');
+    }finally{
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> حفظ ونشر';
+    }
+});
+
+function resetAddForm(){
+    $('#addForm').reset();
+    $('#addServers').innerHTML = '';
+    $('#addServers').appendChild(serverRow('سيرفر رئيسي'));
+}
+window.resetAddForm = resetAddForm;
+
+function loadMedia(){
+    db.ref('videos').on('value', snap => {
+        allItems = [];
+        snap.forEach(c => allItems.push({ id: c.key, ...c.val() }));
+
+        // Stats
+        const total = allItems.length;
+        const vip = allItems.filter(i => i.isVip).length;
+        const views = allItems.reduce((s, i) => s + (i.views || 0), 0);
+        $('#statTotalVideos').textContent = total.toLocaleString('ar-EG');
+        $('#statVipVideos').textContent = vip.toLocaleString('ar-EG');
+        $('#statTotalViews').textContent = views.toLocaleString('ar-EG');
+
+        renderMedia();
+    });
+}
+
+function renderMedia(){
+    const q = ($('#qMedia').value || '').toLowerCase().trim();
+    const f = $('#filterVip').value;
+    const box = $('#mediaList');
+
+    let list = allItems.filter(i => {
+        if(f === 'vip' && !i.isVip) return false;
+        if(f === 'free' && i.isVip) return false;
+        if(q){
+            const t = (i.title||'').toLowerCase();
+            const c = (i.category||'').toLowerCase();
+            if(!t.includes(q) && !c.includes(q)) return false;
+        }
+        return true;
+    });
+
+    if(!list.length){
+        box.innerHTML = `<div class="empty"><i class="fa-solid fa-film"></i><p>لا يوجد محتوى مطابق</p></div>`;
+        return;
+    }
+
+    box.innerHTML = list.map(i => `
+        <div class="dl-row">
+            <img class="dl-thumb" src="${esc(i.thumbnailUrl || 'https://via.placeholder.com/160x90/1f1f1f/ffffff?text=Media')}" onerror="this.src='https://via.placeholder.com/160x90/1f1f1f/ffffff?text=Media'">
+            <div class="dl-cell"><span class="k">العنوان</span><span class="v">${esc(i.title || 'بدون عنوان')}</span></div>
+            <div class="dl-cell"><span class="k">التصنيف</span><span class="badge">${esc(i.category || 'عام')}</span></div>
+            <div class="dl-cell"><span class="k">النوع</span>${i.isVip ? '<span class="badge vip"><i class="fa-solid fa-crown"></i> VIP</span>' : '<span class="badge">مجاني</span>'}</div>
+            <div class="dl-cell"><span class="k">سيرفرات</span><span class="badge info">${(i.servers||[]).length} سيرفر</span></div>
+            <div class="dl-cell"><span class="k">مشاهدات</span><span class="v"><i class="fa-regular fa-eye"></i> ${(i.views||0).toLocaleString('ar-EG')}</span></div>
+            <div class="dl-actions">
+                <button class="btn ghost sm" onclick="previewItem('${esc(i.id)}')"><i class="fa-solid fa-eye"></i></button>
+                <button class="btn ghost sm" onclick="editItem('${esc(i.id)}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn red sm" onclick="delItem('${esc(i.id)}','${esc(i.title||'')}')"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`).join('');
+}
+
+$('#qMedia').addEventListener('input', debounce(renderMedia, 220));
+$('#filterVip').addEventListener('change', renderMedia);
+
+async function editItem(id){
+    const snap = await db.ref('videos/' + id).once('value');
+    if(!snap.exists()) return toast('غير موجود','','err');
+    const item = snap.val();
+    $('#editId').value = id;
+    $('#editTitle').value = item.title || '';
+    $('#editCategory').value = item.category || 'عام';
+    $('#editIsVip').value = item.isVip ? 'true' : 'false';
+    $('#editThumbnail').value = item.thumbnailUrl || '';
+    $('#editDescription').value = item.description || '';
+    fillServers('#editServers', item.servers || []);
+    openModal('mEdit');
+}
+window.editItem = editItem;
+
+$('#editForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = $('#editId').value;
+    try{
+        await db.ref('videos/' + id).update({
+            title: $('#editTitle').value.trim(),
+            category: $('#editCategory').value,
+            isVip: $('#editIsVip').value === 'true',
+            thumbnailUrl: $('#editThumbnail').value.trim(),
+            description: $('#editDescription').value.trim(),
+            servers: collectServers('#editServers')
+        });
+        closeModal('mEdit');
+        logActivity('تعديل محتوى');
+        toast('تم الحفظ','','ok');
+    }catch(err){ toast('خطأ', err.message, 'err'); }
+});
+
+async function delItem(id, title){
+    const ok = await askConfirm({
+        title:'حذف المحتوى',
+        msg:`سيتم حذف "${title}" نهائياً. لا يمكن التراجع.`,
+        okText:'حذف نهائي'
+    });
+    if(!ok) return;
+    await db.ref('videos/' + id).remove();
+    logActivity(`حذف محتوى: ${title}`);
+    toast('تم الحذف', title, 'ok');
+}
+window.delItem = delItem;
+
+function previewItem(id){
+    const item = allItems.find(i => i.id === id);
+    if(!item) return;
+    $('#pvTitle').textContent = item.title || 'بدون عنوان';
+    $('#pvMeta').textContent = `${item.category || 'عام'} • ${item.isVip ? 'VIP' : 'مجاني'} • ${item.views||0} مشاهدة`;
+    $('#pvThumb').src = item.thumbnailUrl || 'https://via.placeholder.com/640x360/1f1f1f/ffffff?text=No+Image';
+    $('#pvDesc').textContent = item.description || 'لا يوجد وصف.';
+    $('#pvServers').innerHTML = (item.servers||[]).map((s,i) =>
+        `<span class="srv-pill"><i class="fa-solid fa-play"></i> ${esc(s.name||('سيرفر '+(i+1)))}</span>`).join('') || '<span class="srv-pill">لا سيرفرات</span>';
+    $('#pvOpen').href = 'play.html#watch-' + id;
+    openModal('mPreview');
+}
+window.previewItem = previewItem;
+
+/* =========================================================
+   14. USERS
+   ========================================================= */
+function loadUsers(){
+    db.ref('users').on('value', snap => {
+        allUsers = [];
+        snap.forEach(c => allUsers.push({ id: c.key, ...c.val() }));
+        $('#statTotalUsers').textContent = allUsers.length.toLocaleString('ar-EG');
+        renderUsers();
+    });
+}
+
+function renderUsers(){
+    const q = ($('#qUser').value || '').toLowerCase().trim();
+    const f = $('#filterUserStatus').value;
+    const now = Date.now();
+    const box = $('#usersList');
+
+    let list = allUsers.filter(u => {
+        if(q){
+            const n = (u.name||'').toLowerCase();
+            const e = (u.email||'').toLowerCase();
+            if(!n.includes(q) && !e.includes(q)) return false;
+        }
+        const banned = userIsBanned(u);
+        const vip = userIsVipNow(u);
+        const exp = userExpire(u);
+        if(f === 'vip' && !vip) return false;
+        if(f === 'blocked' && !banned) return false;
+        if(f === 'expired' && !(exp > 0 && exp <= now)) return false;
+        return true;
+    });
+
+    if(!list.length){
+        box.innerHTML = `<div class="empty"><i class="fa-solid fa-users"></i><p>لا يوجد مستخدمون مطابقون</p></div>`;
+        return;
+    }
+
+    box.innerHTML = list.map(u => {
+        const vip = userIsVipNow(u);
+        const banned = userIsBanned(u);
+        const exp = userExpire(u);
+        let days = '—', statusBadge;
+        if(banned){
+            statusBadge = `<span class="badge block"><i class="fa-solid fa-ban"></i> محظور</span>`;
+        }else if(exp > 0 && exp <= now){
+            statusBadge = `<span class="badge exp">منتهي</span>`;
+        }else{
+            statusBadge = `<span class="badge ok"><i class="fa-solid fa-circle-check"></i> نشط</span>`;
+        }
+        if(exp > 0){
+            const diff = Math.ceil((exp - now) / 86400000);
+            days = diff > 0 ? diff + ' يوم' : 'منتهي';
         }
 
-        // =========================================================
-        // 4. السيرفرات الديناميكية (إضافة وحذف الحقول)
-        // =========================================================
-        document.getElementById('btnAddServerField').addEventListener('click', () => {
-            appendServerRow('addServersContainer', '', '');
-        });
-
-        document.getElementById('btnEditAddServerField').addEventListener('click', () => {
-            appendServerRow('editServersContainer', '', '');
-        });
-
-        function appendServerRow(containerId, name = '', url = '') {
-            const container = document.getElementById(containerId);
-            const div = document.createElement('div');
-            div.className = 'server-row';
-            div.innerHTML = `
-                <input type="text" placeholder="اسم السيرفر" value="${name}" class="srv-name" required>
-                <input type="url" placeholder="رابط البث أو الفيديو" value="${url}" class="srv-url" required>
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()" title="حذف السيرفر">
-                    <i class="fa-solid fa-trash"></i>
+        return `
+        <div class="dl-row">
+            <div class="dl-cell"><span class="k">الاسم</span><span class="v">${esc(u.name || 'مستخدم')}</span></div>
+            <div class="dl-cell"><span class="k">البريد</span><span class="v" style="font-size:.82rem;color:var(--text-2)">${esc(u.email || '—')}</span></div>
+            <div class="dl-cell"><span class="k">النوع</span>${vip ? '<span class="badge vip"><i class="fa-solid fa-crown"></i> VIP</span>' : '<span class="badge">عادي</span>'}</div>
+            <div class="dl-cell"><span class="k">الانتهاء</span><span class="v">${exp ? fmtDate(exp) : '—'}</span></div>
+            <div class="dl-cell"><span class="k">المتبقي</span><span class="v">${days}</span></div>
+            <div class="dl-cell"><span class="k">الحالة</span>${statusBadge}</div>
+            <div class="dl-actions">
+                <button class="btn ghost sm" onclick="editUser('${esc(u.id)}')"><i class="fa-solid fa-user-pen"></i></button>
+                <button class="btn ${banned ? 'green' : 'gold'} sm" onclick="toggleBan('${esc(u.id)}',${!banned})" title="${banned ? 'إلغاء الحظر' : 'حظر'}">
+                    <i class="fa-solid ${banned ? 'fa-lock-open' : 'fa-ban'}"></i>
                 </button>
-            `;
-            container.appendChild(div);
-        }
+                <button class="btn red sm" onclick="delUser('${esc(u.id)}','${esc(u.name||'')}')"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
 
-        // =========================================================
-        // 5. إدارة التصنيفات والأقسام (Categories Management)
-        // =========================================================
-        const defaultCategories = ["بث مباشر", "أفلام", "مسلسلات", "رياضة", "عام", "محتوى VIP شركات"];
+$('#qUser').addEventListener('input', debounce(renderUsers, 220));
+$('#filterUserStatus').addEventListener('change', renderUsers);
 
-        function initCategories() {
-            db.ref('categories').on('value', (snapshot) => {
-                const addCatSelect = document.getElementById('addCategory');
-                const editCatSelect = document.getElementById('editCategory');
-                const tbody = document.getElementById('categoriesTableBody');
-                
-                addCatSelect.innerHTML = '';
-                editCatSelect.innerHTML = '';
-                tbody.innerHTML = '';
+$('#btnNewUser').addEventListener('click', () => openUserModal());
+$('#btnQuickUser').addEventListener('click', () => openUserModal());
 
-                if (!snapshot.exists()) {
-                    defaultCategories.forEach(cat => {
-                        const newRef = db.ref('categories').push();
-                        newRef.set({ name: cat, type: cat.includes('VIP') ? 'VIP' : 'عام' });
-                    });
-                    return;
-                }
+function openUserModal(){
+    $('#userForm').reset();
+    $('#userId').value = '';
+    $('#userModalTitle').textContent = 'مستخدم جديد';
+    openModal('mUser');
+}
 
-                snapshot.forEach(child => {
-                    const id = child.key;
-                    const cat = child.val();
+async function editUser(id){
+    const snap = await db.ref('users/' + id).once('value');
+    if(!snap.exists()) return toast('غير موجود','','err');
+    const u = snap.val();
+    $('#userId').value = id;
+    $('#userName').value = u.name || '';
+    $('#userEmail').value = u.email || '';
+    $('#userPassword').value = u.password || '';
+    $('#userIsVip').value = userIsVipNow(u) ? 'true' : 'false';
+    $('#userModalTitle').textContent = 'تعديل المستخدم';
+    openModal('mUser');
+}
+window.editUser = editUser;
 
-                    const opt1 = new Option(cat.name, cat.name);
-                    const opt2 = new Option(cat.name, cat.name);
-                    addCatSelect.add(opt1);
-                    editCatSelect.add(opt2);
+$('#userForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = $('#userId').value;
+    const name = $('#userName').value.trim();
+    const email = $('#userEmail').value.trim();
+    const password = $('#userPassword').value.trim();
+    const isVip = $('#userIsVip').value === 'true';
+    const val = parseInt($('#subValue').value) || 1;
+    const unit = $('#subUnit').value;
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${cat.name}</strong></td>
-                        <td><span class="badge ${cat.type === 'VIP' ? 'badge-vip' : ''}">${cat.type || 'عام'}</span></td>
-                        <td>
-                            <button class="btn btn-danger btn-sm" onclick="deleteCategory('${id}')">
-                                <i class="fa-solid fa-trash"></i> حذف
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+    let addMs = 0;
+    if(unit === 'days') addMs = val * 86400000;
+    else if(unit === 'months') addMs = val * 30 * 86400000;
+    else if(unit === 'years') addMs = val * 365 * 86400000;
+
+    const now = Date.now();
+    let baseTime = now;
+
+    if(id){
+        const snap = await db.ref('users/' + id).once('value');
+        const prev = snap.val() || {};
+        const prevExp = userExpire(prev);
+        if(prevExp > now) baseTime = prevExp; // تمديد تراكمي
+    }
+    const expireAt = baseTime + addMs;
+
+    const payload = {
+        name, email, password,
+        isVip,
+        // ✅ كتابة الحقلين معاً للتوافق مع المشغل
+        expireAt,
+        vipExpireDate: expireAt,
+        updatedAt: now
+    };
+
+    try{
+        if(id){
+            await db.ref('users/' + id).update(payload);
+        }else{
+            await db.ref('users').push({
+                ...payload,
+                isBlocked: false,
+                isBanned: false,
+                createdAt: now
             });
         }
+        closeModal('mUser');
+        logActivity(id ? `تعديل مستخدم: ${name}` : `إضافة مستخدم: ${name}`);
+        toast('تم الحفظ', name, 'ok');
+    }catch(err){ toast('خطأ', err.message, 'err'); }
+});
 
-        document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('newCategoryName').value.trim();
-            const type = document.getElementById('newCategoryType').value;
+async function toggleBan(id, status){
+    await db.ref('users/' + id).update({ isBlocked: status, isBanned: status });
+    logActivity(status ? 'حظر مستخدم' : 'إلغاء حظر مستخدم');
+    toast(status ? 'تم الحظر' : 'تم إلغاء الحظر','','ok');
+}
+window.toggleBan = toggleBan;
 
-            if (!name) return;
+async function delUser(id, name){
+    const ok = await askConfirm({title:'حذف حساب', msg:`حذف "${name}"؟ لا يمكن التراجع.`, okText:'حذف'});
+    if(!ok) return;
+    await db.ref('users/' + id).remove();
+    logActivity(`حذف مستخدم: ${name}`);
+    toast('تم الحذف', name, 'ok');
+}
+window.delUser = delUser;
 
-            await db.ref('categories').push().set({
-                name,
-                type,
-                createdAt: Date.now()
-            });
-
-            document.getElementById('newCategoryName').value = '';
+/* =========================================================
+   15. SETTINGS
+   ========================================================= */
+function loadSettings(){
+    db.ref('settings').on('value', snap => {
+        if(!snap.exists()) return;
+        const s = snap.val();
+        if(s.siteName){ $('#settingSiteName').value = s.siteName; $('#sideBrandName').textContent = s.siteName; }
+        if(s.tickerText) $('#settingTickerText').value = s.tickerText;
+        if(s.accentColor) $('#settingAccentColor').value = s.accentColor;
+        if(s.vipColor) $('#settingVipColor').value = s.vipColor;
+        if(s.popupBanner) $('#settingPopupBanner').value = s.popupBanner;
+    });
+}
+$('#btnSaveSettings').addEventListener('click', async () => {
+    try{
+        await db.ref('settings').set({
+            siteName: $('#settingSiteName').value.trim(),
+            tickerText: $('#settingTickerText').value.trim(),
+            accentColor: $('#settingAccentColor').value,
+            vipColor: $('#settingVipColor').value,
+            popupBanner: $('#settingPopupBanner').value.trim(),
+            updatedAt: Date.now()
         });
-
-        function deleteCategory(id) {
-            if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
-                db.ref('categories/' + id).remove();
-            }
-        }
-
-        // =========================================================
-        // 6. إضافة محتوى جديد
-        // =========================================================
-        document.getElementById('addForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const submitBtn = document.getElementById('btnSubmitAdd');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
-
-            const title = document.getElementById('addTitle').value.trim();
-            const category = document.getElementById('addCategory').value;
-            const isVip = document.getElementById('addIsVip').value === 'true';
-            const thumbnailUrl = document.getElementById('addThumbnail').value.trim();
-            const description = document.getElementById('addDescription').value.trim();
-
-            const srvNames = document.querySelectorAll('#addServersContainer .srv-name');
-            const srvUrls = document.querySelectorAll('#addServersContainer .srv-url');
-
-            let servers = [];
-            srvNames.forEach((item, idx) => {
-                servers.push({
-                    name: item.value.trim(),
-                    url: srvUrls[idx].value.trim()
-                });
-            });
-
-            try {
-                const newRef = db.ref('videos').push();
-                await newRef.set({
-                    title,
-                    category,
-                    isVip,
-                    thumbnailUrl,
-                    description,
-                    servers,
-                    views: 0,
-                    createdAt: Date.now()
-                });
-
-                document.getElementById('addForm').reset();
-                document.getElementById('addServersContainer').innerHTML = `
-                    <div class="server-row">
-                        <input type="text" placeholder="اسم السيرفر" class="srv-name" required>
-                        <input type="url" placeholder="رابط البث أو الفيديو" class="srv-url" required>
-                    </div>
-                `;
-            } catch (error) {
-                alert('حدث خطأ أثناء الحفظ: ' + error.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> حفظ ونشر المحتوى فوراً';
-            }
-        });
-
-        // =========================================================
-        // 7. تحميل جدول المحتوى والفلترة
-        // =========================================================
-        function loadVideosTable() {
-            const filter = document.getElementById('filterVip').value;
-
-            db.ref('videos').on('value', (snapshot) => {
-                const tbody = document.getElementById('videosTableBody');
-                tbody.innerHTML = '';
-
-                let totalCount = 0;
-                let vipCount = 0;
-                let totalViews = 0;
-
-                if (!snapshot.exists()) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">لا يوجد محتوى مضاف حتى الآن.</td></tr>';
-                    updateStats(0, 0, 0);
-                    return;
-                }
-
-                snapshot.forEach((childSnapshot) => {
-                    const id = childSnapshot.key;
-                    const item = childSnapshot.val();
-                    
-                    totalCount++;
-                    if (item.isVip) vipCount++;
-                    totalViews += (item.views || 0);
-
-                    if (filter === 'free' && item.isVip) return;
-                    if (filter === 'vip' && !item.isVip) return;
-
-                    const thumb = item.thumbnailUrl || 'https://via.placeholder.com/50x30/1f1f1f/ffffff?text=Media';
-                    const serversCount = item.servers ? item.servers.length : 0;
-                    const vipBadge = item.isVip 
-                        ? `<span class="badge badge-vip"><i class="fa-solid fa-crown"></i> VIP</span>` 
-                        : `<span class="badge">عام</span>`;
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><img src="${thumb}" alt="${item.title}"></td>
-                        <td><strong>${item.title || 'بدون عنوان'}</strong></td>
-                        <td><span class="badge">${item.category || 'عام'}</span></td>
-                        <td>${vipBadge}</td>
-                        <td>${serversCount} سيرفرات</td>
-                        <td><i class="fa-regular fa-eye"></i> ${item.views || 0}</td>
-                        <td>
-                            <div class="actions-cell">
-                                <button class="btn btn-secondary btn-sm" onclick="openEditModal('${id}')">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteItem('${id}')">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                updateStats(totalCount, vipCount, totalViews);
-            });
-        }
-
-        function filterVideosTable() {
-            const input = document.getElementById("searchVideoInput").value.toLowerCase();
-            const rows = document.querySelectorAll("#videosTableBody tr");
-
-            rows.forEach(row => {
-                const title = row.children[1] ? row.children[1].innerText.toLowerCase() : '';
-                if (title.includes(input)) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            });
-        }
-
-        function updateStats(total, vip, views) {
-            document.getElementById('statTotalVideos').innerText = total;
-            document.getElementById('statVipVideos').innerText = vip;
-            document.getElementById('statTotalViews').innerText = views;
-        }
-
-        function deleteItem(id) {
-            if (confirm('هل أنت متأكد من حذف هذا المحتوى؟')) {
-                db.ref('videos/' + id).remove();
-            }
-        }
-
-        // =========================================================
-        // 8. تعديل المحتوى
-        // =========================================================
-        async function openEditModal(id) {
-            const snapshot = await db.ref('videos/' + id).once('value');
-            if (!snapshot.exists()) return;
-
-            const item = snapshot.val();
-            document.getElementById('editId').value = id;
-            document.getElementById('editTitle').value = item.title || '';
-            document.getElementById('editCategory').value = item.category || 'عام';
-            document.getElementById('editIsVip').value = item.isVip ? "true" : "false";
-            document.getElementById('editThumbnail').value = item.thumbnailUrl || '';
-            document.getElementById('editDescription').value = item.description || '';
-
-            const container = document.getElementById('editServersContainer');
-            container.innerHTML = '';
-
-            if (item.servers && item.servers.length > 0) {
-                item.servers.forEach(srv => {
-                    appendServerRow('editServersContainer', srv.name, srv.url);
-                });
-            }
-
-            document.getElementById('editModal').classList.add('active');
-        }
-
-        function closeEditModal() {
-            document.getElementById('editModal').classList.remove('active');
-        }
-
-        document.getElementById('editForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const id = document.getElementById('editId').value;
-            const title = document.getElementById('editTitle').value.trim();
-            const category = document.getElementById('editCategory').value;
-            const isVip = document.getElementById('editIsVip').value === 'true';
-            const thumbnailUrl = document.getElementById('editThumbnail').value.trim();
-            const description = document.getElementById('editDescription').value.trim();
-
-            const srvNames = document.querySelectorAll('#editServersContainer .srv-name');
-            const srvUrls = document.querySelectorAll('#editServersContainer .srv-url');
-
-            let servers = [];
-            srvNames.forEach((item, idx) => {
-                servers.push({
-                    name: item.value.trim(),
-                    url: srvUrls[idx].value.trim()
-                });
-            });
-
-            await db.ref('videos/' + id).update({
-                title, category, isVip, thumbnailUrl, description, servers
-            });
-
-            closeEditModal();
-        });
-
-        // =========================================================
-        // 👥 9. إدارة المستخدمين وتحديد مدة الاشتراكات بالأيام والأشهر
-        // =========================================================
-        function loadUsersTable() {
-            db.ref('users').on('value', (snapshot) => {
-                const tbody = document.getElementById('usersTableBody');
-                tbody.innerHTML = '';
-
-                let userCount = 0;
-
-                if (!snapshot.exists()) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">لا يوجد مستخدمون حتى الآن.</td></tr>';
-                    document.getElementById('statTotalUsers').innerText = 0;
-                    return;
-                }
-
-                const now = Date.now();
-
-                snapshot.forEach((child) => {
-                    userCount++;
-                    const id = child.key;
-                    const u = child.val();
-
-                    const vipStatus = u.isVip 
-                        ? `<span class="badge badge-vip"><i class="fa-solid fa-crown"></i> VIP</span>` 
-                        : `<span class="badge">عادي</span>`;
-
-                    let expireStr = 'غير محدد';
-                    let remainingDays = '—';
-                    let statusBadge = `<span class="badge badge-active">نشط</span>`;
-
-                    if (u.expireAt) {
-                        expireStr = new Date(u.expireAt).toLocaleDateString('ar-EG');
-                        const diffTime = u.expireAt - now;
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                        if (diffDays <= 0) {
-                            remainingDays = 'منتهي';
-                            statusBadge = `<span class="badge badge-expired">منتهي الاشتراك</span>`;
-                        } else {
-                            remainingDays = `${diffDays} يوم`;
-                        }
-                    }
-
-                    if (u.isBlocked) {
-                        statusBadge = `<span class="badge badge-blocked">محظور</span>`;
-                    }
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${u.name || 'مستخدم'}</strong></td>
-                        <td>${u.email || 'بدون بريد'}</td>
-                        <td>${vipStatus}</td>
-                        <td>${expireStr}</td>
-                        <td><strong>${remainingDays}</strong></td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <div class="actions-cell">
-                                <button class="btn btn-secondary btn-sm" onclick="editUserModal('${id}')" title="تعديل الحساب والاشتراك">
-                                    <i class="fa-solid fa-user-pen"></i>
-                                </button>
-                                <button class="btn ${u.isBlocked ? 'btn-success' : 'btn-danger'} btn-sm" onclick="toggleUserBlock('${id}', ${!u.isBlocked})">
-                                    <i class="fa-solid ${u.isBlocked ? 'fa-lock-open' : 'fa-ban'}"></i>
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteUser('${id}')">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                document.getElementById('statTotalUsers').innerText = userCount;
-            });
-        }
-
-        function toggleUserBlock(id, status) {
-            db.ref('users/' + id).update({ isBlocked: status });
-        }
-
-        function deleteUser(id) {
-            if (confirm('هل أنت متأكد من حذف هذا الحساب؟')) {
-                db.ref('users/' + id).remove();
-            }
-        }
-
-        function openAddUserModal() {
-            document.getElementById('userForm').reset();
-            document.getElementById('userId').value = '';
-            document.getElementById('userModalTitle').innerText = 'إضافة حساب جديد وتحديد مدة الاشتراك';
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        async function editUserModal(id) {
-            const snap = await db.ref('users/' + id).once('value');
-            if(!snap.exists()) return;
-            const u = snap.val();
-
-            document.getElementById('userId').value = id;
-            document.getElementById('userName').value = u.name || '';
-            document.getElementById('userEmail').value = u.email || '';
-            document.getElementById('userPassword').value = u.password || '';
-            document.getElementById('userIsVip').value = u.isVip ? 'true' : 'false';
-            document.getElementById('userModalTitle').innerText = 'تعديل الحساب وتمديد الاشتراك';
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        function closeUserModal() {
-            document.getElementById('userModal').classList.remove('active');
-        }
-
-        document.getElementById('userForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const userId = document.getElementById('userId').value;
-            const name = document.getElementById('userName').value.trim();
-            const email = document.getElementById('userEmail').value.trim();
-            const password = document.getElementById('userPassword').value.trim();
-            const isVip = document.getElementById('userIsVip').value === 'true';
-
-            const val = parseInt(document.getElementById('subDurationValue').value) || 1;
-            const unit = document.getElementById('subDurationUnit').value;
-
-            let addMs = 0;
-            if (unit === 'days') addMs = val * 24 * 60 * 60 * 1000;
-            else if (unit === 'months') addMs = val * 30 * 24 * 60 * 60 * 1000;
-            else if (unit === 'years') addMs = val * 365 * 24 * 60 * 60 * 1000;
-
-            const now = Date.now();
-            let expireAt = now + addMs;
-
-            if (userId) {
-                // تحديث حساب
-                await db.ref('users/' + userId).update({
-                    name, email, password, isVip, expireAt
-                });
-            } else {
-                // إضافة جديد
-                const newRef = db.ref('users').push();
-                await newRef.set({
-                    name, email, password, isVip, isBlocked: false, createdAt: now, expireAt
-                });
-            }
-
-            closeUserModal();
-        });
-
-        // =========================================================
-        // 🎨 10. حفظ وتخصيص المظهر والشكل (Site Settings Customizer)
-        // =========================================================
-        async function saveSiteSettings() {
-            const siteName = document.getElementById('settingSiteName').value.trim();
-            const tickerText = document.getElementById('settingTickerText').value.trim();
-            const accentColor = document.getElementById('settingAccentColor').value;
-            const vipColor = document.getElementById('settingVipColor').value;
-            const popupBanner = document.getElementById('settingPopupBanner').value.trim();
-
-            await db.ref('settings').set({
-                siteName,
-                tickerText,
-                accentColor,
-                vipColor,
-                popupBanner,
-                updatedAt: Date.now()
-            });
-
-            alert('تم حفظ وتطبيق المظهر بنجاح! سيتم إرساله للوحة المستخدم فوراً.');
-        }
-
-        function loadSiteSettings() {
-            db.ref('settings').on('value', (snap) => {
-                if(!snap.exists()) return;
-                const s = snap.val();
-
-                if (s.siteName) {
-                    document.getElementById('settingSiteName').value = s.siteName;
-                    document.getElementById('navSiteTitle').innerText = s.siteName;
-                }
-                if (s.tickerText) document.getElementById('settingTickerText').value = s.tickerText;
-                if (s.accentColor) document.getElementById('settingAccentColor').value = s.accentColor;
-                if (s.vipColor) document.getElementById('settingVipColor').value = s.vipColor;
-                if (s.popupBanner) document.getElementById('settingPopupBanner').value = s.popupBanner;
-            });
-        }
-
-        // =========================================================
-        // 📥 11. تصدير نسخة احتياطية من قواعد البيانات
-        // =========================================================
-        async function exportDatabaseBackup() {
-            const snapshot = await db.ref().once('value');
-            const data = JSON.stringify(snapshot.val(), null, 2);
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `backup_vip_media_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-        }
-
-        // =========================================================
-        // 🚀 التشغيل التلقائي عند بدء التحميل
-        // =========================================================
-        window.addEventListener('DOMContentLoaded', () => {
-            initCategories();
-            loadVideosTable();
-            loadUsersTable();
-            loadSiteSettings();
-        });
-    </script>
+        logActivity('تحديث إعدادات المظهر');
+        toast('تم الحفظ', 'الإعدادات طُبّقت على الموقع', 'ok');
+    }catch(err){ toast('خطأ', err.message, 'err'); }
+});
+
+/* =========================================================
+   16. CHANGE PIN
+   ========================================================= */
+$('#btnChangePin').addEventListener('click', () => {
+    $('#pinForm').reset();
+    openModal('mPin');
+});
+$('#pinForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const oldP = $('#pinOld').value.trim();
+    const newP = $('#pinNew').value.trim();
+    if(oldP !== SECURITY_PIN) return toast('خطأ', 'الرمز الحالي غير صحيح', 'err');
+    if(!/^\d{4,6}$/.test(newP)) return toast('خطأ', 'الرمز الجديد يجب أن يكون 4-6 أرقام', 'err');
+    try{
+        await db.ref('adminPin').set({ pin: newP, updatedAt: Date.now() });
+        SECURITY_PIN = newP;
+        closeModal('mPin');
+        logActivity('تغيير رمز الدخول');
+        toast('تم التغيير', 'استخدم الرمز الجديد في المرة القادمة', 'ok');
+    }catch(err){ toast('خطأ', err.message, 'err'); }
+});
+
+/* =========================================================
+   17. BACKUP
+   ========================================================= */
+async function exportBackup(){
+    try{
+        toast('جاري التحضير','يتم تصدير البيانات...','');
+        const snap = await db.ref().once('value');
+        const data = JSON.stringify(snap.val() || {}, null, 2);
+        const blob = new Blob([data], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `vip_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        logActivity('تصدير نسخة احتياطية');
+        toast('تم التصدير', 'الملف نزل على جهازك', 'ok');
+    }catch(err){ toast('خطأ', err.message, 'err'); }
+}
+
+/* =========================================================
+   18. PREVIEW LINK
+   ========================================================= */
+(function initPreview(){
+    const link = $('#previewLink');
+    const url = new URL('play.html', location.href).href;
+    link.href = url;
+})();
+
+/* =========================================================
+   19. BOOT
+   ========================================================= */
+window.addEventListener('DOMContentLoaded', () => {
+    renderPinDots();
+    loadCategories();
+    loadMedia();
+    loadUsers();
+    loadSettings();
+});
+</script>
 </body>
 </html>
