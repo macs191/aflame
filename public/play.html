@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Player Engines (HLS.js for IPTV / Dash.js for MPD / Video.js Standard) -->
+    <!-- Player Engines -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 
@@ -266,7 +266,7 @@
         .thumb-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            padding-top: 56.25%;
             background-color: #000;
         }
 
@@ -465,7 +465,6 @@
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* Profile & Account Details Modal CSS */
         .profile-row {
             display: flex;
             justify-content: space-between;
@@ -474,7 +473,6 @@
             font-size: 0.85rem;
         }
 
-        /* Mobile Specific Overrides */
         @media (max-width: 768px) {
             .navbar { flex-wrap: wrap; padding: 8px 12px; }
             .search-box { order: 3; max-width: 100%; margin-top: 4px; }
@@ -528,7 +526,7 @@
         <div id="bottomAdBanner" class="ad-banner-container" style="margin-top:25px;"></div>
     </div>
 
-    <!-- Auth Modal (Login / Register) -->
+    <!-- Auth Modal -->
     <div id="authModal" class="modal">
         <div class="modal-card">
             <button class="close-modal" onclick="closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
@@ -562,7 +560,7 @@
         </div>
     </div>
 
-    <!-- Account Details / User Profile Modal -->
+    <!-- Profile Modal -->
     <div id="profileModal" class="modal">
         <div class="modal-card">
             <button class="close-modal" onclick="closeModal('profileModal')"><i class="fa-solid fa-xmark"></i></button>
@@ -596,7 +594,7 @@
         </div>
     </div>
 
-    <!-- VIP Subscription Info Modal -->
+    <!-- VIP Modal -->
     <div id="subModal" class="modal">
         <div class="modal-card" style="text-align: center;">
             <button class="close-modal" onclick="closeModal('subModal')"><i class="fa-solid fa-xmark"></i></button>
@@ -605,9 +603,6 @@
             <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 15px;">
                 هذا المحتوى مخصص لحسابات VIP المميزة. يمكنك الاشتراك أو تجديد اشتراكك عبر التواصل مع إدارة المنصة.
             </p>
-            <div style="background: #0f1015; padding: 12px; border-radius: 8px; border: 1px dashed var(--vip-gold); margin-bottom: 15px;">
-                <p style="font-size: 0.8rem; color: #fff;">للتفعيل المباشر، يرجى تزويد الإدارة ببريدك الإلكتروني.</p>
-            </div>
             <button class="btn btn-vip" style="width: 100%; justify-content: center; padding: 10px;" onclick="closeModal('subModal')">
                 حسناً، فهمت
             </button>
@@ -620,18 +615,17 @@
             <div style="font-size: 3.5rem; color: var(--accent-color); margin-bottom: 8px;"><i class="fa-solid fa-user-slash"></i></div>
             <h3 style="font-weight: 800; margin-bottom: 8px; color: var(--accent-color);">حسابك معطل / محظور</h3>
             <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 15px;">
-                تم حظر حسابك من قبل إدارة المنصة. يرجى مراجعة الدعم الفني لحل المشكلة.
+                تم حظر حسابك من قبل إدارة المنصة. يرجى مراجعة الدعم الفني.
             </p>
             <button class="btn btn-outline" style="width: 100%; justify-content: center;" onclick="logout()">تسجيل الخروج</button>
         </div>
     </div>
 
-    <!-- Universal Video & Embedded Player Modal -->
+    <!-- Universal Player Modal -->
     <div id="playerModal" class="modal">
         <div class="modal-card large">
             <button class="close-modal" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
 
-            <!-- Video Player Host Area -->
             <div id="playerContainer" class="player-wrapper"></div>
 
             <div class="player-info-body">
@@ -641,7 +635,6 @@
                     <span><i class="fa-solid fa-folder"></i> <span id="modalCategory">عام</span></span>
                 </div>
 
-                <!-- Servers Section -->
                 <div id="serversSection" style="margin-top: 12px; display: none;">
                     <span style="font-size: 0.8rem; font-weight: 700; color: #ddd;"><i class="fa-solid fa-server"></i> اختر سيرفر / جودة المشاهدة:</span>
                     <div id="serversGrid" class="servers-grid"></div>
@@ -655,9 +648,7 @@
     </div>
 
     <script>
-        // =========================================================
-        // 1. Firebase Configuration & Initialization
-        // =========================================================
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
             authDomain: "voip17.firebaseapp.com",
@@ -683,15 +674,11 @@
         let hlsPlayerInstance = null;
         let dashPlayerInstance = null;
 
-        // =========================================================
-        // 2. Authentication State & Live User Realtime Listener
-        // =========================================================
         auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
                 db.ref('users/' + user.uid).on('value', (snapshot) => {
                     userData = snapshot.val();
-
                     if (!userData) {
                         db.ref('users/' + user.uid).set({
                             email: user.email,
@@ -702,7 +689,6 @@
                         });
                         return;
                     }
-
                     if (userData.isBanned) {
                         document.getElementById('bannedModal').classList.add('active');
                         closePlayer();
@@ -710,7 +696,6 @@
                     } else {
                         document.getElementById('bannedModal').classList.remove('active');
                     }
-
                     renderNavUserArea();
                     renderGridItems();
                 });
@@ -750,9 +735,6 @@
             return uData.vipExpireDate > Date.now();
         }
 
-        // =========================================================
-        // 3. Fetch Data, Ads & Dynamic Categories
-        // =========================================================
         window.addEventListener('DOMContentLoaded', () => {
             fetchMediaData();
             fetchAds();
@@ -832,7 +814,6 @@
                 const matchesSearch = title.includes(searchVal) || desc.includes(searchVal) || category.includes(searchVal);
 
                 if (!matchesSearch) return false;
-
                 if (activeTab === 'vip') return item.isVip === true;
                 if (activeTab === 'free') return !item.isVip;
                 if (activeTab !== 'all') return item.category === activeTab;
@@ -875,9 +856,6 @@
             });
         }
 
-        // =========================================================
-        // 4. Item Click & Subscription Gate
-        // =========================================================
         function handleCardClick(id) {
             const item = allFetchedItems.find(i => i.id === id);
             if (!item) return;
@@ -893,7 +871,6 @@
                 }
             }
 
-            // Update Dynamic SEO Tags for search engines & sharing
             updateSEOTags(item);
             openPlayerModal(item);
         }
@@ -908,8 +885,6 @@
             if(item.thumbnailUrl) {
                 document.getElementById('ogImage').setAttribute('content', item.thumbnailUrl);
             }
-
-            // Update URL hash without refreshing
             window.history.replaceState(null, null, `#watch-${item.id}`);
         }
 
@@ -922,9 +897,6 @@
             }
         }
 
-        // =========================================================
-        // 5. Universal Engine Player (Supports ALL URLs, Tokens, & HTML Scripts)
-        // =========================================================
         function openPlayerModal(item) {
             document.getElementById('modalTitle').innerText = item.title || 'بدون عنوان';
             document.getElementById('modalDesc').innerText = item.description || 'لا يوجد وصف متوفر.';
@@ -956,7 +928,7 @@
                 serversSection.style.display = 'none';
                 playUniversalSource(item.videoUrl || item.url);
             } else {
-                alert('عذراً، لا يوجد رابط بث أو سكريبت متاح لهذا المحتوى.');
+                alert('عذراً، لا يوجد رابط بث أوسكريبت متاح لهذا المحتوى.');
                 return;
             }
 
@@ -964,6 +936,9 @@
             db.ref('videos/' + item.id + '/views').set((item.views || 0) + 1);
         }
 
+        // =========================================================
+        // الدالة المحسّنة والمطورة لتشغيل روابط OK.ru و m3u8 المحمية
+        // =========================================================
         function playUniversalSource(source, isExplicitScript = false) {
             const container = document.getElementById('playerContainer');
             destroyPlayers();
@@ -972,7 +947,7 @@
             if (!source) return;
             source = source.trim();
 
-            // A. Handle Custom HTML Embed Code / Video Script Direct Execution
+            // 1. أكواد HTML المباشرة
             if (isExplicitScript || source.startsWith('<') || source.includes('<iframe') || source.includes('<script')) {
                 const wrapper = document.createElement('div');
                 wrapper.id = 'customScriptContainer';
@@ -981,7 +956,6 @@
                 wrapper.innerHTML = source;
                 container.appendChild(wrapper);
 
-                // Execute inline script tags if any exist in the code snippet
                 const scripts = wrapper.querySelectorAll('script');
                 scripts.forEach(oldScript => {
                     const newScript = document.createElement('script');
@@ -992,21 +966,49 @@
                 return;
             }
 
-            // B. YouTube URLs
+            // 2. معالجة خاصة وسريعة لسيرفرات OK.ru و okcdn.ru لتخطي قيود CORS
+            if (source.includes('okcdn.ru') || source.includes('ok.ru')) {
+                const video = document.createElement('video');
+                video.controls = true;
+                video.autoplay = true;
+                video.playsInline = true;
+                video.style.width = '100%';
+                video.style.height = '100%';
+
+                // جلب المباشر عبر HTML5 Video Tag لتجاوز CORS Headers في Chrome
+                video.src = source;
+                container.appendChild(video);
+
+                // تجربة المكمل بـ HLS في حال الرفض
+                video.onerror = function() {
+                    if (Hls.isSupported()) {
+                        hlsPlayerInstance = new Hls({
+                            xhrSetup: function(xhr, url) {
+                                xhr.withCredentials = false;
+                            }
+                        });
+                        hlsPlayerInstance.loadSource(source);
+                        hlsPlayerInstance.attachMedia(video);
+                    }
+                };
+                return;
+            }
+
+            // 3. YouTube
             if (source.includes('youtube.com') || source.includes('youtu.be')) {
                 const embedUrl = convertYouTubeUrl(source);
                 container.innerHTML = `<iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                 return;
             }
 
-            // C. Google Drive Video Links
+            // 4. Google Drive
             if (source.includes('drive.google.com')) {
                 const embedUrl = source.replace('/view', '/preview');
                 container.innerHTML = `<iframe src="${embedUrl}" allow="autoplay" allowfullscreen></iframe>`;
                 return;
             }
 
-            // D. MPEG-DASH (.mpd) Streams
+            // 5. MPEG-DASH (.mpd)
             if (source.includes('.mpd')) {
                 const video = document.createElement('video');
                 video.controls = true;
@@ -1021,7 +1023,7 @@
                 return;
             }
 
-            // E. HLS (.m3u8) IPTV & Tokenized Live Streams
+            // 6. القياسي HLS (.m3u8)
             if (source.includes('.m3u8') || source.includes('m3u8')) {
                 const video = document.createElement('video');
                 video.controls = true;
@@ -1034,8 +1036,7 @@
                 if (Hls.isSupported()) {
                     hlsPlayerInstance = new Hls({
                         enableWorker: true,
-                        lowLatencyMode: true,
-                        backBufferLength: 90
+                        lowLatencyMode: true
                     });
                     hlsPlayerInstance.loadSource(source);
                     hlsPlayerInstance.attachMedia(video);
@@ -1045,7 +1046,7 @@
                 return;
             }
 
-            // F. Direct Media Files (MP4, MKV, WebM, TS, MOV, FLV, AAC)
+            // 7. ملفات الفيديو المباشرة
             const isDirectFile = /\.(mp4|mkv|webm|mov|ts|flv|m4v|3gp|mp3)($|\?)/i.test(source);
             if (isDirectFile) {
                 const video = document.createElement('video');
@@ -1059,7 +1060,7 @@
                 return;
             }
 
-            // G. Universal Fallback Iframe Player (Supports Embed links, Vimeo, Ok.ru, Streamwise, Tokens)
+            // 8. Fallback Frame
             container.innerHTML = `<iframe src="${source}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
         }
 
@@ -1087,9 +1088,6 @@
             window.history.replaceState(null, null, ' ');
         }
 
-        // =========================================================
-        // 6. Profile & Account Management Modal
-        // =========================================================
         function openProfileModal() {
             if (!userData) return;
             document.getElementById('profileName').innerText = userData.name || 'بدون اسم';
@@ -1121,9 +1119,6 @@
             document.getElementById('subModal').classList.add('active');
         }
 
-        // =========================================================
-        // 7. Auth Handling Logic
-        // =========================================================
         function openAuthModal(mode) {
             isAuthLoginMode = (mode === 'login');
             updateAuthModalUI();
