@@ -4,6 +4,7 @@ export interface StreamInitializationResult {
   canPlayNative: boolean;
   streamUrl: string;
   headers?: Record<string, string>;
+  isHls: boolean;
 }
 
 export interface IStreamProvider {
@@ -13,36 +14,44 @@ export interface IStreamProvider {
   cleanup(): void;
 }
 
-/**
- * Default HLS Provider Strategy
- * Handles .m3u8 parsing verification and runtime setup.
- */
+const isHlsUrl = (url: string, mimeType?: string) => {
+  const path = (() => {
+    try {
+      return new URL(url).pathname.toLowerCase();
+    } catch {
+      return url.toLowerCase();
+    }
+  })();
+
+  return mimeType === 'application/vnd.apple.mpegurl' || mimeType === 'application/x-mpegurl' || path.endsWith('.m3u8');
+};
+
+/** Supports HLS and browser-native progressive media (MP4, WebM, Ogg, etc.). */
 export class HlsStreamProvider implements IStreamProvider {
   id = 'hls-direct';
-  name = 'Standard HLS Direct Provider';
+  name = 'HLS / Browser Native';
 
   async initializeStream(source: StreamSource): Promise<StreamInitializationResult> {
-    if (!source.url || !source.url.includes('.m3u8')) {
-      throw new Error('رابط البث غير صالحة صيغته. يجب أن يكون رابط HLS (.m3u8)');
+    if (!source.url) {
+      throw new Error('رابط الفيديو مطلوب.');
     }
 
+    const isHls = isHlsUrl(source.url, source.mimeType);
     const testVideo = document.createElement('video');
-    const canPlayNative = testVideo.canPlayType('application/vnd.apple.mpegurl') !== '';
+    const canPlayNative = isHls
+      ? testVideo.canPlayType('application/vnd.apple.mpegurl') !== ''
+      : source.mimeType
+        ? testVideo.canPlayType(source.mimeType) !== ''
+        : true;
 
-    return {
-      canPlayNative,
-      streamUrl: source.url,
-    };
+    return { canPlayNative, streamUrl: source.url, headers: source.headers, isHls };
   }
 
   cleanup(): void {
-    // Provider specific cleanup (e.g. revoking blob tokens or disconnecting sessions)
+    // Reserved for provider-specific cleanup.
   }
 }
 
-/**
- * Stream Factory / Manager to prevent binding components directly to a single engine
- */
 export class StreamManager {
   private static providers: Map<string, IStreamProvider> = new Map();
 
@@ -51,14 +60,8 @@ export class StreamManager {
   }
 
   static getProvider(providerId: string): IStreamProvider {
-    const provider = this.providers.get(providerId);
-    if (!provider) {
-      // Fallback to default HlsStreamProvider if missing
-      return new HlsStreamProvider();
-    }
-    return provider;
+    return this.providers.get(providerId) ?? new HlsStreamProvider();
   }
 }
 
-// Register default providers
 StreamManager.registerProvider(new HlsStreamProvider());

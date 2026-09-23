@@ -37,10 +37,13 @@ export interface Category {
 }
 
 export interface StreamSource {
-  providerId: string; // Identifier for provider strategy (e.g., 'hls-direct', 'secure-proxy')
-  url: string;        // The .m3u8 or stream link
+  providerId: string;
+  url: string;
+  label?: string;
+  mimeType?: string;
   drmKey?: string;
   quality?: '1080p' | '720p' | '480p' | 'auto';
+  headers?: Record<string, string>;
 }
 
 export interface LiveChannel {
