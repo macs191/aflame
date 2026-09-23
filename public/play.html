@@ -1,461 +1,625 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="dynamicPageTitle">FARESFLIX | منصة البث المتكاملة VIP</title>
-    <meta name="description" id="metaDescription" content="منصة FARESFLIX لمشاهدة أحدث الأفلام والمسلسلات والقنوات.">
-    <meta name="keywords" id="metaKeywords" content="بث مباشر, افلام, مسلسلات, IPTV, FARESFLIX">
-    <meta property="og:type" content="video.other">
-    <meta property="og:title" id="ogTitle" content="FARESFLIX">
-    <meta property="og:description" id="ogDescription" content="شاهد أحدث المحتويات مجاناً وللمشتركين VIP.">
-    <meta property="og:image" id="ogImage" content="https://via.placeholder.com/1200x630/15171e/ffffff?text=FARESFLIX">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0c10">
+<title id="dynamicPageTitle">FARESFLIX | منصة البث المتكاملة VIP</title>
+<meta name="description" id="metaDescription" content="منصة FARESFLIX لمشاهدة أحدث الأفلام والمسلسلات والقنوات.">
+<meta property="og:title" id="ogTitle" content="FARESFLIX">
+<meta property="og:description" id="ogDescription" content="شاهد أحدث المحتويات مجاناً وللمشتركين VIP.">
+<meta property="og:image" id="ogImage" content="https://via.placeholder.com/1200x630/15171e/ffffff?text=FARESFLIX">
 
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
-    <style>
-        :root {
-            --bg-color: #0b0c10;
-            --card-bg: #15171e;
-            --accent-color: #e50914;
-            --accent-hover: #ff0f1a;
-            --vip-gold: #ffb703;
-            --vip-gold-dark: #d49a00;
-            --text-color: #fff;
-            --text-secondary: #9aa0a6;
-            --border-color: #272a37;
-            --success-color: #2ec4b6;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-color); color: var(--text-color); padding-bottom: 70px; min-height: 100vh; overflow-x: hidden; }
+<style>
+:root{
+    --bg-color:#0b0c10; --card-bg:#15171e;
+    --accent-color:#e50914; --accent-hover:#ff0f1a;
+    --vip-gold:#ffb703; --vip-gold-dark:#d49a00;
+    --text-color:#fff; --text-secondary:#9aa0a6;
+    --border-color:#272a37; --success-color:#2ec4b6;
+    --live-red:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-height:100vh;overflow-x:hidden}
 
-        /* Navbar */
-        .navbar { background: rgba(11,12,16,.96); backdrop-filter: blur(12px); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 1000; gap: 10px; }
-        .navbar-brand { font-size: 1.3rem; font-weight: 900; color: var(--accent-color); text-decoration: none; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-        .navbar-brand span { color: #fff; }
-        .search-box { display: flex; align-items: center; background: #1a1d26; border: 1px solid var(--border-color); border-radius: 30px; padding: 5px 14px; width: 100%; max-width: 360px; transition: .3s; }
-        .search-box:focus-within { border-color: var(--accent-color); box-shadow: 0 0 10px rgba(229,9,20,.3); }
-        .search-box input { background: transparent; border: none; outline: none; color: #fff; width: 100%; padding: 4px 8px; font-size: .85rem; }
-        .nav-user-area { display: flex; align-items: center; gap: 8px; }
-        .btn { padding: 7px 14px; border-radius: 8px; font-size: .85rem; font-weight: 700; cursor: pointer; border: none; outline: none; transition: .25s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; white-space: nowrap; }
-        .btn-primary { background: var(--accent-color); color: #fff; }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: #fff; }
-        .btn-outline:hover { border-color: var(--accent-color); color: var(--accent-color); }
-        .btn-vip { background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold-dark)); color: #000; font-weight: 800; }
-        .user-badge-info { display: flex; align-items: center; gap: 8px; background: #181b24; padding: 4px 10px; border-radius: 30px; border: 1px solid var(--border-color); cursor: pointer; }
-        .sub-status-tag { font-size: .7rem; padding: 2px 6px; border-radius: 10px; font-weight: 800; }
-        .sub-status-tag.active { background: rgba(46,196,182,.15); color: var(--success-color); border: 1px solid var(--success-color); }
-        .sub-status-tag.expired { background: rgba(229,9,20,.15); color: var(--accent-color); border: 1px solid var(--accent-color); }
+/* ===== Navbar ===== */
+.navbar{background:rgba(11,12,16,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:1000;gap:10px}
+.navbar-brand{font-size:1.25rem;font-weight:900;color:var(--accent-color);text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.navbar-brand span{color:#fff}
+.search-box{display:flex;align-items:center;background:#1a1d26;border:1px solid var(--border-color);border-radius:30px;padding:5px 14px;width:100%;max-width:360px;transition:.3s}
+.search-box:focus-within{border-color:var(--accent-color);box-shadow:0 0 10px rgba(229,9,20,.3)}
+.search-box input{background:transparent;border:none;outline:none;color:#fff;width:100%;padding:4px 8px;font-size:.85rem;font-family:inherit}
+.nav-user-area{display:flex;align-items:center;gap:6px}
+.btn{padding:7px 12px;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;outline:none;transition:.25s;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap;font-family:inherit}
+.btn-primary{background:var(--accent-color);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-outline{background:transparent;border:1px solid var(--border-color);color:#fff}
+.btn-outline:hover{border-color:var(--accent-color);color:var(--accent-color)}
+.btn-vip{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;font-weight:800}
+.btn-vip:hover{filter:brightness(1.05)}
+.user-badge-info{display:flex;align-items:center;gap:6px;background:#181b24;padding:4px 10px;border-radius:30px;border:1px solid var(--border-color);cursor:pointer}
+.sub-status-tag{font-size:.68rem;padding:2px 6px;border-radius:10px;font-weight:800}
+.sub-status-tag.active{background:rgba(46,196,182,.15);color:var(--success-color);border:1px solid var(--success-color)}
+.sub-status-tag.expired{background:rgba(229,9,20,.15);color:var(--accent-color);border:1px solid var(--accent-color)}
 
-        /* Ticker */
-        .ticker-bar { background: linear-gradient(90deg, var(--accent-color), var(--vip-gold)); color: #fff; font-weight: 700; font-size: .85rem; padding: 8px 0; overflow: hidden; white-space: nowrap; display: none; }
-        .ticker-content { display: inline-block; padding-left: 100%; animation: tickerScroll 30s linear infinite; }
-        @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+/* ===== Ticker ===== */
+.ticker-bar{background:linear-gradient(90deg,var(--accent-color),var(--vip-gold));color:#fff;font-weight:700;font-size:.85rem;padding:8px 0;overflow:hidden;white-space:nowrap;display:none}
+.ticker-content{display:inline-block;padding-left:100%;animation:tickerScroll 30s linear infinite}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
 
-        .container { max-width: 1400px; margin: 15px auto; padding: 0 12px; }
-        .ad-banner-container { width: 100%; margin-bottom: 15px; text-align: center; overflow: hidden; border-radius: 10px; background: #12141a; border: 1px dashed var(--border-color); display: none; }
-        .ad-banner-container img, .ad-banner-container iframe { max-width: 100%; height: auto; border: none; }
+.container{max-width:1400px;margin:12px auto;padding:0 12px}
+.ad-banner-container{width:100%;margin-bottom:15px;text-align:center;overflow:hidden;border-radius:10px;background:#12141a;border:1px dashed var(--border-color);display:none}
+.ad-banner-container img,.ad-banner-container iframe{max-width:100%;height:auto;border:none}
 
-        .category-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
-        .category-tabs::-webkit-scrollbar { display: none; }
-        .tab-btn { background: #181b24; color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: .85rem; font-weight: 700; cursor: pointer; transition: .3s; white-space: nowrap; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-        .tab-btn.active, .tab-btn:hover { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
-        .tab-btn.vip-tab.active { background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold-dark)); color: #000; border-color: var(--vip-gold); }
+/* ===== View Toggle (VOD vs Live) ===== */
+.view-toggle{display:flex;gap:8px;background:#13151c;border:1px solid var(--border-color);border-radius:12px;padding:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+.view-toggle::-webkit-scrollbar{display:none}
+.view-btn{flex:1;min-width:130px;padding:10px 14px;border-radius:8px;background:transparent;border:none;color:var(--text-secondary);font-weight:800;font-size:.85rem;cursor:pointer;transition:.25s;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;white-space:nowrap}
+.view-btn.active{background:var(--accent-color);color:#fff;box-shadow:0 4px 14px rgba(229,9,20,.35)}
+.view-btn.active.live-btn{background:linear-gradient(135deg,var(--live-red),#b91c1c);box-shadow:0 4px 14px rgba(239,68,68,.4)}
+.view-btn.live-btn{color:#fff}
+.view-btn.live-btn i{color:var(--live-red)}
+.view-btn.live-btn.active i{color:#fff}
+.view-btn .live-dot{width:8px;height:8px;border-radius:50%;background:var(--live-red);animation:livePulse 1.2s infinite}
+.view-btn.active .live-dot{background:#fff}
+@keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,255,255,.6)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(255,255,255,0)}}
 
-        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-        @media (min-width: 600px) { .items-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; } }
-        @media (min-width: 1024px) { .items-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; } }
+/* ===== Category Tabs ===== */
+.category-tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--border-color);padding-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.category-tabs::-webkit-scrollbar{display:none}
+.tab-btn{background:#181b24;color:var(--text-secondary);border:1px solid var(--border-color);padding:8px 14px;border-radius:20px;font-size:.82rem;font-weight:700;cursor:pointer;transition:.3s;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0;font-family:inherit}
+.tab-btn.active,.tab-btn:hover{background:var(--accent-color);color:#fff;border-color:var(--accent-color)}
+.tab-btn.vip-tab.active{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;border-color:var(--vip-gold)}
+.tab-btn.live-cat-tab.active{background:linear-gradient(135deg,var(--live-red),#b91c1c);border-color:var(--live-red)}
 
-        .item-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; cursor: pointer; transition: .25s; border: 1px solid var(--border-color); display: flex; flex-direction: column; position: relative; }
-        .item-card:hover { transform: translateY(-5px); border-color: var(--accent-color); box-shadow: 0 8px 20px rgba(0,0,0,.6); }
-        .item-card.is-vip { border-color: rgba(255,183,3,.4); }
-        .item-card.is-vip:hover { border-color: var(--vip-gold); }
-        .thumb-container { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
-        .thumb-container img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        .play-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: .3s; }
-        .item-card:hover .play-overlay { opacity: 1; }
-        .play-overlay i { font-size: 2.8rem; color: var(--accent-color); }
-        .vip-card-badge { position: absolute; top: 8px; left: 8px; background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold-dark)); color: #000; padding: 2px 7px; border-radius: 4px; font-size: .68rem; font-weight: 900; z-index: 2; }
-        .category-badge { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.8); color: #fff; padding: 2px 7px; border-radius: 4px; font-size: .68rem; font-weight: 700; }
-        .card-details { padding: 10px; display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
-        .card-title { font-size: .88rem; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #fff; }
-        .card-meta { font-size: .75rem; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.05); }
+/* ===== VOD Grid ===== */
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+@media (min-width:600px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}}
+@media (min-width:1024px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}}
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 2000; justify-content: center; align-items: center; padding: 10px; backdrop-filter: blur(8px); overflow-y: auto; }
-        .modal.active { display: flex; }
-        .modal-card { background: var(--card-bg); width: 100%; max-width: 440px; border-radius: 14px; padding: 20px; position: relative; box-shadow: 0 15px 40px rgba(0,0,0,.8); border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
-        .modal-card.large { max-width: 1000px; padding: 0; overflow: hidden; }
-        .close-modal { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.7); color: #fff; border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; }
-        .close-modal:hover { background: var(--accent-color); }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; margin-bottom: 6px; font-size: .8rem; font-weight: 700; color: #ddd; }
-        .form-control { width: 100%; padding: 10px 12px; background: #0f1015; border: 1px solid var(--border-color); border-radius: 8px; color: #fff; outline: none; font-size: .88rem; }
-        .form-control:focus { border-color: var(--accent-color); }
-        .player-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
-        .player-wrapper video, .player-wrapper iframe, .player-wrapper div#customScriptContainer { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; border: none; outline: none; }
-        .player-info-body { padding: 15px; }
-        .servers-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .server-btn { background: #1e212d; color: #fff; border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: .8rem; font-weight: 700; }
-        .server-btn.active, .server-btn:hover { background: var(--accent-color); border-color: var(--accent-color); }
-        .status-box { text-align: center; padding: 50px 15px; grid-column: 1/-1; color: var(--text-secondary); }
-        .spinner { width: 35px; height: 35px; border: 3px solid rgba(255,255,255,.1); border-top: 3px solid var(--accent-color); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .profile-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: .85rem; }
-        .player-error { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; color: #fff; gap: 10px; text-align: center; padding: 20px; }
-        .player-error i { font-size: 3rem; color: var(--accent-color); }
+.item-card{background:var(--card-bg);border-radius:12px;overflow:hidden;transition:.25s;border:1px solid var(--border-color);display:flex;flex-direction:column;position:relative}
+.item-card:hover{transform:translateY(-4px);border-color:var(--accent-color);box-shadow:0 8px 20px rgba(0,0,0,.6)}
+.item-card.is-vip{border-color:rgba(255,183,3,.4)}
+.item-card.is-vip:hover{border-color:var(--vip-gold)}
+.thumb-container{position:relative;width:100%;padding-top:56.25%;background:#000;cursor:pointer}
+.thumb-container img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.play-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;opacity:0;transition:.3s}
+.item-card:hover .play-overlay{opacity:1}
+.play-overlay i{font-size:2.6rem;color:var(--accent-color)}
+.vip-card-badge{position:absolute;top:8px;left:8px;background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:900;z-index:2}
+.category-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.8);color:#fff;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:700}
+.download-flag{position:absolute;bottom:8px;left:8px;background:rgba(46,196,182,.9);color:#000;padding:2px 7px;border-radius:4px;font-size:.65rem;font-weight:900;z-index:2}
+.card-details{padding:10px;display:flex;flex-direction:column;gap:6px;flex-grow:1}
+.card-title{font-size:.88rem;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#fff;cursor:pointer}
+.card-meta{font-size:.72rem;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
 
-        @media (max-width: 768px) {
-            .navbar { flex-wrap: wrap; padding: 8px 12px; }
-            .search-box { order: 3; max-width: 100%; margin-top: 4px; }
-            .navbar-brand { font-size: 1.1rem; }
-            .modal-card { padding: 15px; }
-            .player-info-body { padding: 10px; }
-        }
-    </style>
+/* ===== Card Actions (Play + Download) ===== */
+.card-actions{display:flex;gap:6px;margin-top:8px}
+.card-action-btn{flex:1;padding:8px 6px;border-radius:8px;font-size:.72rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;border:none;outline:none;transition:.2s;font-family:inherit}
+.card-action-btn.play{background:var(--accent-color);color:#fff}
+.card-action-btn.play:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.card-action-btn.dl{background:#1e212d;color:#fff;border:1px solid var(--border-color)}
+.card-action-btn.dl:hover{background:rgba(255,183,3,.12);border-color:var(--vip-gold);color:var(--vip-gold);transform:translateY(-1px)}
+.card-action-btn.dl.vip-dl{border-color:rgba(255,183,3,.5)}
+.card-action-btn.dl i{font-size:.85rem}
+
+/* ===== Live Grid ===== */
+.live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+@media (min-width:600px){.live-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}}
+.live-card{background:var(--card-bg);border-radius:12px;overflow:hidden;cursor:pointer;transition:.25s;border:1px solid var(--border-color);display:flex;flex-direction:column;position:relative}
+.live-card:hover{transform:translateY(-4px);border-color:var(--live-red);box-shadow:0 8px 20px rgba(239,68,68,.25)}
+.live-card.is-vip{border-color:rgba(255,183,3,.4)}
+.live-thumb{position:relative;width:100%;padding-top:56.25%;background:#000}
+.live-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:12px;transition:.3s}
+.live-thumb .live-indicator{position:absolute;top:8px;left:8px;background:var(--live-red);color:#fff;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:900;display:inline-flex;align-items:center;gap:4px;z-index:2}
+.live-thumb .live-indicator::before{content:'';width:6px;height:6px;border-radius:50%;background:#fff;animation:livePulse 1.2s infinite}
+.live-details{padding:10px;display:flex;flex-direction:column;gap:6px;flex-grow:1}
+.live-name{font-size:.85rem;font-weight:800;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#fff}
+.live-meta{font-size:.7rem;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
+
+/* ===== Modals ===== */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;justify-content:center;align-items:flex-end;padding:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);overflow-y:auto}
+@media (min-width:640px){.modal{align-items:center;padding:20px}}
+.modal.active{display:flex}
+.modal-card{background:var(--card-bg);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:22px 18px;position:relative;box-shadow:0 -10px 40px rgba(0,0,0,.8);border:1px solid var(--border-color);max-height:92vh;overflow-y:auto;animation:slideUp .35s cubic-bezier(.34,1.4,.64,1)}
+@media (min-width:640px){.modal-card{border-radius:16px;padding:22px;max-height:90vh;animation:zoomIn .3s cubic-bezier(.34,1.56,.64,1)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes zoomIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.modal-card.large{max-width:1000px;padding:0;overflow:hidden;border-radius:14px}
+.modal-grab{width:42px;height:4px;border-radius:4px;background:rgba(255,255,255,.18);margin:0 auto 14px}
+@media (min-width:640px){.modal-grab{display:none}}
+.close-modal{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);color:#fff;border:1px solid var(--border-color);width:34px;height:34px;border-radius:50%;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:.2s}
+.close-modal:hover{background:var(--accent-color);transform:rotate(90deg)}
+
+.form-group{margin-bottom:14px}
+.form-group label{display:block;margin-bottom:6px;font-size:.8rem;font-weight:700;color:#ddd}
+.form-control{width:100%;padding:11px 12px;background:#0f1015;border:1px solid var(--border-color);border-radius:8px;color:#fff;outline:none;font-size:.88rem;font-family:inherit;transition:.2s}
+.form-control:focus{border-color:var(--accent-color)}
+
+/* ===== Player ===== */
+.player-wrapper{position:relative;width:100%;padding-top:56.25%;background:#000}
+.player-wrapper video,.player-wrapper iframe,.player-wrapper div#customScriptContainer{position:absolute;inset:0;width:100%!important;height:100%!important;border:none;outline:none}
+.player-info-body{padding:15px}
+.servers-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.server-btn{background:#1e212d;color:#fff;border:1px solid var(--border-color);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:700;font-family:inherit;transition:.2s}
+.server-btn.active,.server-btn:hover{background:var(--accent-color);border-color:var(--accent-color)}
+
+/* ===== Download button inside player ===== */
+.player-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.player-actions .btn{flex:1;min-width:130px;justify-content:center;padding:10px}
+.dl-btn-player{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;font-weight:800;box-shadow:0 4px 14px rgba(255,183,3,.3)}
+.dl-btn-player:hover{filter:brightness(1.07);transform:translateY(-1px)}
+
+/* ===== Download Flow ===== */
+.dl-hero{text-align:center;padding:4px 0 14px}
+.dl-hero-icon{width:70px;height:70px;border-radius:50%;margin:0 auto 12px;background:linear-gradient(135deg,var(--accent-color),var(--vip-gold));display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#fff;box-shadow:0 10px 28px rgba(229,9,20,.35)}
+.dl-hero h3{font-size:1.05rem;font-weight:900;margin-bottom:4px}
+.dl-hero p{color:var(--text-secondary);font-size:.82rem;line-height:1.5}
+.dl-options{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.dl-option-btn{padding:14px;border-radius:12px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1px solid transparent;text-align:right;transition:.25s;font-family:inherit;width:100%}
+.dl-option-btn:hover{transform:translateY(-2px)}
+.dl-option-btn.vip-option{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;box-shadow:0 6px 18px rgba(255,183,3,.3)}
+.dl-option-btn.free-option{background:#1e212d;border-color:var(--border-color);color:#fff}
+.dl-option-btn.free-option:hover{border-color:var(--accent-color)}
+.dl-opt-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.dl-option-btn.vip-option .dl-opt-icon{background:rgba(0,0,0,.15)}
+.dl-option-btn.free-option .dl-opt-icon{background:rgba(255,255,255,.06);color:var(--accent-color)}
+.dl-opt-text{flex:1;min-width:0}
+.dl-opt-title{font-weight:800;font-size:.9rem;margin-bottom:2px}
+.dl-opt-sub{font-size:.72rem;opacity:.85;line-height:1.4}
+
+/* VIP benefits list */
+.vip-benefits{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:8px}
+.vip-benefits li{display:flex;align-items:center;gap:10px;font-size:.85rem;padding:10px 12px;background:#0f1015;border-radius:10px;border:1px solid var(--border-color)}
+.vip-benefits li i{color:var(--vip-gold);font-size:1rem;width:18px;text-align:center}
+
+/* Countdown */
+.countdown-wrap{text-align:center;padding:8px 0}
+.countdown-circle{width:100px;height:100px;margin:0 auto 14px;border-radius:50%;background:conic-gradient(var(--accent-color) var(--progress,0%),rgba(255,255,255,.08) 0);display:flex;align-items:center;justify-content:center;position:relative;transition:background .3s}
+.countdown-circle::before{content:'';position:absolute;inset:7px;border-radius:50%;background:var(--card-bg)}
+.countdown-num{position:relative;font-size:2rem;font-weight:900;color:var(--accent-color)}
+.countdown-txt{font-size:.85rem;color:var(--text-secondary);margin-top:6px}
+.countdown-txt strong{color:#fff;font-weight:800}
+
+.ad-container{width:100%;min-height:150px;max-height:300px;overflow:hidden;border-radius:12px;background:#0f1015;border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;margin:14px 0}
+.ad-container iframe,.ad-container img,.ad-container video{max-width:100%;max-height:300px;border:none}
+
+.dl-ready-btn{width:100%;padding:14px;border-radius:12px;font-weight:800;font-size:.95rem;border:none;cursor:pointer;font-family:inherit;transition:.25s;background:linear-gradient(135deg,var(--success-color),#1a9a8e);color:#fff;display:none;box-shadow:0 8px 22px rgba(46,196,182,.35)}
+.dl-ready-btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.dl-ready-btn.show{display:flex;align-items:center;justify-content:center;gap:8px;animation:zoomIn .3s}
+
+/* Status / Empty */
+.status-box{text-align:center;padding:50px 15px;grid-column:1/-1;color:var(--text-secondary)}
+.spinner{width:35px;height:35px;border:3px solid rgba(255,255,255,.1);border-top:3px solid var(--accent-color);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{100%{transform:rotate(360deg)}}
+.profile-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-color);font-size:.85rem}
+.player-error{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;color:#fff;gap:10px;text-align:center;padding:20px}
+.player-error i{font-size:3rem;color:var(--accent-color)}
+
+/* Toast */
+.toast-wrap{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:calc(100% - 32px);max-width:420px}
+.toast{background:linear-gradient(135deg,#14141c,#0e0e16);border:1px solid var(--border-color);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 15px 40px rgba(0,0,0,.7);animation:zoomIn .3s;pointer-events:auto;font-size:.85rem;font-weight:700}
+.toast i{color:var(--accent-color)}
+.toast.ok i{color:var(--success-color)}
+.toast.err i{color:var(--accent-color)}
+
+/* ===== Mobile ===== */
+@media (max-width:768px){
+    .navbar{flex-wrap:wrap;padding:8px 12px;gap:8px}
+    .search-box{order:3;max-width:100%;margin-top:2px}
+    .navbar-brand{font-size:1.05rem}
+    .modal-card{padding:18px 15px}
+    .player-info-body{padding:12px}
+    .card-actions .card-action-btn{padding:7px 4px;font-size:.68rem}
+    .view-toggle .view-btn{min-width:auto;padding:9px 12px;font-size:.78rem}
+}
+@media (max-width:380px){
+    .card-action-btn span{display:none}
+    .card-action-btn{padding:8px 4px}
+}
+</style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <a href="#" class="navbar-brand" onclick="location.reload()">
-            <i class="fa-solid fa-circle-play"></i>
-            <span id="brandText">FARES<span>FLIX</span></span>
-        </a>
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass" style="color: #777;"></i>
-            <input type="text" id="searchInput" placeholder="بحث عن فيلم، مسلسل، أو قناة...">
-        </div>
-        <div class="nav-user-area" id="navUserArea"></div>
-    </nav>
+<nav class="navbar">
+    <a href="#" class="navbar-brand" onclick="event.preventDefault();switchView('vod');">
+        <i class="fa-solid fa-circle-play"></i>
+        <span id="brandText">FARES<span>FLIX</span></span>
+    </a>
+    <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass" style="color:#777"></i>
+        <input type="text" id="searchInput" placeholder="بحث...">
+    </div>
+    <div class="nav-user-area" id="navUserArea"></div>
+</nav>
 
-    <div class="ticker-bar" id="tickerBar"><div class="ticker-content" id="tickerContent"></div></div>
+<div class="ticker-bar" id="tickerBar"><div class="ticker-content" id="tickerContent"></div></div>
 
-    <div class="container">
-        <div id="topAdBanner" class="ad-banner-container"></div>
-        <div class="category-tabs" id="categoryTabs"></div>
-        <div id="itemsGrid" class="items-grid">
-            <div class="status-box"><div class="spinner"></div><p>جاري الاتصال بقاعدة البيانات...</p></div>
-        </div>
-        <div id="bottomAdBanner" class="ad-banner-container" style="margin-top:25px;"></div>
+<div class="container">
+    <div id="topAdBanner" class="ad-banner-container"></div>
+
+    <!-- View Toggle: VOD / Live -->
+    <div class="view-toggle">
+        <button class="view-btn active" data-view="vod">
+            <i class="fa-solid fa-film"></i> الأفلام والمسلسلات
+        </button>
+        <button class="view-btn live-btn" data-view="live">
+            <span class="live-dot"></span> البث المباشر
+        </button>
     </div>
 
-    <!-- Auth Modal -->
-    <div id="authModal" class="modal">
-        <div class="modal-card">
-            <button class="close-modal" onclick="closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
-            <h3 id="authTitle" style="text-align: center; margin-bottom: 15px; font-weight: 800;">تسجيل الدخول</h3>
-            <form id="authForm">
-                <div class="form-group" id="nameGroup" style="display: none;">
-                    <label>الاسم الكامل</label>
-                    <input type="text" id="authName" class="form-control" placeholder="أدخل اسمك الكامل">
-                </div>
-                <div class="form-group">
-                    <label>البريد الإلكتروني</label>
-                    <input type="email" id="authEmail" class="form-control" required placeholder="example@mail.com">
-                </div>
-                <div class="form-group">
-                    <label>كلمة المرور</label>
-                    <input type="password" id="authPassword" class="form-control" required placeholder="••••••••">
-                </div>
-                <button type="submit" id="authSubmitBtn" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px; margin-top: 8px;">دخول</button>
-            </form>
-            <div style="text-align: center; margin-top: 12px; font-size: .8rem;">
-                <a href="#" id="forgotPassLink" style="color: var(--text-secondary); text-decoration: none;">نسيت كلمة المرور؟</a>
+    <!-- VOD Tabs -->
+    <div class="category-tabs" id="vodTabs"></div>
+    <!-- Live Tabs -->
+    <div class="category-tabs" id="liveTabs" style="display:none"></div>
+
+    <!-- Main Grid -->
+    <div id="itemsGrid" class="items-grid">
+        <div class="status-box"><div class="spinner"></div><p>جاري الاتصال بقاعدة البيانات...</p></div>
+    </div>
+
+    <div id="bottomAdBanner" class="ad-banner-container" style="margin-top:25px"></div>
+</div>
+
+<!-- =============== Auth Modal =============== -->
+<div id="authModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-grab"></div>
+        <button class="close-modal" onclick="closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
+        <h3 id="authTitle" style="text-align:center;margin-bottom:15px;font-weight:800">تسجيل الدخول</h3>
+        <form id="authForm">
+            <div class="form-group" id="nameGroup" style="display:none">
+                <label>الاسم الكامل</label>
+                <input type="text" id="authName" class="form-control" placeholder="أدخل اسمك الكامل">
             </div>
-            <div style="text-align: center; margin-top: 8px; font-size: .8rem; color: var(--text-secondary);">
-                <span id="authToggleText">ليس لديك حساب؟</span>
-                <a href="#" id="authToggleBtn" style="color: var(--accent-color); font-weight: 700; text-decoration: none;">إنشاء حساب جديد</a>
+            <div class="form-group">
+                <label>البريد الإلكتروني</label>
+                <input type="email" id="authEmail" class="form-control" required placeholder="example@mail.com">
             </div>
-        </div>
-    </div>
-
-    <!-- Profile Modal -->
-    <div id="profileModal" class="modal">
-        <div class="modal-card">
-            <button class="close-modal" onclick="closeModal('profileModal')"><i class="fa-solid fa-xmark"></i></button>
-            <div style="text-align: center; margin-bottom: 15px;">
-                <i class="fa-solid fa-circle-user" style="font-size: 3.5rem; color: var(--accent-color);"></i>
-                <h3 id="profileName" style="margin-top: 8px; font-weight: 800;">---</h3>
-                <p id="profileEmail" style="font-size: .8rem; color: var(--text-secondary);">---</p>
+            <div class="form-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="authPassword" class="form-control" required placeholder="••••••••">
             </div>
-            <div class="profile-row"><span>حالة الاشتراك:</span><span id="profileSubStatus" style="font-weight: 800;">---</span></div>
-            <div class="profile-row"><span>تاريخ انتهاء الاشتراك:</span><span id="profileExpireDate" style="font-weight: 700;">---</span></div>
-            <div class="profile-row"><span>الأيام المتبقية:</span><span id="profileDaysLeft" style="font-weight: 800; color: var(--vip-gold);">---</span></div>
-            <div style="margin-top: 18px; display: flex; gap: 8px;">
-                <button class="btn btn-vip" style="flex:1; justify-content:center;" onclick="closeModal('profileModal'); openSubModal();"><i class="fa-solid fa-crown"></i> تجديد الاشتراك</button>
-                <button class="btn btn-outline" style="padding:8px 12px;" onclick="logout()">خروج</button>
+            <button type="submit" id="authSubmitBtn" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;margin-top:8px">دخول</button>
+        </form>
+        <div style="text-align:center;margin-top:12px;font-size:.8rem">
+            <a href="#" id="forgotPassLink" style="color:var(--text-secondary);text-decoration:none">نسيت كلمة المرور؟</a>
+        </div>
+        <div style="text-align:center;margin-top:8px;font-size:.8rem;color:var(--text-secondary)">
+            <span id="authToggleText">ليس لديك حساب؟</span>
+            <a href="#" id="authToggleBtn" style="color:var(--accent-color);font-weight:700;text-decoration:none">إنشاء حساب جديد</a>
+        </div>
+    </div>
+</div>
+
+<!-- =============== Profile Modal =============== -->
+<div id="profileModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-grab"></div>
+        <button class="close-modal" onclick="closeModal('profileModal')"><i class="fa-solid fa-xmark"></i></button>
+        <div style="text-align:center;margin-bottom:15px">
+            <i class="fa-solid fa-circle-user" style="font-size:3.5rem;color:var(--accent-color)"></i>
+            <h3 id="profileName" style="margin-top:8px;font-weight:800">---</h3>
+            <p id="profileEmail" style="font-size:.8rem;color:var(--text-secondary)">---</p>
+        </div>
+        <div class="profile-row"><span>حالة الاشتراك:</span><span id="profileSubStatus" style="font-weight:800">---</span></div>
+        <div class="profile-row"><span>تاريخ انتهاء الاشتراك:</span><span id="profileExpireDate" style="font-weight:700">---</span></div>
+        <div class="profile-row"><span>الأيام المتبقية:</span><span id="profileDaysLeft" style="font-weight:800;color:var(--vip-gold)">---</span></div>
+        <div style="margin-top:18px;display:flex;gap:8px">
+            <button class="btn btn-vip" style="flex:1;justify-content:center" onclick="closeModal('profileModal');openSubModal()"><i class="fa-solid fa-crown"></i> ترقية / تجديد</button>
+            <button class="btn btn-outline" style="padding:8px 12px" onclick="logout()">خروج</button>
+        </div>
+    </div>
+</div>
+
+<!-- =============== VIP Benefits Modal =============== -->
+<div id="subModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-grab"></div>
+        <button class="close-modal" onclick="closeModal('subModal')"><i class="fa-solid fa-xmark"></i></button>
+        <div class="dl-hero">
+            <div class="dl-hero-icon"><i class="fa-solid fa-crown"></i></div>
+            <h3>مزايا الاشتراك VIP</h3>
+            <p>احصل على تجربة مشاهدة وتحميل بلا حدود</p>
+        </div>
+        <ul class="vip-benefits">
+            <li><i class="fa-solid fa-download"></i> تحميل مباشر بدون إعلانات لكل المحتوى</li>
+            <li><i class="fa-solid fa-unlock"></i> فتح المحتوى الحصري VIP (أفلام + مسلسلات)</li>
+            <li><i class="fa-solid fa-bolt"></i> سيرفرات بجودة عالية 4K/1080p</li>
+            <li><i class="fa-solid fa-headset"></i> دعم فني أولوية</li>
+            <li><i class="fa-solid fa-circle-check"></i> بدون إعلانات منبثقة</li>
+        </ul>
+        <button class="btn btn-vip" style="width:100%;justify-content:center;padding:12px" onclick="contactAdminForSub()">
+            <i class="fa-solid fa-comments"></i> تواصل مع الإدارة للاشتراك
+        </button>
+        <button class="btn btn-outline" style="width:100%;justify-content:center;padding:10px;margin-top:8px" onclick="closeModal('subModal')">لاحقاً</button>
+    </div>
+</div>
+
+<!-- =============== Banned Modal =============== -->
+<div id="bannedModal" class="modal">
+    <div class="modal-card" style="text-align:center">
+        <div class="modal-grab"></div>
+        <div style="font-size:3.5rem;color:var(--accent-color);margin-bottom:8px"><i class="fa-solid fa-user-slash"></i></div>
+        <h3 style="font-weight:800;margin-bottom:8px;color:var(--accent-color)">حسابك معطل / محظور</h3>
+        <p style="color:var(--text-secondary);font-size:.85rem;line-height:1.5;margin-bottom:15px">تم حظر حسابك من قبل إدارة المنصة.</p>
+        <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="logout()">تسجيل الخروج</button>
+    </div>
+</div>
+
+<!-- =============== Popup Banner =============== -->
+<div id="popupBannerModal" class="modal">
+    <div class="modal-card" style="text-align:center">
+        <div class="modal-grab"></div>
+        <div style="font-size:3rem;color:var(--vip-gold);margin-bottom:8px"><i class="fa-solid fa-bullhorn"></i></div>
+        <p id="popupBannerText" style="font-size:.95rem;line-height:1.6;margin:15px 0"></p>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="closeModal('popupBannerModal')">إغلاق</button>
+    </div>
+</div>
+
+<!-- =============== Player Modal =============== -->
+<div id="playerModal" class="modal">
+    <div class="modal-card large">
+        <button class="close-modal" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
+        <div id="playerContainer" class="player-wrapper"></div>
+        <div class="player-info-body">
+            <h3 id="modalTitle" style="font-size:1.1rem;font-weight:800">عنوان المحتوى</h3>
+            <div style="display:flex;gap:12px;font-size:.78rem;color:var(--text-secondary);margin-top:4px">
+                <span><i class="fa-regular fa-eye"></i> <span id="modalViews">0</span> مشاهدة</span>
+                <span><i class="fa-solid fa-folder"></i> <span id="modalCategory">عام</span></span>
             </div>
-        </div>
-    </div>
 
-    <!-- VIP Modal -->
-    <div id="subModal" class="modal">
-        <div class="modal-card" style="text-align: center;">
-            <button class="close-modal" onclick="closeModal('subModal')"><i class="fa-solid fa-xmark"></i></button>
-            <div style="font-size: 3.5rem; color: var(--vip-gold); margin-bottom: 8px;"><i class="fa-solid fa-crown"></i></div>
-            <h3 style="font-weight: 800; margin-bottom: 8px;">محتوى خاص بالمشتركين VIP</h3>
-            <p style="color: var(--text-secondary); font-size: .85rem; line-height: 1.5; margin-bottom: 15px;">هذا المحتوى مخصص لحسابات VIP. تواصل مع الإدارة للاشتراك.</p>
-            <button class="btn btn-vip" style="width: 100%; justify-content: center; padding: 10px;" onclick="closeModal('subModal')">حسناً، فهمت</button>
-        </div>
-    </div>
-
-    <!-- Banned Modal -->
-    <div id="bannedModal" class="modal">
-        <div class="modal-card" style="text-align: center;">
-            <div style="font-size: 3.5rem; color: var(--accent-color); margin-bottom: 8px;"><i class="fa-solid fa-user-slash"></i></div>
-            <h3 style="font-weight: 800; margin-bottom: 8px; color: var(--accent-color);">حسابك معطل / محظور</h3>
-            <p style="color: var(--text-secondary); font-size: .85rem; line-height: 1.5; margin-bottom: 15px;">تم حظر حسابك من قبل إدارة المنصة.</p>
-            <button class="btn btn-outline" style="width: 100%; justify-content: center;" onclick="logout()">تسجيل الخروج</button>
-        </div>
-    </div>
-
-    <!-- Popup Banner Modal (from settings) -->
-    <div id="popupBannerModal" class="modal">
-        <div class="modal-card" style="text-align: center;">
-            <div style="font-size: 3rem; color: var(--vip-gold); margin-bottom: 8px;"><i class="fa-solid fa-bullhorn"></i></div>
-            <p id="popupBannerText" style="font-size: .95rem; line-height: 1.6; margin: 15px 0;"></p>
-            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="closeModal('popupBannerModal')">إغلاق</button>
-        </div>
-    </div>
-
-    <!-- Player Modal -->
-    <div id="playerModal" class="modal">
-        <div class="modal-card large">
-            <button class="close-modal" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
-            <div id="playerContainer" class="player-wrapper"></div>
-            <div class="player-info-body">
-                <h3 id="modalTitle" style="font-size: 1.1rem; font-weight: 800;">عنوان المحتوى</h3>
-                <div style="display: flex; gap: 12px; font-size: .8rem; color: var(--text-secondary); margin-top: 4px;">
-                    <span><i class="fa-regular fa-eye"></i> <span id="modalViews">0</span> مشاهدة</span>
-                    <span><i class="fa-solid fa-folder"></i> <span id="modalCategory">عام</span></span>
-                </div>
-                <div id="serversSection" style="margin-top: 12px; display: none;">
-                    <span style="font-size: .8rem; font-weight: 700; color: #ddd;"><i class="fa-solid fa-server"></i> اختر سيرفر / جودة:</span>
-                    <div id="serversGrid" class="servers-grid"></div>
-                </div>
-                <div id="modalDesc" style="margin-top: 12px; background: #0f1015; padding: 10px; border-radius: 8px; font-size: .82rem; color: #bbb; max-height: 90px; overflow-y: auto;"></div>
+            <!-- Download button inside player -->
+            <div class="player-actions" id="playerDlWrap" style="display:none">
+                <button class="btn dl-btn-player" id="playerDlBtn">
+                    <i class="fa-solid fa-download"></i> تحميل الفيديو
+                </button>
             </div>
+
+            <div id="serversSection" style="margin-top:12px;display:none">
+                <span style="font-size:.78rem;font-weight:700;color:#ddd"><i class="fa-solid fa-server"></i> اختر سيرفر / جودة:</span>
+                <div id="serversGrid" class="servers-grid"></div>
+            </div>
+            <div id="modalDesc" style="margin-top:12px;background:#0f1015;padding:10px;border-radius:8px;font-size:.82rem;color:#bbb;max-height:100px;overflow-y:auto"></div>
         </div>
     </div>
+</div>
+
+<!-- =============== Download Options Modal =============== -->
+<div id="dlModal" class="modal">
+    <div class="modal-card" id="dlModalCard">
+        <!-- Will be filled dynamically -->
+    </div>
+</div>
+
+<!-- =============== Toasts =============== -->
+<div class="toast-wrap" id="toasts"></div>
 
 <script>
 /* =========================================================
-   إعداد Firebase (نفس المشروع تماماً مع اللوحة)
+   Firebase
    ========================================================= */
 const firebaseConfig = {
-    apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
-    authDomain: "voip17.firebaseapp.com",
-    databaseURL: "https://voip17-default-rtdb.firebaseio.com",
-    projectId: "voip17",
-    storageBucket: "voip17.firebasestorage.app",
-    messagingSenderId: "608379006778",
-    appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
-    measurementId: "G-GZNJZLM701"
+    apiKey:"AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
+    authDomain:"voip17.firebaseapp.com",
+    databaseURL:"https://voip17-default-rtdb.firebaseio.com",
+    projectId:"voip17",
+    storageBucket:"voip17.firebasestorage.app",
+    messagingSenderId:"608379006778",
+    appId:"1:608379006778:web:51fe8032d09fbd5b556a03",
+    measurementId:"G-GZNJZLM701"
 };
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
 /* =========================================================
-   متغيرات الحالة
+   State
    ========================================================= */
-let currentUser = null;
-let userData = null;
-let allFetchedItems = [];
-let allCategoryObjects = [];
-let siteSettings = {};
-let activeTab = 'all';
-let isAuthLoginMode = true;
-let hlsPlayerInstance = null;
-let dashPlayerInstance = null;
-let currentPlayingId = null;
-let hasHandledUrlHash = false;
-let userListenerRef = null;
-let userListenerCallback = null;
+let currentUser=null, userData=null;
+let allFetchedItems=[], allCategoryObjects=[];
+let allLiveChannels=[], allLiveCategories=[];
+let siteSettings={};
+let activeTab='all';
+let activeLiveTab='all';
+let currentView='vod'; // 'vod' | 'live'
+let isAuthLoginMode=true;
+let hlsPlayerInstance=null, dashPlayerInstance=null;
+let currentPlayingId=null;
+let hasHandledUrlHash=false;
+let userListenerRef=null, userListenerCallback=null;
+let currentDlItem=null; // item being downloaded
+let countdownTimer=null;
 
 /* =========================================================
-   أدوات مساعدة
+   Utilities
    ========================================================= */
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-}[c]));
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const debounce = (fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}};
 
-function debounce(fn, ms = 250) {
-    let t;
-    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-
-// توحيد حقول المستخدم: يدعم isBanned/isBlocked و vipExpireDate/expireAt
-function getUserVipExpire(u) {
-    if (!u) return 0;
-    return u.vipExpireDate || u.expireAt || 0;
-}
-function getUserIsVip(u) {
-    if (!u) return false;
+const getUserVipExpire = u => u ? (u.vipExpireDate || u.expireAt || 0) : 0;
+const getUserIsVip = u => {
+    if(!u) return false;
     const exp = getUserVipExpire(u);
-    if (u.isVip === true && exp === 0) return true; // دعم قديم: isVip=true بدون تاريخ
+    if(u.isVip === true && exp === 0) return true;
     return exp > Date.now();
-}
-function getUserIsBanned(u) {
-    return !!(u && (u.isBanned === true || u.isBlocked === true));
+};
+const getUserIsBanned = u => !!(u && (u.isBanned === true || u.isBlocked === true));
+
+function toast(msg, type=''){
+    const w = $('#toasts');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    const icon = type === 'ok' ? 'fa-circle-check' : type === 'err' ? 'fa-circle-exclamation' : 'fa-circle-info';
+    t.innerHTML = `<i class="fa-solid ${icon}"></i><span>${esc(msg)}</span>`;
+    w.appendChild(t);
+    setTimeout(()=>{t.style.transition='opacity .3s,transform .3s';t.style.opacity='0';t.style.transform='translateY(-10px)';setTimeout(()=>t.remove(),320);}, 3200);
 }
 
 /* =========================================================
-   مراقبة المصادقة + تنظيف listeners
+   Auth Listener
    ========================================================= */
-auth.onAuthStateChanged((user) => {
-    // تنظيف listener القديم
-    if (userListenerRef && userListenerCallback) {
+auth.onAuthStateChanged(user => {
+    if(userListenerRef && userListenerCallback){
         userListenerRef.off('value', userListenerCallback);
     }
-    userListenerRef = null;
-    userListenerCallback = null;
+    userListenerRef = null; userListenerCallback = null;
 
-    if (user) {
+    if(user){
         currentUser = user;
         userListenerRef = db.ref('users/' + user.uid);
-        userListenerCallback = userListenerRef.on('value', (snapshot) => {
-            userData = snapshot.val();
-            if (!userData) {
+        userListenerCallback = userListenerRef.on('value', snap => {
+            userData = snap.val();
+            if(!userData){
                 userListenerRef.set({
-                    email: user.email,
-                    name: user.displayName || 'مستخدم جديد',
-                    isBanned: false, isBlocked: false,
-                    isVip: false,
-                    vipExpireDate: 0, expireAt: 0,
-                    createdAt: Date.now()
+                    email:user.email, name:user.displayName || 'مستخدم جديد',
+                    isBanned:false, isBlocked:false, isVip:false,
+                    vipExpireDate:0, expireAt:0, createdAt:Date.now()
                 });
                 return;
             }
-            if (getUserIsBanned(userData)) {
-                document.getElementById('bannedModal').classList.add('active');
+            if(getUserIsBanned(userData)){
+                $('#bannedModal').classList.add('active');
                 closePlayer();
                 renderNavUserArea();
                 return;
-            } else {
-                document.getElementById('bannedModal').classList.remove('active');
+            }else{
+                $('#bannedModal').classList.remove('active');
             }
             renderNavUserArea();
             renderGridItems();
+            renderLiveChannels();
         });
-    } else {
-        currentUser = null;
-        userData = null;
+    }else{
+        currentUser = null; userData = null;
         renderNavUserArea();
         renderGridItems();
+        renderLiveChannels();
     }
 });
 
-/* =========================================================
-   واجهة المستخدم - شريط الحالة
-   ========================================================= */
-function renderNavUserArea() {
-    const navArea = document.getElementById('navUserArea');
-    if (currentUser && userData) {
+function renderNavUserArea(){
+    const navArea = $('#navUserArea');
+    if(currentUser && userData){
         const isVip = getUserIsVip(userData);
         const subTag = isVip
             ? `<span class="sub-status-tag active"><i class="fa-solid fa-crown"></i> VIP</span>`
             : `<span class="sub-status-tag expired">عادي</span>`;
         navArea.innerHTML = `
             <div class="user-badge-info" id="openProfileBtn">
-                <i class="fa-solid fa-circle-user" style="font-size:1.1rem;color:var(--accent-color);"></i>
-                <span style="font-size:.8rem;font-weight:700;">${esc(userData.name || 'حسابي')}</span>
+                <i class="fa-solid fa-circle-user" style="font-size:1.1rem;color:var(--accent-color)"></i>
+                <span style="font-size:.78rem;font-weight:700">${esc(userData.name||'حسابي')}</span>
                 ${subTag}
             </div>`;
-        document.getElementById('openProfileBtn').addEventListener('click', openProfileModal);
-    } else {
+        $('#openProfileBtn').addEventListener('click', openProfileModal);
+    }else{
         navArea.innerHTML = `
             <button class="btn btn-outline" id="loginBtn"><i class="fa-solid fa-right-to-bracket"></i> دخول</button>
-            <button class="btn btn-primary" id="registerBtn"><i class="fa-solid fa-user-plus"></i> حساب جديد</button>`;
-        document.getElementById('loginBtn').addEventListener('click', () => openAuthModal('login'));
-        document.getElementById('registerBtn').addEventListener('click', () => openAuthModal('register'));
+            <button class="btn btn-primary" id="registerBtn"><i class="fa-solid fa-user-plus"></i> جديد</button>`;
+        $('#loginBtn').addEventListener('click', ()=>openAuthModal('login'));
+        $('#registerBtn').addEventListener('click', ()=>openAuthModal('register'));
     }
 }
 
 /* =========================================================
-   تحميل الإعدادات من اللوحة
+   Settings
    ========================================================= */
-function loadSiteSettings() {
-    db.ref('settings').on('value', (snap) => {
+function loadSiteSettings(){
+    db.ref('settings').on('value', snap => {
         siteSettings = snap.val() || {};
-
-        // اسم الموقع
-        if (siteSettings.siteName) {
-            document.getElementById('brandText').innerHTML = esc(siteSettings.siteName);
+        if(siteSettings.siteName){
+            $('#brandText').innerHTML = esc(siteSettings.siteName);
             document.title = `${siteSettings.siteName} | منصة البث VIP`;
         }
-        // الألوان
-        if (siteSettings.accentColor) {
+        if(siteSettings.accentColor){
             document.documentElement.style.setProperty('--accent-color', siteSettings.accentColor);
         }
-        if (siteSettings.vipColor) {
+        if(siteSettings.vipColor){
             document.documentElement.style.setProperty('--vip-gold', siteSettings.vipColor);
         }
-        // الشريط الإخباري
-        if (siteSettings.tickerText) {
-            const bar = document.getElementById('tickerBar');
-            const content = document.getElementById('tickerContent');
-            content.textContent = siteSettings.tickerText;
+        if(siteSettings.tickerText){
+            const bar = $('#tickerBar');
+            $('#tickerContent').textContent = siteSettings.tickerText;
             bar.style.display = 'block';
         }
-        // الإعلان المنبثق (يظهر مرة واحدة لكل جلسة)
-        if (siteSettings.popupBanner && !sessionStorage.getItem('popupDismissed')) {
-            document.getElementById('popupBannerText').textContent = siteSettings.popupBanner;
-            setTimeout(() => {
-                document.getElementById('popupBannerModal').classList.add('active');
-                sessionStorage.setItem('popupDismissed', '1');
+        if(siteSettings.popupBanner && !sessionStorage.getItem('popupDismissed')){
+            $('#popupBannerText').textContent = siteSettings.popupBanner;
+            setTimeout(()=>{
+                $('#popupBannerModal').classList.add('active');
+                sessionStorage.setItem('popupDismissed','1');
             }, 1500);
         }
     });
 }
 
 /* =========================================================
-   تحميل الفيديوهات + التصنيفات
+   Fetch VOD data
    ========================================================= */
-function fetchMediaData() {
-    db.ref('videos').on('value', (snapshot) => {
+function fetchMediaData(){
+    db.ref('videos').on('value', snap => {
         allFetchedItems = [];
-        if (snapshot.exists()) {
-            snapshot.forEach((child) => {
-                allFetchedItems.push({ id: child.key, ...child.val() });
-            });
+        if(snap.exists()){
+            snap.forEach(c => allFetchedItems.push({id:c.key, ...c.val()}));
         }
         renderGridItems();
         checkUrlForDirectPlay();
-    }, (err) => {
-        console.error('DB read error:', err);
-        document.getElementById('itemsGrid').innerHTML =
-            `<div class="status-box"><p style="color:var(--accent-color)">تعذّر قراءة البيانات. تأكد من قواعد Firebase.</p></div>`;
+    }, err => {
+        console.error('DB err:', err);
+        $('#itemsGrid').innerHTML = `<div class="status-box"><p style="color:var(--accent-color)">تعذّر قراءة البيانات.</p></div>`;
     });
 }
 
-function fetchCategories() {
-    db.ref('categories').on('value', (snap) => {
+function fetchCategories(){
+    db.ref('categories').on('value', snap => {
         allCategoryObjects = [];
-        if (snap.exists()) {
-            snap.forEach(c => allCategoryObjects.push({ id: c.key, ...c.val() }));
+        if(snap.exists()){
+            snap.forEach(c => allCategoryObjects.push({id:c.key, ...c.val()}));
         }
-        buildDynamicCategoryTabs();
+        buildVodTabs();
     });
 }
 
-function fetchAds() {
-    db.ref('ads').on('value', (snapshot) => {
-        if (!snapshot.exists()) return;
-        const ads = snapshot.val();
-        if (ads.topBanner) {
-            const b = document.getElementById('topAdBanner');
+/* =========================================================
+   Fetch Live data
+   ========================================================= */
+function fetchLiveData(){
+    db.ref('liveCategories').on('value', snap => {
+        allLiveCategories = [];
+        if(snap.exists()){
+            snap.forEach(c => allLiveCategories.push({id:c.key, ...c.val()}));
+        }
+        buildLiveTabs();
+    });
+    db.ref('liveChannels').on('value', snap => {
+        allLiveChannels = [];
+        if(snap.exists()){
+            snap.forEach(c => allLiveChannels.push({id:c.key, ...c.val()}));
+        }
+        renderLiveChannels();
+    });
+}
+
+function fetchAds(){
+    db.ref('ads').on('value', snap => {
+        if(!snap.exists()) return;
+        const ads = snap.val();
+        if(ads.topBanner){
+            const b = $('#topAdBanner');
             b.innerHTML = ads.topBanner;
             b.style.display = 'block';
         }
-        if (ads.bottomBanner) {
-            const b = document.getElementById('bottomAdBanner');
+        if(ads.bottomBanner){
+            const b = $('#bottomAdBanner');
             b.innerHTML = ads.bottomBanner;
             b.style.display = 'block';
         }
@@ -463,59 +627,108 @@ function fetchAds() {
 }
 
 /* =========================================================
-   بناء التصنيفات (يجمع بين تصنيفات اللوحة + تصنيفات الفيديو)
+   VOD Tabs
    ========================================================= */
-function buildDynamicCategoryTabs() {
-    const tabsContainer = document.getElementById('categoryTabs');
-    const catSet = new Set();
-    // من اللوحة
-    allCategoryObjects.forEach(c => { if (c.name) catSet.add(c.name); });
-    // من الفيديوهات (توافقية)
-    allFetchedItems.forEach(i => { if (i.category) catSet.add(i.category); });
+function buildVodTabs(){
+    const tabs = $('#vodTabs');
+    const set = new Set();
+    allCategoryObjects.forEach(c => { if(c.name) set.add(c.name); });
+    allFetchedItems.forEach(i => { if(i.category) set.add(i.category); });
 
     let html = `
-        <button class="tab-btn ${activeTab === 'all' ? 'active' : ''}" data-tab="all"><i class="fa-solid fa-border-all"></i> الكل</button>
-        <button class="tab-btn ${activeTab === 'free' ? 'active' : ''}" data-tab="free"><i class="fa-solid fa-film"></i> مجاني</button>
-        <button class="tab-btn vip-tab ${activeTab === 'vip' ? 'active' : ''}" data-tab="vip"><i class="fa-solid fa-crown" style="color:var(--vip-gold)"></i> المميز VIP</button>`;
-    catSet.forEach(cat => {
-        html += `<button class="tab-btn ${activeTab === cat ? 'active' : ''}" data-tab="${esc(cat)}"><i class="fa-solid fa-folder"></i> ${esc(cat)}</button>`;
+        <button class="tab-btn ${activeTab==='all'?'active':''}" data-tab="all"><i class="fa-solid fa-border-all"></i> الكل</button>
+        <button class="tab-btn ${activeTab==='free'?'active':''}" data-tab="free"><i class="fa-solid fa-film"></i> مجاني</button>
+        <button class="tab-btn vip-tab ${activeTab==='vip'?'active':''}" data-tab="vip"><i class="fa-solid fa-crown" style="color:var(--vip-gold)"></i> المميز VIP</button>`;
+    set.forEach(cat => {
+        html += `<button class="tab-btn ${activeTab===cat?'active':''}" data-tab="${esc(cat)}"><i class="fa-solid fa-folder"></i> ${esc(cat)}</button>`;
     });
-    tabsContainer.innerHTML = html;
-
-    // Event delegation
-    tabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    tabs.innerHTML = html;
+    tabs.querySelectorAll('.tab-btn').forEach(b => {
+        b.addEventListener('click', () => switchVodTab(b.dataset.tab));
     });
 }
 
-function switchTab(tab) {
+function switchVodTab(tab){
     activeTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.tab === tab);
-    });
+    $$('#vodTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     renderGridItems();
 }
 
 /* =========================================================
-   عرض شبكة العناصر (Event Delegation + Escape)
+   Live Tabs
    ========================================================= */
-function renderGridItems() {
-    const grid = document.getElementById('itemsGrid');
-    const searchVal = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+function buildLiveTabs(){
+    const tabs = $('#liveTabs');
+    const set = new Set();
+    allLiveCategories.forEach(c => { if(c.name) set.add(c.name); });
+    allLiveChannels.forEach(c => { if(c.category) set.add(c.category); });
+
+    if(set.size === 0 && allLiveChannels.length === 0){
+        tabs.innerHTML = '';
+        return;
+    }
+
+    let html = `<button class="tab-btn live-cat-tab ${activeLiveTab==='all'?'active':''}" data-ltab="all"><i class="fa-solid fa-tower-broadcast"></i> كل القنوات</button>`;
+    set.forEach(cat => {
+        html += `<button class="tab-btn live-cat-tab ${activeLiveTab===cat?'active':''}" data-ltab="${esc(cat)}"><i class="fa-solid fa-tv"></i> ${esc(cat)}</button>`;
+    });
+    tabs.innerHTML = html;
+    tabs.querySelectorAll('.tab-btn').forEach(b => {
+        b.addEventListener('click', () => switchLiveTab(b.dataset.ltab));
+    });
+}
+
+function switchLiveTab(tab){
+    activeLiveTab = tab;
+    $$('#liveTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.ltab === tab));
+    renderLiveChannels();
+}
+
+/* =========================================================
+   View Switching
+   ========================================================= */
+function switchView(view){
+    currentView = view;
+    $$('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    if(view === 'live'){
+        $('#vodTabs').style.display = 'none';
+        $('#liveTabs').style.display = 'flex';
+        $('#searchInput').placeholder = 'ابحث في القنوات...';
+        $('#searchInput').value = '';
+        renderLiveChannels();
+    }else{
+        $('#vodTabs').style.display = 'flex';
+        $('#liveTabs').style.display = 'none';
+        $('#searchInput').placeholder = 'بحث عن فيلم، مسلسل...';
+        $('#searchInput').value = '';
+        renderGridItems();
+    }
+    window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$$('.view-btn').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
+
+/* =========================================================
+   Render VOD Grid
+   ========================================================= */
+function renderGridItems(){
+    if(currentView !== 'vod') return;
+    const grid = $('#itemsGrid');
+    const searchVal = ($('#searchInput').value||'').toLowerCase().trim();
 
     const filtered = allFetchedItems.filter(item => {
-        const title = (item.title || '').toLowerCase();
-        const desc = (item.description || '').toLowerCase();
-        const category = (item.category || '').toLowerCase();
+        const title = (item.title||'').toLowerCase();
+        const desc = (item.description||'').toLowerCase();
+        const category = (item.category||'').toLowerCase();
         const matchesSearch = !searchVal || title.includes(searchVal) || desc.includes(searchVal) || category.includes(searchVal);
-        if (!matchesSearch) return false;
-        if (activeTab === 'vip') return item.isVip === true;
-        if (activeTab === 'free') return !item.isVip;
-        if (activeTab !== 'all') return item.category === activeTab;
+        if(!matchesSearch) return false;
+        if(activeTab === 'vip') return item.isVip === true;
+        if(activeTab === 'free') return !item.isVip;
+        if(activeTab !== 'all') return item.category === activeTab;
         return true;
     });
 
-    if (filtered.length === 0) {
+    if(filtered.length === 0){
         grid.innerHTML = '<div class="status-box"><p>لا يوجد محتوى مطابق.</p></div>';
         return;
     }
@@ -527,138 +740,242 @@ function renderGridItems() {
         const category = esc(item.category || 'فيديو');
         const views = item.views || 0;
         const isVip = item.isVip === true;
+        const hasDownload = !!(item.downloadUrl || item.adDownloadUrl);
         html += `
-            <div class="item-card ${isVip ? 'is-vip' : ''}" data-id="${esc(item.id)}">
-                <div class="thumb-container">
+            <div class="item-card ${isVip?'is-vip':''}" data-id="${esc(item.id)}">
+                <div class="thumb-container" data-action="play">
                     <img src="${esc(thumb)}" alt="${title}" loading="lazy"
                          onerror="this.src='https://via.placeholder.com/320x180/15171e/ffffff?text=FARESFLIX'">
                     ${isVip ? '<span class="vip-card-badge"><i class="fa-solid fa-crown"></i> VIP</span>' : ''}
                     <span class="category-badge">${category}</span>
+                    ${hasDownload ? '<span class="download-flag"><i class="fa-solid fa-download"></i> تحميل</span>' : ''}
                     <div class="play-overlay"><i class="fa-solid fa-circle-play"></i></div>
                 </div>
                 <div class="card-details">
-                    <div class="card-title">${title}</div>
+                    <div class="card-title" data-action="play">${title}</div>
                     <div class="card-meta">
                         <span><i class="fa-regular fa-eye"></i> ${views}</span>
-                        <span><i class="fa-solid fa-play"></i> تشغيل</span>
+                        <span>${hasDownload ? '<i class="fa-solid fa-download" style="color:var(--success-color)"></i>' : ''}</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="card-action-btn play" data-action="play" data-id="${esc(item.id)}">
+                            <i class="fa-solid fa-play"></i><span>تشغيل</span>
+                        </button>
+                        ${hasDownload ? `
+                        <button class="card-action-btn dl ${isVip?'vip-dl':''}" data-action="download" data-id="${esc(item.id)}">
+                            <i class="fa-solid fa-download"></i><span>تحميل</span>
+                        </button>` : ''}
                     </div>
                 </div>
             </div>`;
     });
     grid.innerHTML = html;
 
-    // Event delegation مرة واحدة
-    if (!grid.dataset.bound) {
+    if(!grid.dataset.bound){
         grid.dataset.bound = '1';
-        grid.addEventListener('click', (e) => {
+        grid.addEventListener('click', e => {
+            const btn = e.target.closest('[data-action]');
+            if(!btn) return;
             const card = e.target.closest('.item-card');
-            if (card) handleCardClick(card.dataset.id);
+            if(!card) return;
+            const id = btn.dataset.id || card.dataset.id;
+            const action = btn.dataset.action;
+            if(action === 'play') handleCardClick(id);
+            else if(action === 'download') handleDownloadClick(id);
         });
     }
 }
 
 /* =========================================================
-   البحث (Debounced)
+   Render Live Channels
    ========================================================= */
-document.getElementById('searchInput').addEventListener('input', debounce(renderGridItems, 250));
+function renderLiveChannels(){
+    if(currentView !== 'live') return;
+    const grid = $('#itemsGrid');
+    const searchVal = ($('#searchInput').value||'').toLowerCase().trim();
 
-/* =========================================================
-   النقر على الكارت
-   ========================================================= */
-function handleCardClick(id) {
-    const item = allFetchedItems.find(i => i.id === id);
-    if (!item) return;
+    const filtered = allLiveChannels.filter(ch => {
+        const name = (ch.name||'').toLowerCase();
+        const cat = (ch.category||'').toLowerCase();
+        const matchesSearch = !searchVal || name.includes(searchVal) || cat.includes(searchVal);
+        if(!matchesSearch) return false;
+        if(activeLiveTab !== 'all') return ch.category === activeLiveTab;
+        return true;
+    });
 
-    // فحص الحظر أولاً
-    if (currentUser && getUserIsBanned(userData)) {
-        document.getElementById('bannedModal').classList.add('active');
+    if(filtered.length === 0){
+        grid.innerHTML = `<div class="status-box">
+            <i class="fa-solid fa-tower-broadcast" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:12px"></i>
+            <p>لا توجد قنوات بث مباشر متاحة حالياً.</p>
+            <p style="font-size:.75rem;margin-top:6px;color:var(--text-secondary)">يمكن للإدارة إضافة القنوات من لوحة التحكم</p>
+        </div>`;
+        grid.classList.remove('items-grid');
+        grid.classList.add('live-grid');
         return;
     }
 
-    // فحص VIP
-    if (item.isVip) {
-        if (!currentUser) { openAuthModal('login'); return; }
-        if (!getUserIsVip(userData)) { openSubModal(); return; }
-    }
+    grid.classList.remove('items-grid');
+    grid.classList.add('live-grid');
 
+    let html = '';
+    filtered.forEach(ch => {
+        const logo = ch.logo || 'https://via.placeholder.com/200x200/15171e/ffffff?text=LIVE';
+        const name = esc(ch.name || 'قناة');
+        const category = esc(ch.category || 'عام');
+        const isVip = ch.isVip === true;
+        const viewers = ch.viewers || 0;
+        html += `
+            <div class="live-card ${isVip?'is-vip':''}" data-id="${esc(ch.id)}">
+                <div class="live-thumb" data-action="play">
+                    <span class="live-indicator">LIVE</span>
+                    ${isVip ? '<span class="vip-card-badge"><i class="fa-solid fa-crown"></i> VIP</span>' : ''}
+                    <img src="${esc(logo)}" alt="${name}" loading="lazy"
+                         onerror="this.src='https://via.placeholder.com/200x200/15171e/ffffff?text=LIVE'">
+                    <div class="play-overlay"><i class="fa-solid fa-circle-play"></i></div>
+                </div>
+                <div class="live-details">
+                    <div class="live-name" data-action="play">${name}</div>
+                    <div class="live-meta">
+                        <span><i class="fa-solid fa-tv"></i> ${category}</span>
+                        <span><i class="fa-regular fa-eye"></i> ${viewers}</span>
+                    </div>
+                </div>
+            </div>`;
+    });
+    grid.innerHTML = html;
+
+    if(!grid.dataset.liveBound){
+        grid.dataset.liveBound = '1';
+        grid.addEventListener('click', e => {
+            const card = e.target.closest('.live-card');
+            if(!card) return;
+            handleLiveClick(card.dataset.id);
+        });
+    }
+}
+
+/* =========================================================
+   Search
+   ========================================================= */
+$('#searchInput').addEventListener('input', debounce(() => {
+    if(currentView === 'live') renderLiveChannels();
+    else renderGridItems();
+}, 250));
+
+/* =========================================================
+   Handle clicks
+   ========================================================= */
+function handleCardClick(id){
+    const item = allFetchedItems.find(i => i.id === id);
+    if(!item) return;
+    if(currentUser && getUserIsBanned(userData)){
+        $('#bannedModal').classList.add('active');
+        return;
+    }
+    if(item.isVip){
+        if(!currentUser){ openAuthModal('login'); return; }
+        if(!getUserIsVip(userData)){ openSubModal(); return; }
+    }
     updateSEOTags(item);
     openPlayerModal(item);
+}
+
+function handleLiveClick(id){
+    const ch = allLiveChannels.find(c => c.id === id);
+    if(!ch) return;
+    if(currentUser && getUserIsBanned(userData)){
+        $('#bannedModal').classList.add('active');
+        return;
+    }
+    if(ch.isVip){
+        if(!currentUser){ openAuthModal('login'); return; }
+        if(!getUserIsVip(userData)){ openSubModal(); return; }
+    }
+    openLivePlayer(ch);
+    db.ref('liveChannels/' + ch.id + '/viewers').set(firebase.database.ServerValue.increment(1));
 }
 
 /* =========================================================
    SEO
    ========================================================= */
-function updateSEOTags(item) {
+function updateSEOTags(item){
     const t = `${item.title || 'مشاهدة'} - ${siteSettings.siteName || 'FARESFLIX'}`;
     document.title = t;
-    const d = document.getElementById('dynamicPageTitle'); if (d) d.innerText = t;
-    const md = document.getElementById('metaDescription'); if (md) md.setAttribute('content', item.description || t);
-    const og1 = document.getElementById('ogTitle'); if (og1) og1.setAttribute('content', t);
-    const og2 = document.getElementById('ogDescription'); if (og2) og2.setAttribute('content', item.description || t);
-    if (item.thumbnailUrl) {
-        const og3 = document.getElementById('ogImage'); if (og3) og3.setAttribute('content', item.thumbnailUrl);
-    }
+    const d = $('#dynamicPageTitle'); if(d) d.innerText = t;
+    const md = $('#metaDescription'); if(md) md.setAttribute('content', item.description || t);
+    const og1 = $('#ogTitle'); if(og1) og1.setAttribute('content', t);
+    const og2 = $('#ogDescription'); if(og2) og2.setAttribute('content', item.description || t);
+    if(item.thumbnailUrl){ const og3 = $('#ogImage'); if(og3) og3.setAttribute('content', item.thumbnailUrl); }
 }
 
 /* =========================================================
-   ✅ حلقة URL مرة واحدة فقط (إصلاح الحلقة اللانهائية)
+   URL hash deep-link
    ========================================================= */
-function checkUrlForDirectPlay() {
-    if (hasHandledUrlHash) return;
+function checkUrlForDirectPlay(){
+    if(hasHandledUrlHash) return;
     const hash = window.location.hash;
-    if (!hash || !hash.startsWith('#watch-')) return;
+    if(!hash || !hash.startsWith('#watch-')) return;
     hasHandledUrlHash = true;
     const id = hash.replace('#watch-', '');
     const item = allFetchedItems.find(i => i.id === id);
-    if (item) handleCardClick(id);
+    if(item) handleCardClick(id);
 }
-
 window.addEventListener('hashchange', () => {
     const hash = window.location.hash;
-    if (!hash || !hash.startsWith('#watch-')) {
-        if (document.getElementById('playerModal').classList.contains('active')) closePlayer();
+    if(!hash || !hash.startsWith('#watch-')){
+        if($('#playerModal').classList.contains('active')) closePlayer();
     }
 });
 
 /* =========================================================
-   فتح المشغل
+   Player Modal
    ========================================================= */
-function openPlayerModal(item) {
-    // ✅ منع الفتح المكرر لنفس العنصر
-    if (currentPlayingId === item.id && document.getElementById('playerModal').classList.contains('active')) return;
+function openPlayerModal(item){
+    if(currentPlayingId === item.id && $('#playerModal').classList.contains('active')) return;
     currentPlayingId = item.id;
 
-    document.getElementById('modalTitle').innerText = item.title || 'بدون عنوان';
-    document.getElementById('modalDesc').innerText = item.description || 'لا يوجد وصف متوفر.';
-    document.getElementById('modalViews').innerText = (item.views || 0) + 1;
-    document.getElementById('modalCategory').innerText = item.category || 'عام';
+    $('#modalTitle').innerText = item.title || 'بدون عنوان';
+    $('#modalDesc').innerText = item.description || 'لا يوجد وصف متوفر.';
+    $('#modalViews').innerText = (item.views || 0) + 1;
+    $('#modalCategory').innerText = item.category || 'عام';
 
-    const serversSection = document.getElementById('serversSection');
-    const serversGrid = document.getElementById('serversGrid');
-    serversGrid.innerHTML = '';
-
-    // ✅ توحيد شكل السيرفرات: url / embedCode / script / m3u8 / mp4
-    let servers = [];
-    if (Array.isArray(item.servers) && item.servers.length) {
-        servers = item.servers;
-    } else if (item.embedScript || item.script) {
-        servers = [{ name: 'سيرفر رئيسي', script: item.embedScript || item.script }];
-    } else if (item.videoUrl || item.url) {
-        servers = [{ name: 'سيرفر رئيسي', url: item.videoUrl || item.url }];
+    // Download button setup
+    const dlWrap = $('#playerDlWrap');
+    const dlBtn = $('#playerDlBtn');
+    const hasDownload = !!(item.downloadUrl || item.adDownloadUrl);
+    if(hasDownload){
+        dlWrap.style.display = 'flex';
+        dlBtn.onclick = () => handleDownloadClick(item.id);
+    }else{
+        dlWrap.style.display = 'none';
+        dlBtn.onclick = null;
     }
 
-    if (servers.length === 0) {
-        alert('عذراً، لا يوجد سيرفر بث متاح لهذا المحتوى.');
+    const serversSection = $('#serversSection');
+    const serversGrid = $('#serversGrid');
+    serversGrid.innerHTML = '';
+
+    let servers = [];
+    if(Array.isArray(item.servers) && item.servers.length){
+        servers = item.servers;
+    }else if(item.embedScript || item.script){
+        servers = [{name:'سيرفر رئيسي', script: item.embedScript || item.script}];
+    }else if(item.videoUrl || item.url){
+        servers = [{name:'سيرفر رئيسي', url: item.videoUrl || item.url}];
+    }
+
+    if(servers.length === 0){
+        toast('لا يوجد سيرفر بث متاح', 'err');
         currentPlayingId = null;
         return;
     }
 
-    if (servers.length > 1) {
+    if(servers.length > 1){
         serversSection.style.display = 'block';
-        servers.forEach((srv, i) => {
+        servers.forEach((srv,i) => {
             const btn = document.createElement('button');
-            btn.className = `server-btn ${i === 0 ? 'active' : ''}`;
-            btn.innerHTML = `<i class="fa-solid fa-play"></i> ${esc(srv.name || ('سيرفر ' + (i + 1)))}`;
+            btn.className = `server-btn ${i===0?'active':''}`;
+            btn.innerHTML = `<i class="fa-solid fa-play"></i> ${esc(srv.name||('سيرفر '+(i+1)))}`;
             btn.addEventListener('click', () => {
                 serversGrid.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -666,47 +983,63 @@ function openPlayerModal(item) {
             });
             serversGrid.appendChild(btn);
         });
-    } else {
+    }else{
         serversSection.style.display = 'none';
     }
 
     const first = servers[0];
     playUniversalSource(first.url || first.embedCode || first.script);
-
-    document.getElementById('playerModal').classList.add('active');
-    // ✅ زيادة ذرّية (تتجنب سباق الكتابة)
+    $('#playerModal').classList.add('active');
     db.ref('videos/' + item.id + '/views').set(firebase.database.ServerValue.increment(1));
 }
 
+function openLivePlayer(ch){
+    currentPlayingId = 'live-' + ch.id;
+    $('#modalTitle').innerText = ch.name || 'بث مباشر';
+    $('#modalDesc').innerText = ch.description || 'بث مباشر مباشر الآن';
+    $('#modalViews').innerText = (ch.viewers || 0) + 1;
+    $('#modalCategory').innerText = ch.category || 'بث مباشر';
+
+    $('#playerDlWrap').style.display = 'none';
+    $('#serversSection').style.display = 'none';
+    $('#serversGrid').innerHTML = '';
+
+    const url = ch.url || ch.streamUrl;
+    if(!url){
+        playUniversalSource('');
+        $('#playerModal').classList.add('active');
+        return;
+    }
+    playUniversalSource(url);
+    $('#playerModal').classList.add('active');
+}
+
 /* =========================================================
-   ✅ محرك التشغيل الموحّد — يدعم جميع الأنواع + okcdn m3u8
+   Universal Play Engine
    ========================================================= */
-function playUniversalSource(source, isExplicitScript = false) {
-    const container = document.getElementById('playerContainer');
+function playUniversalSource(source, isExplicitScript = false){
+    const container = $('#playerContainer');
     destroyPlayers();
     container.innerHTML = '';
-    if (!source) return;
+    if(!source) return;
     source = String(source).trim();
 
-    // 1) HTML/Script صريح
-    if (isExplicitScript || source.startsWith('<') || source.includes('<iframe') || source.includes('<script')) {
+    if(isExplicitScript || source.startsWith('<') || source.includes('<iframe') || source.includes('<script')){
         const wrapper = document.createElement('div');
         wrapper.id = 'customScriptContainer';
-        wrapper.style.width = '100%';
-        wrapper.style.height = '100%';
+        wrapper.style.width = '100%'; wrapper.style.height = '100%';
         wrapper.innerHTML = source;
         container.appendChild(wrapper);
         wrapper.querySelectorAll('script').forEach(oldScript => {
             const s = document.createElement('script');
-            Array.from(oldScript.attributes).forEach(a => s.setAttribute(a.name, a.value));
+            Array.from(oldScript.attributes).forEach(a => s.setAttribute(a.name,a.value));
             s.appendChild(document.createTextNode(oldScript.innerHTML));
             oldScript.parentNode.replaceChild(s, oldScript);
         });
         return;
     }
 
-    // 2) YouTube
-    if (/youtube\.com|youtu\.be/.test(source)) {
+    if(/youtube\.com|youtu\.be/.test(source)){
         const m = source.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
         const vid = (m && m[2] && m[2].length === 11) ? m[2] : null;
         const url = vid ? `https://www.youtube.com/embed/${vid}?autoplay=1&mute=1` : source;
@@ -714,223 +1047,403 @@ function playUniversalSource(source, isExplicitScript = false) {
         return;
     }
 
-    // 3) Google Drive
-    if (source.includes('drive.google.com')) {
-        const url = source.replace('/view', '/preview');
+    if(source.includes('drive.google.com')){
+        const url = source.replace('/view','/preview');
         container.innerHTML = `<iframe src="${esc(url)}" allow="autoplay" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
         return;
     }
 
-    // 4) MPEG-DASH (.mpd)
-    if (source.includes('.mpd')) {
+    if(source.includes('.mpd')){
         const video = makeVideoEl();
         container.appendChild(video);
-        if (window.dashjs) {
+        if(window.dashjs){
             dashPlayerInstance = dashjs.MediaPlayer().create();
             dashPlayerInstance.initialize(video, source, true);
-        } else {
+        }else{
             showPlayerError('مشغل DASH غير محمّل.');
         }
         return;
     }
 
-    // 5) ✅ HLS (.m3u8) — يُفحص قبل ok.ru لأنه قد يحتوي okcdn.ru
-    //    (هذا هو إصلاح مشكلة okcdn m3u8 الموجّه لفرع خاطئ)
-    if (/\.m3u8(\?|$)/i.test(source) || /m3u8/i.test(source)) {
+    // HLS (m3u8) — before ok.ru
+    if(/\.m3u8(\?|$)/i.test(source) || /m3u8/i.test(source)){
         const video = makeVideoEl();
         container.appendChild(video);
-
-        if (window.Hls && Hls.isSupported()) {
+        if(window.Hls && Hls.isSupported()){
             hlsPlayerInstance = new Hls({
-                enableWorker: true,
-                lowLatencyMode: false,
-                xhrSetup: (xhr) => { xhr.withCredentials = false; },
-                manifestLoadingTimeOut: 20000,
-                manifestLoadingMaxRetry: 3,
-                levelLoadingMaxRetry: 4,
-                fragLoadingMaxRetry: 6
+                enableWorker:true,
+                lowLatencyMode:false,
+                xhrSetup: xhr => { xhr.withCredentials = false; },
+                manifestLoadingTimeOut:20000,
+                manifestLoadingMaxRetry:3,
+                levelLoadingMaxRetry:4,
+                fragLoadingMaxRetry:6
             });
             hlsPlayerInstance.loadSource(source);
             hlsPlayerInstance.attachMedia(video);
-            hlsPlayerInstance.on(Hls.Events.ERROR, (evt, data) => {
-                console.warn('HLS error:', data);
-                if (data.fatal) {
-                    switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR:
-                            hlsPlayerInstance.startLoad();
-                            break;
-                        case Hls.ErrorTypes.MEDIA_ERROR:
-                            hlsPlayerInstance.recoverMediaError();
-                            break;
-                        default:
-                            showPlayerError('تعذّر تشغيل البث. قد يكون الرابط منتهي الصلاحية أو مرتبطاً بـ IP/جهاز معين.');
+            hlsPlayerInstance.on(Hls.Events.ERROR, (evt,data) => {
+                console.warn('HLS err:', data);
+                if(data.fatal){
+                    switch(data.type){
+                        case Hls.ErrorTypes.NETWORK_ERROR: hlsPlayerInstance.startLoad(); break;
+                        case Hls.ErrorTypes.MEDIA_ERROR: hlsPlayerInstance.recoverMediaError(); break;
+                        default: showPlayerError('تعذّر تشغيل البث. تحقق من الرابط.');
                     }
                 }
             });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        }else if(video.canPlayType('application/vnd.apple.mpegurl')){
             video.src = source;
-        } else {
+        }else{
             showPlayerError('متصفحك لا يدعم تشغيل HLS.');
         }
         return;
     }
 
-    // 6) ملفات فيديو مباشرة
-    if (/\.(mp4|mkv|webm|mov|ts|flv|m4v|3gp|mp3|ogg|aac)(\?|$)/i.test(source)) {
+    if(/\.(mp4|mkv|webm|mov|ts|flv|m4v|3gp|mp3|ogg|aac)(\?|$)/i.test(source)){
         const video = makeVideoEl();
         video.src = source;
         container.appendChild(video);
         return;
     }
 
-    // 7) ok.ru صفحة (رابط فيديو لا مباشر) → iframe embed
-    if (/ok\.ru\/video\/(\d+)/.test(source)) {
+    if(/ok\.ru\/video\/(\d+)/.test(source)){
         const m = source.match(/ok\.ru\/video\/(\d+)/);
         const embed = `https://ok.ru/videoembed/${m[1]}`;
         container.innerHTML = `<iframe src="${esc(embed)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
         return;
     }
 
-    // 8) أي رابط آخر → iframe
     container.innerHTML = `<iframe src="${esc(source)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
 }
 
-function makeVideoEl() {
+function makeVideoEl(){
     const v = document.createElement('video');
-    v.controls = true;
-    v.playsInline = true;
-    v.autoplay = true;
-    v.muted = true; // ✅ منع حظر التشغيل التلقائي
-    v.style.width = '100%';
-    v.style.height = '100%';
-    v.setAttribute('controlsList', 'nodownload');
-    v.addEventListener('error', () => {
-        console.warn('Video error event fired');
-    });
+    v.controls = true; v.playsInline = true; v.autoplay = true; v.muted = true;
+    v.style.width = '100%'; v.style.height = '100%';
     return v;
 }
-
-function showPlayerError(msg) {
-    const c = document.getElementById('playerContainer');
-    c.innerHTML = `<div class="player-error">
-        <i class="fa-solid fa-circle-exclamation"></i>
-        <p style="font-weight:700;">تعذّر تشغيل السيرفر</p>
-        <p style="font-size:.85rem;color:#9aa0a6;">${esc(msg)}</p>
-    </div>`;
+function showPlayerError(msg){
+    const c = $('#playerContainer');
+    c.innerHTML = `<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i>
+        <p style="font-weight:700">تعذّر تشغيل السيرفر</p>
+        <p style="font-size:.85rem;color:#9aa0a6">${esc(msg)}</p></div>`;
 }
-
-function destroyPlayers() {
-    if (hlsPlayerInstance) { try { hlsPlayerInstance.destroy(); } catch(e){} hlsPlayerInstance = null; }
-    if (dashPlayerInstance) { try { dashPlayerInstance.reset(); } catch(e){} dashPlayerInstance = null; }
+function destroyPlayers(){
+    if(hlsPlayerInstance){ try{hlsPlayerInstance.destroy();}catch(e){} hlsPlayerInstance = null; }
+    if(dashPlayerInstance){ try{dashPlayerInstance.reset();}catch(e){} dashPlayerInstance = null; }
 }
-
-function closePlayer() {
+function closePlayer(){
     destroyPlayers();
-    document.getElementById('playerModal').classList.remove('active');
-    document.getElementById('playerContainer').innerHTML = '';
+    $('#playerModal').classList.remove('active');
+    $('#playerContainer').innerHTML = '';
     currentPlayingId = null;
-    if (window.location.hash) {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
+    if(window.location.hash){
+        history.replaceState(null,'',window.location.pathname + window.location.search);
+    }
+}
+
+/* =========================================================
+   ★ DOWNLOAD FLOW
+   ========================================================= */
+function handleDownloadClick(id){
+    const item = allFetchedItems.find(i => i.id === id);
+    if(!item){ toast('المحتوى غير متوفر','err'); return; }
+
+    // Banned check
+    if(currentUser && getUserIsBanned(userData)){
+        $('#bannedModal').classList.add('active');
+        return;
+    }
+
+    const isVip = getUserIsVip(userData);
+    const directUrl = item.downloadUrl || '';
+    const adUrl = item.adDownloadUrl || '';
+
+    // Determine URLs
+    // - VIP user: use directUrl if available, else adUrl (fallback)
+    // - Non-VIP user: use adUrl (with ad) if available, else directUrl (with ad)
+    if(isVip){
+        const url = directUrl || adUrl;
+        if(!url){ toast('لا يوجد رابط تحميل متاح','err'); return; }
+        triggerDownload(url);
+        toast('بدأ التحميل المباشر ✓','ok');
+        return;
+    }
+
+    // Non-VIP: show options modal
+    currentDlItem = item;
+    showDownloadOptions(item);
+}
+
+function showDownloadOptions(item){
+    const card = $('#dlModalCard');
+    card.innerHTML = `
+        <div class="modal-grab"></div>
+        <button class="close-modal" onclick="closeModal('dlModal')"><i class="fa-solid fa-xmark"></i></button>
+        <div class="dl-hero">
+            <div class="dl-hero-icon"><i class="fa-solid fa-download"></i></div>
+            <h3>تحميل: ${esc(item.title || '')}</h3>
+            <p>اختر طريقة التحميل المناسبة لك</p>
+        </div>
+        <div class="dl-options">
+            <button class="dl-option-btn vip-option" id="optVip">
+                <div class="dl-opt-icon"><i class="fa-solid fa-crown"></i></div>
+                <div class="dl-opt-text">
+                    <div class="dl-opt-title">اشترك VIP — تحميل مباشر</div>
+                    <div class="dl-opt-sub">تحميل فوري بجودة كاملة وبدون إعلانات</div>
+                </div>
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="dl-option-btn free-option" id="optFree">
+                <div class="dl-opt-icon"><i class="fa-solid fa-play"></i></div>
+                <div class="dl-opt-text">
+                    <div class="dl-opt-title">تحميل مجاني (إعلان واحد)</div>
+                    <div class="dl-opt-sub">شاهد إعلان قصير ثم ابدأ التحميل</div>
+                </div>
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+        </div>`;
+    $('#dlModal').classList.add('active');
+    $('#optVip').addEventListener('click', () => {
+        closeModal('dlModal');
+        setTimeout(openSubModal, 200);
+    });
+    $('#optFree').addEventListener('click', () => startAdDownloadFlow(item));
+}
+
+function startAdDownloadFlow(item){
+    const card = $('#dlModalCard');
+    card.innerHTML = `
+        <div class="modal-grab"></div>
+        <button class="close-modal" id="dlCloseAd"><i class="fa-solid fa-xmark"></i></button>
+        <div class="dl-hero" style="padding-bottom:6px">
+            <h3 style="font-size:1rem">شاهد الإعلان لبدء التحميل</h3>
+            <p style="font-size:.78rem">سيفتح رابط التحميل تلقائياً بعد انتهاء العدّاد</p>
+        </div>
+        <div class="ad-container" id="adBox"></div>
+        <div class="countdown-wrap">
+            <div class="countdown-circle" id="cntCircle">
+                <span class="countdown-num" id="cntNum">10</span>
+            </div>
+            <p class="countdown-txt">الرجاء الانتظار <strong id="cntLabel">10 ثواني</strong></p>
+        </div>
+        <button class="dl-ready-btn" id="dlReadyBtn">
+            <i class="fa-solid fa-download"></i> تحميل الآن
+        </button>
+    `;
+
+    // Load ad
+    loadAdIntoBox();
+
+    // Close handler
+    $('#dlCloseAd').addEventListener('click', () => {
+        stopCountdown();
+        closeModal('dlModal');
+    });
+
+    // Start countdown
+    startCountdown(10, () => {
+        $('#dlReadyBtn').classList.add('show');
+        $('#dlReadyBtn').addEventListener('click', () => {
+            const url = item.adDownloadUrl || item.downloadUrl;
+            if(url){
+                triggerDownload(url);
+                toast('بدأ التحميل ✓','ok');
+                closeModal('dlModal');
+            }else{
+                toast('لا يوجد رابط تحميل','err');
+            }
+        });
+    });
+}
+
+function loadAdIntoBox(){
+    const box = $('#adBox');
+    box.innerHTML = '<div class="spinner"></div>';
+
+    // Try loading ad from Firebase
+    db.ref('ads/downloadAd').once('value').then(snap => {
+        const adHTML = snap.exists() ? snap.val() : null;
+        if(adHTML && typeof adHTML === 'string'){
+            box.innerHTML = adHTML;
+            // Re-execute scripts
+            box.querySelectorAll('script').forEach(old => {
+                const s = document.createElement('script');
+                Array.from(old.attributes).forEach(a => s.setAttribute(a.name, a.value));
+                s.appendChild(document.createTextNode(old.innerHTML));
+                old.parentNode.replaceChild(s, old);
+            });
+        }else{
+            // Fallback: friendly placeholder
+            box.innerHTML = `
+                <div style="text-align:center;padding:20px;color:var(--text-secondary)">
+                    <i class="fa-solid fa-bullhorn" style="font-size:2.2rem;color:var(--vip-gold);margin-bottom:10px;display:block"></i>
+                    <p style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:4px">مساحة الإعلان</p>
+                    <p style="font-size:.75rem">يمكن للإدارة إضافة الإعلان من لوحة التحكم</p>
+                </div>`;
+        }
+    }).catch(() => {
+        box.innerHTML = `
+            <div style="text-align:center;padding:20px;color:var(--text-secondary)">
+                <i class="fa-solid fa-bullhorn" style="font-size:2.2rem;color:var(--vip-gold);margin-bottom:10px;display:block"></i>
+                <p style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:4px">مساحة الإعلان</p>
+            </div>`;
+    });
+}
+
+function startCountdown(seconds, onDone){
+    let remaining = seconds;
+    const circle = $('#cntCircle');
+    const num = $('#cntNum');
+    const label = $('#cntLabel');
+    const total = seconds;
+
+    updateCircle(0);
+    num.textContent = remaining;
+    label.textContent = remaining + ' ثواني';
+
+    stopCountdown();
+    countdownTimer = setInterval(() => {
+        remaining--;
+        if(remaining <= 0){
+            stopCountdown();
+            num.textContent = '✓';
+            label.textContent = 'جاهز للتحميل';
+            updateCircle(100);
+            if(onDone) onDone();
+            return;
+        }
+        num.textContent = remaining;
+        label.textContent = remaining + ' ثواني';
+        updateCircle(((total - remaining) / total) * 100);
+    }, 1000);
+
+    function updateCircle(pct){
+        circle.style.setProperty('--progress', pct + '%');
+    }
+}
+
+function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+}
+
+function triggerDownload(url){
+    if(!url) return;
+    try{
+        // Create hidden anchor
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        // Try same-origin download attribute
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }catch(e){
+        // Fallback: open in new tab
+        window.open(url, '_blank', 'noopener');
     }
 }
 
 /* =========================================================
    Profile / VIP
    ========================================================= */
-function openProfileModal() {
-    if (!userData) return;
-    document.getElementById('profileName').innerText = userData.name || 'بدون اسم';
-    document.getElementById('profileEmail').innerText = userData.email || '';
+function openProfileModal(){
+    if(!userData) return;
+    $('#profileName').innerText = userData.name || 'بدون اسم';
+    $('#profileEmail').innerText = userData.email || '';
 
     const isVip = getUserIsVip(userData);
     const exp = getUserVipExpire(userData);
-    const statusBox = document.getElementById('profileSubStatus');
-    const expireBox = document.getElementById('profileExpireDate');
-    const daysBox = document.getElementById('profileDaysLeft');
+    const statusBox = $('#profileSubStatus');
+    const expireBox = $('#profileExpireDate');
+    const daysBox = $('#profileDaysLeft');
 
-    if (isVip && exp > 0) {
-        statusBox.innerHTML = `<span style="color:var(--success-color)"><i class="fa-solid fa-crown"></i> اشتراك VIP نشط</span>`;
+    if(isVip && exp > 0){
+        statusBox.innerHTML = `<span style="color:var(--success-color)"><i class="fa-solid fa-crown"></i> VIP نشط</span>`;
         expireBox.innerText = new Date(exp).toLocaleDateString('ar-EG');
         const diff = Math.ceil((exp - Date.now()) / 86400000);
         daysBox.innerText = diff + ' يوم';
-    } else if (isVip) {
+    }else if(isVip){
         statusBox.innerHTML = `<span style="color:var(--success-color)"><i class="fa-solid fa-crown"></i> VIP مفتوح</span>`;
         expireBox.innerText = 'غير محدد';
         daysBox.innerText = '∞';
-    } else {
-        statusBox.innerHTML = `<span style="color:var(--accent-color)">حساب عادي / منتهي</span>`;
+    }else{
+        statusBox.innerHTML = `<span style="color:var(--accent-color)">حساب عادي</span>`;
         expireBox.innerText = exp ? new Date(exp).toLocaleDateString('ar-EG') : 'غير محدد';
         daysBox.innerText = '0 يوم';
     }
-    document.getElementById('profileModal').classList.add('active');
+    $('#profileModal').classList.add('active');
 }
 
-function openSubModal() {
-    document.getElementById('subModal').classList.add('active');
+function openSubModal(){ $('#subModal').classList.add('active'); }
+
+function contactAdminForSub(){
+    const wa = siteSettings.whatsappLink || siteSettings.contactLink || '';
+    if(wa){
+        window.open(wa, '_blank');
+    }else{
+        toast('تواصل مع الإدارة عبر وسائل الاتصال المتاحة','');
+    }
 }
 
 /* =========================================================
    Auth
    ========================================================= */
-function openAuthModal(mode) {
+function openAuthModal(mode){
     isAuthLoginMode = (mode === 'login');
     updateAuthModalUI();
-    document.getElementById('authModal').classList.add('active');
+    $('#authModal').classList.add('active');
 }
-
-document.getElementById('authToggleBtn').addEventListener('click', (e) => {
+$('#authToggleBtn').addEventListener('click', e => {
     e.preventDefault();
     isAuthLoginMode = !isAuthLoginMode;
     updateAuthModalUI();
 });
-
-document.getElementById('forgotPassLink').addEventListener('click', async (e) => {
+$('#forgotPassLink').addEventListener('click', async e => {
     e.preventDefault();
     const email = prompt('أدخل بريدك الإلكتروني لاستعادة كلمة المرور:');
-    if (!email) return;
-    try {
+    if(!email) return;
+    try{
         await auth.sendPasswordResetEmail(email);
-        alert('تم إرسال رابط الاستعادة إلى بريدك. تفقّد صندوق الوارد.');
-    } catch (err) {
-        alert('خطأ: ' + err.message);
+        toast('تم إرسال رابط الاستعادة إلى بريدك','ok');
+    }catch(err){
+        toast('خطأ: ' + err.message,'err');
     }
 });
-
-function updateAuthModalUI() {
-    document.getElementById('authTitle').innerText = isAuthLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
-    document.getElementById('nameGroup').style.display = isAuthLoginMode ? 'none' : 'block';
-    document.getElementById('authSubmitBtn').innerText = isAuthLoginMode ? 'دخول' : 'تسجيل الحساب';
-    document.getElementById('authToggleText').innerText = isAuthLoginMode ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟';
-    document.getElementById('authToggleBtn').innerText = isAuthLoginMode ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
-    document.getElementById('forgotPassLink').style.display = isAuthLoginMode ? 'inline' : 'none';
+function updateAuthModalUI(){
+    $('#authTitle').innerText = isAuthLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
+    $('#nameGroup').style.display = isAuthLoginMode ? 'none' : 'block';
+    $('#authSubmitBtn').innerText = isAuthLoginMode ? 'دخول' : 'تسجيل الحساب';
+    $('#authToggleText').innerText = isAuthLoginMode ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟';
+    $('#authToggleBtn').innerText = isAuthLoginMode ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
+    $('#forgotPassLink').style.display = isAuthLoginMode ? 'inline' : 'none';
 }
-
-document.getElementById('authForm').addEventListener('submit', async (e) => {
+$('#authForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value;
-    const name = document.getElementById('authName').value.trim();
-    try {
-        if (isAuthLoginMode) {
+    const email = $('#authEmail').value.trim();
+    const password = $('#authPassword').value;
+    const name = $('#authName').value.trim();
+    try{
+        if(isAuthLoginMode){
             await auth.signInWithEmailAndPassword(email, password);
             closeModal('authModal');
-        } else {
+        }else{
             const res = await auth.createUserWithEmailAndPassword(email, password);
             await db.ref('users/' + res.user.uid).set({
                 email, name: name || 'مستخدم جديد',
                 isBanned: false, isBlocked: false,
-                isVip: false,
-                vipExpireDate: 0, expireAt: 0,
+                isVip: false, vipExpireDate: 0, expireAt: 0,
                 createdAt: Date.now()
             });
             closeModal('authModal');
         }
-    } catch (err) {
-        alert('خطأ: ' + err.message);
+    }catch(err){
+        toast('خطأ: ' + err.message,'err');
     }
 });
-
-function logout() {
+function logout(){
     auth.signOut().then(() => {
         closeModal('bannedModal');
         closeModal('profileModal');
@@ -938,35 +1451,34 @@ function logout() {
 }
 
 /* =========================================================
-   Modals عامة
+   Modals Utilities
    ========================================================= */
-function closeModal(id) {
+function closeModal(id){
     document.getElementById(id).classList.remove('active');
+    if(id === 'dlModal') stopCountdown();
 }
-
-document.querySelectorAll('.modal').forEach(m => {
-    m.addEventListener('click', (e) => {
-        if (e.target === m) {
-            if (m.id === 'playerModal') closePlayer();
-            else m.classList.remove('active');
-        }
-    });
-});
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const player = document.getElementById('playerModal');
-        if (player.classList.contains('active')) { closePlayer(); return; }
-        document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+$$('.modal').forEach(m => m.addEventListener('click', e => {
+    if(e.target === m){
+        if(m.id === 'playerModal') closePlayer();
+        else m.classList.remove('active');
+        if(m.id === 'dlModal') stopCountdown();
+    }
+}));
+document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){
+        if($('#playerModal').classList.contains('active')){ closePlayer(); return; }
+        $$('.modal.active').forEach(m => m.classList.remove('active'));
+        stopCountdown();
     }
 });
 
 /* =========================================================
-   تشغيل
+   Init
    ========================================================= */
 window.addEventListener('DOMContentLoaded', () => {
     fetchMediaData();
     fetchCategories();
+    fetchLiveData();
     fetchAds();
     loadSiteSettings();
 });
