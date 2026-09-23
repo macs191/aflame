@@ -20,35 +20,58 @@
 
 <style>
 :root{
-    --bg-color:#0b0c10; --card-bg:#15171e;
+    --bg-color:#0b0c10; --card-bg:#15171e; --card-bg-2:#1a1d26;
     --accent-color:#e50914; --accent-hover:#ff0f1a;
     --vip-gold:#ffb703; --vip-gold-dark:#d49a00;
-    --text-color:#fff; --text-secondary:#9aa0a6;
+    --text-color:#fff; --text-secondary:#9aa0a6; --text-muted:#6b7280;
     --border-color:#272a37; --success-color:#2ec4b6;
-    --live-red:#ef4444;
+    --live-red:#ef4444; --warning-color:#f59e0b;
+    --safe-b:env(safe-area-inset-bottom,0px);
+    --safe-t:env(safe-area-inset-top,0px);
+    --nav-h:62px;
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',sans-serif;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-height:100vh;overflow-x:hidden}
+html{scroll-behavior:smooth}
+body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(--nav-h) + var(--safe-b) + 20px);min-height:100vh;overflow-x:hidden}
+@media (min-width:1024px){body{padding-bottom:20px}}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#050508}
+::-webkit-scrollbar-thumb{background:#27272a;border-radius:20px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent-color)}
 
 /* ===== Navbar ===== */
-.navbar{background:rgba(11,12,16,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:1000;gap:10px}
+.navbar{
+    background:rgba(11,12,16,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    padding:10px 14px;padding-top:calc(10px + var(--safe-t));
+    display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:1000;gap:10px;
+}
 .navbar-brand{font-size:1.25rem;font-weight:900;color:var(--accent-color);text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap}
 .navbar-brand span{color:#fff}
-.search-box{display:flex;align-items:center;background:#1a1d26;border:1px solid var(--border-color);border-radius:30px;padding:5px 14px;width:100%;max-width:360px;transition:.3s}
+.search-box{display:flex;align-items:center;background:#1a1d26;border:1px solid var(--border-color);border-radius:30px;padding:5px 14px;width:100%;max-width:360px;transition:.3s;position:relative}
 .search-box:focus-within{border-color:var(--accent-color);box-shadow:0 0 10px rgba(229,9,20,.3)}
 .search-box input{background:transparent;border:none;outline:none;color:#fff;width:100%;padding:4px 8px;font-size:.85rem;font-family:inherit}
+.search-clear{background:transparent;border:none;color:var(--text-secondary);cursor:pointer;font-size:.85rem;padding:2px 4px;display:none}
+.search-clear.show{display:inline-flex}
 .nav-user-area{display:flex;align-items:center;gap:6px}
 .btn{padding:7px 12px;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;outline:none;transition:.25s;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap;font-family:inherit}
+.btn:active{transform:scale(.97)}
 .btn-primary{background:var(--accent-color);color:#fff}
 .btn-primary:hover{background:var(--accent-hover)}
 .btn-outline{background:transparent;border:1px solid var(--border-color);color:#fff}
 .btn-outline:hover{border-color:var(--accent-color);color:var(--accent-color)}
 .btn-vip{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;font-weight:800}
 .btn-vip:hover{filter:brightness(1.05)}
-.user-badge-info{display:flex;align-items:center;gap:6px;background:#181b24;padding:4px 10px;border-radius:30px;border:1px solid var(--border-color);cursor:pointer}
+.btn-success{background:linear-gradient(135deg,var(--success-color),#1a9a8e);color:#fff}
+.btn-block{width:100%;justify-content:center}
+.btn.sm{padding:6px 10px;font-size:.75rem;border-radius:8px}
+.user-badge-info{display:flex;align-items:center;gap:6px;background:#181b24;padding:4px 10px;border-radius:30px;border:1px solid var(--border-color);cursor:pointer;transition:.2s}
+.user-badge-info:hover{border-color:var(--accent-color)}
 .sub-status-tag{font-size:.68rem;padding:2px 6px;border-radius:10px;font-weight:800}
 .sub-status-tag.active{background:rgba(46,196,182,.15);color:var(--success-color);border:1px solid var(--success-color)}
 .sub-status-tag.expired{background:rgba(229,9,20,.15);color:var(--accent-color);border:1px solid var(--accent-color)}
+.sub-status-tag.pending{background:rgba(245,158,11,.15);color:var(--warning-color);border:1px solid var(--warning-color);animation:pulseSoft 2s infinite}
+@keyframes pulseSoft{0%,100%{opacity:1}50%{opacity:.7}}
 
 /* ===== Ticker ===== */
 .ticker-bar{background:linear-gradient(90deg,var(--accent-color),var(--vip-gold));color:#fff;font-weight:700;font-size:.85rem;padding:8px 0;overflow:hidden;white-space:nowrap;display:none}
@@ -59,7 +82,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 .ad-banner-container{width:100%;margin-bottom:15px;text-align:center;overflow:hidden;border-radius:10px;background:#12141a;border:1px dashed var(--border-color);display:none}
 .ad-banner-container img,.ad-banner-container iframe{max-width:100%;height:auto;border:none}
 
-/* ===== View Toggle (VOD vs Live) ===== */
+/* ===== View Toggle ===== */
 .view-toggle{display:flex;gap:8px;background:#13151c;border:1px solid var(--border-color);border-radius:12px;padding:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
 .view-toggle::-webkit-scrollbar{display:none}
 .view-btn{flex:1;min-width:130px;padding:10px 14px;border-radius:8px;background:transparent;border:none;color:var(--text-secondary);font-weight:800;font-size:.85rem;cursor:pointer;transition:.25s;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;white-space:nowrap}
@@ -72,6 +95,20 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 .view-btn.active .live-dot{background:#fff}
 @keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,255,255,.6)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(255,255,255,0)}}
 
+/* ===== Continue Watching ===== */
+.continue-section{margin-bottom:18px;display:none}
+.continue-section.show{display:block}
+.section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.section-title{font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:8px}
+.section-title i{color:var(--accent-color)}
+.continue-scroll{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:6px}
+.continue-scroll::-webkit-scrollbar{display:none}
+.continue-card{flex-shrink:0;width:160px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:10px;overflow:hidden;cursor:pointer;transition:.2s;position:relative}
+.continue-card:hover{transform:translateY(-3px);border-color:var(--accent-color)}
+.continue-thumb{position:relative;width:100%;padding-top:56.25%;background:#000}
+.continue-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.continue-title{font-size:.75rem;font-weight:700;padding:8px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
 /* ===== Category Tabs ===== */
 .category-tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--border-color);padding-bottom:10px;overflow-x:auto;scrollbar-width:none}
 .category-tabs::-webkit-scrollbar{display:none}
@@ -79,6 +116,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 .tab-btn.active,.tab-btn:hover{background:var(--accent-color);color:#fff;border-color:var(--accent-color)}
 .tab-btn.vip-tab.active{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;border-color:var(--vip-gold)}
 .tab-btn.live-cat-tab.active{background:linear-gradient(135deg,var(--live-red),#b91c1c);border-color:var(--live-red)}
+.tab-btn.fav-tab.active{background:linear-gradient(135deg,#ef4444,#b91c1c);border-color:#ef4444}
 
 /* ===== VOD Grid ===== */
 .items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
@@ -97,11 +135,21 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 .vip-card-badge{position:absolute;top:8px;left:8px;background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:900;z-index:2}
 .category-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.8);color:#fff;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:700}
 .download-flag{position:absolute;bottom:8px;left:8px;background:rgba(46,196,182,.9);color:#000;padding:2px 7px;border-radius:4px;font-size:.65rem;font-weight:900;z-index:2}
+.fav-btn{
+    position:absolute;top:8px;left:8px;width:32px;height:32px;border-radius:50%;
+    background:rgba(0,0,0,.6);color:#fff;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:.2s;z-index:3;font-size:.9rem;
+}
+.fav-btn:hover{transform:scale(1.1);background:rgba(239,68,68,.9)}
+.fav-btn.active{color:#ef4444;background:rgba(239,68,68,.15)}
+.fav-btn.active i{font-weight:900}
+.item-card.is-vip .fav-btn{left:auto;right:8px;top:auto;bottom:8px}
 .card-details{padding:10px;display:flex;flex-direction:column;gap:6px;flex-grow:1}
 .card-title{font-size:.88rem;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#fff;cursor:pointer}
 .card-meta{font-size:.72rem;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
 
-/* ===== Card Actions (Play + Download) ===== */
+/* Card Actions */
 .card-actions{display:flex;gap:6px;margin-top:8px}
 .card-action-btn{flex:1;padding:8px 6px;border-radius:8px;font-size:.72rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;border:none;outline:none;transition:.2s;font-family:inherit}
 .card-action-btn.play{background:var(--accent-color);color:#fff}
@@ -125,18 +173,61 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 .live-name{font-size:.85rem;font-weight:800;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#fff}
 .live-meta{font-size:.7rem;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
 
+/* ===== Skeletons ===== */
+.skeleton-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+@media (min-width:600px){.skeleton-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}}
+.skeleton-card{background:var(--card-bg);border-radius:12px;overflow:hidden;border:1px solid var(--border-color)}
+.skeleton-thumb{width:100%;padding-top:56.25%;background:linear-gradient(90deg,#1a1d26 25%,#242833 50%,#1a1d26 75%);background-size:200% 100%;animation:skel 1.4s infinite}
+.skeleton-line{height:12px;margin:10px;background:linear-gradient(90deg,#1a1d26 25%,#242833 50%,#1a1d26 75%);background-size:200% 100%;animation:skel 1.4s infinite;border-radius:6px}
+.skeleton-line.short{width:60%}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ===== Bottom Nav (Mobile) ===== */
+.bottom-nav{
+    position:fixed;left:0;right:0;bottom:0;
+    height:calc(var(--nav-h) + var(--safe-b));
+    background:rgba(11,12,16,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-top:1px solid var(--border-color);
+    display:flex;align-items:flex-start;justify-content:space-around;
+    padding:8px 6px calc(var(--safe-b) + 4px);z-index:1500;
+}
+@media (min-width:1024px){.bottom-nav{display:none}}
+.bn-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 4px;border-radius:12px;color:var(--text-secondary);
+    font-size:.68rem;font-weight:700;cursor:pointer;transition:.2s;
+    background:transparent;border:none;font-family:inherit;
+}
+.bn-item i{font-size:1.15rem;transition:.2s}
+.bn-item.active{color:var(--accent-color)}
+.bn-item.active i{transform:translateY(-2px) scale(1.1);filter:drop-shadow(0 4px 8px rgba(229,9,20,.5))}
+.bn-item.live-bn.active{color:var(--live-red)}
+.bn-item.live-bn.active i{filter:drop-shadow(0 4px 8px rgba(239,68,68,.5))}
+.bn-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--accent-color);color:#fff;font-size:.6rem;padding:1px 5px;border-radius:10px;font-weight:800;min-width:16px;text-align:center}
+
 /* ===== Modals ===== */
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;justify-content:center;align-items:flex-end;padding:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);overflow-y:auto}
 @media (min-width:640px){.modal{align-items:center;padding:20px}}
-.modal.active{display:flex}
-.modal-card{background:var(--card-bg);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:22px 18px;position:relative;box-shadow:0 -10px 40px rgba(0,0,0,.8);border:1px solid var(--border-color);max-height:92vh;overflow-y:auto;animation:slideUp .35s cubic-bezier(.34,1.4,.64,1)}
-@media (min-width:640px){.modal-card{border-radius:16px;padding:22px;max-height:90vh;animation:zoomIn .3s cubic-bezier(.34,1.56,.64,1)}}
+.modal.active{display:flex;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-card{
+    background:var(--card-bg);width:100%;max-width:520px;
+    border-radius:22px 22px 0 0;padding:22px 18px 22px;
+    padding-bottom:calc(22px + var(--safe-b));
+    position:relative;box-shadow:0 -10px 40px rgba(0,0,0,.8);
+    border:1px solid var(--border-color);max-height:92vh;overflow-y:auto;
+    animation:slideUp .35s cubic-bezier(.34,1.4,.64,1);
+}
+@media (min-width:640px){
+    .modal-card{border-radius:16px;padding:24px;padding-bottom:24px;max-height:90vh;animation:zoomIn .3s cubic-bezier(.34,1.56,.64,1)}
+}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes zoomIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
-.modal-card.large{max-width:1000px;padding:0;overflow:hidden;border-radius:14px}
+.modal-card.large{max-width:1000px;padding:0;padding-bottom:0;overflow:hidden;border-radius:14px 14px 0 0}
+@media (min-width:640px){.modal-card.large{border-radius:14px}}
 .modal-grab{width:42px;height:4px;border-radius:4px;background:rgba(255,255,255,.18);margin:0 auto 14px}
 @media (min-width:640px){.modal-grab{display:none}}
-.close-modal{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);color:#fff;border:1px solid var(--border-color);width:34px;height:34px;border-radius:50%;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:.2s}
+.close-modal{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.7);color:#fff;border:1px solid var(--border-color);width:34px;height:34px;border-radius:50%;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:.2s}
 .close-modal:hover{background:var(--accent-color);transform:rotate(90deg)}
 
 .form-group{margin-bottom:14px}
@@ -152,11 +243,12 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 .server-btn{background:#1e212d;color:#fff;border:1px solid var(--border-color);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:700;font-family:inherit;transition:.2s}
 .server-btn.active,.server-btn:hover{background:var(--accent-color);border-color:var(--accent-color)}
 
-/* ===== Download button inside player ===== */
 .player-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .player-actions .btn{flex:1;min-width:130px;justify-content:center;padding:10px}
 .dl-btn-player{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;font-weight:800;box-shadow:0 4px 14px rgba(255,183,3,.3)}
 .dl-btn-player:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.fav-btn-player{background:#1e212d;color:#fff;border:1px solid var(--border-color)}
+.fav-btn-player.active{background:rgba(239,68,68,.15);color:#ef4444;border-color:#ef4444}
 
 /* ===== Download Flow ===== */
 .dl-hero{text-align:center;padding:4px 0 14px}
@@ -176,10 +268,39 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 .dl-opt-title{font-weight:800;font-size:.9rem;margin-bottom:2px}
 .dl-opt-sub{font-size:.72rem;opacity:.85;line-height:1.4}
 
-/* VIP benefits list */
+/* VIP benefits */
 .vip-benefits{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:8px}
 .vip-benefits li{display:flex;align-items:center;gap:10px;font-size:.85rem;padding:10px 12px;background:#0f1015;border-radius:10px;border:1px solid var(--border-color)}
 .vip-benefits li i{color:var(--vip-gold);font-size:1rem;width:18px;text-align:center}
+.vip-benefits li strong{color:#fff}
+
+/* VIP request status */
+.vip-status-card{
+    padding:14px;border-radius:12px;margin:12px 0;display:flex;align-items:center;gap:12px;
+    border:1px solid;font-size:.85rem;
+}
+.vip-status-card.pending{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.4);color:#fcd34d}
+.vip-status-card.approved{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.4);color:#6ee7b7}
+.vip-status-card.rejected{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.4);color:#fca5a5}
+.vip-status-card .vsc-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;background:rgba(0,0,0,.3)}
+.vip-status-card .vsc-body{flex:1;min-width:0}
+.vip-status-card .vsc-title{font-weight:800;margin-bottom:2px;color:#fff}
+.vip-status-card .vsc-sub{font-size:.72rem;color:var(--text-secondary);line-height:1.4}
+
+/* WhatsApp contact block */
+.wa-contact-box{
+    background:linear-gradient(135deg,rgba(37,211,102,.12),rgba(37,211,102,.04));
+    border:1px solid rgba(37,211,102,.4);border-radius:14px;
+    padding:16px;margin:12px 0;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;
+}
+.wa-contact-box i.wa{font-size:2.4rem;color:#25D366}
+.wa-contact-box .wa-title{font-size:1rem;font-weight:900;color:#fff}
+.wa-contact-box .wa-sub{font-size:.78rem;color:var(--text-secondary);line-height:1.5;max-width:340px}
+.btn-whatsapp{
+    background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-weight:800;
+    box-shadow:0 6px 18px rgba(37,211,102,.35);width:100%;justify-content:center;padding:12px;
+}
+.btn-whatsapp:hover{filter:brightness(1.08);transform:translateY(-2px)}
 
 /* Countdown */
 .countdown-wrap{text-align:center;padding:8px 0}
@@ -198,6 +319,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 
 /* Status / Empty */
 .status-box{text-align:center;padding:50px 15px;grid-column:1/-1;color:var(--text-secondary)}
+.status-box i.empty-icon{font-size:2.5rem;opacity:.3;display:block;margin-bottom:14px}
 .spinner{width:35px;height:35px;border:3px solid rgba(255,255,255,.1);border-top:3px solid var(--accent-color);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
 @keyframes spin{100%{transform:rotate(360deg)}}
 .profile-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-color);font-size:.85rem}
@@ -205,25 +327,35 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 .player-error i{font-size:3rem;color:var(--accent-color)}
 
 /* Toast */
-.toast-wrap{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:calc(100% - 32px);max-width:420px}
-.toast{background:linear-gradient(135deg,#14141c,#0e0e16);border:1px solid var(--border-color);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 15px 40px rgba(0,0,0,.7);animation:zoomIn .3s;pointer-events:auto;font-size:.85rem;font-weight:700}
-.toast i{color:var(--accent-color)}
-.toast.ok i{color:var(--success-color)}
-.toast.err i{color:var(--accent-color)}
+.toast-wrap{position:fixed;top:calc(16px + var(--safe-t));left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:calc(100% - 32px);max-width:420px}
+.toast{background:linear-gradient(135deg,#14141c,#0e0e16);border:1px solid var(--border-color);border-radius:12px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 15px 40px rgba(0,0,0,.7);animation:toastIn .3s;pointer-events:auto;font-size:.85rem;font-weight:700;position:relative;overflow:hidden}
+@keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.96)}to{opacity:1;transform:none}}
+.toast::before{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:var(--accent-color)}
+.toast.ok::before{background:var(--success-color)}
+.toast.err::before{background:var(--accent-color)}
+.toast.warn::before{background:var(--warning-color)}
+.toast-i{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#fff;background:var(--accent-color)}
+.toast.ok .toast-i{background:var(--success-color)}
+.toast.warn .toast-i{background:var(--warning-color)}
+.toast-body{flex:1;min-width:0}
+.toast-title{font-size:.82rem;font-weight:800;margin-bottom:1px;color:#fff}
+.toast-msg{font-size:.75rem;color:var(--text-secondary);line-height:1.4}
 
 /* ===== Mobile ===== */
 @media (max-width:768px){
-    .navbar{flex-wrap:wrap;padding:8px 12px;gap:8px}
+    .navbar{flex-wrap:wrap;padding:8px 12px;gap:8px;padding-top:calc(8px + var(--safe-t))}
     .search-box{order:3;max-width:100%;margin-top:2px}
     .navbar-brand{font-size:1.05rem}
-    .modal-card{padding:18px 15px}
-    .player-info-body{padding:12px}
+    .modal-card{padding:18px 15px;padding-bottom:calc(18px + var(--safe-b))}
+    .player-info-body{padding:12px;padding-bottom:calc(12px + var(--safe-b))}
     .card-actions .card-action-btn{padding:7px 4px;font-size:.68rem}
     .view-toggle .view-btn{min-width:auto;padding:9px 12px;font-size:.78rem}
+    .continue-card{width:140px}
 }
 @media (max-width:380px){
     .card-action-btn span{display:none}
     .card-action-btn{padding:8px 4px}
+    .bottom-nav .bn-item span{font-size:.6rem}
 }
 </style>
 </head>
@@ -237,6 +369,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
     <div class="search-box">
         <i class="fa-solid fa-magnifying-glass" style="color:#777"></i>
         <input type="text" id="searchInput" placeholder="بحث...">
+        <button class="search-clear" id="searchClear" title="مسح"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="nav-user-area" id="navUserArea"></div>
 </nav>
@@ -246,7 +379,16 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 <div class="container">
     <div id="topAdBanner" class="ad-banner-container"></div>
 
-    <!-- View Toggle: VOD / Live -->
+    <!-- Continue Watching -->
+    <div class="continue-section" id="continueSection">
+        <div class="section-title-row">
+            <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> أكمل المشاهدة</div>
+            <button class="btn btn-outline sm" id="clearContinueBtn"><i class="fa-solid fa-eraser"></i> مسح</button>
+        </div>
+        <div class="continue-scroll" id="continueScroll"></div>
+    </div>
+
+    <!-- View Toggle -->
     <div class="view-toggle">
         <button class="view-btn active" data-view="vod">
             <i class="fa-solid fa-film"></i> الأفلام والمسلسلات
@@ -256,18 +398,31 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
         </button>
     </div>
 
-    <!-- VOD Tabs -->
+    <!-- Tabs -->
     <div class="category-tabs" id="vodTabs"></div>
-    <!-- Live Tabs -->
     <div class="category-tabs" id="liveTabs" style="display:none"></div>
 
-    <!-- Main Grid -->
+    <!-- Grid -->
     <div id="itemsGrid" class="items-grid">
-        <div class="status-box"><div class="spinner"></div><p>جاري الاتصال بقاعدة البيانات...</p></div>
+        <div class="skeleton-grid" style="grid-column:1/-1">
+            <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+            <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+            <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+            <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+        </div>
     </div>
 
     <div id="bottomAdBanner" class="ad-banner-container" style="margin-top:25px"></div>
 </div>
+
+<!-- ============ Bottom Nav (Mobile) ============ -->
+<nav class="bottom-nav">
+    <button class="bn-item active" data-bn="vod"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button>
+    <button class="bn-item live-bn" data-bn="live"><i class="fa-solid fa-tower-broadcast"></i><span>البث</span></button>
+    <button class="bn-item" data-bn="search"><i class="fa-solid fa-magnifying-glass"></i><span>بحث</span></button>
+    <button class="bn-item" data-bn="favorites"><i class="fa-solid fa-heart"></i><span>المفضلة</span></button>
+    <button class="bn-item" data-bn="profile"><i class="fa-solid fa-user"></i><span>حسابي</span></button>
+</nav>
 
 <!-- =============== Auth Modal =============== -->
 <div id="authModal" class="modal">
@@ -288,7 +443,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
                 <label>كلمة المرور</label>
                 <input type="password" id="authPassword" class="form-control" required placeholder="••••••••">
             </div>
-            <button type="submit" id="authSubmitBtn" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;margin-top:8px">دخول</button>
+            <button type="submit" id="authSubmitBtn" class="btn btn-primary btn-block" style="padding:11px;margin-top:8px">دخول</button>
         </form>
         <div style="text-align:center;margin-top:12px;font-size:.8rem">
             <a href="#" id="forgotPassLink" style="color:var(--text-secondary);text-decoration:none">نسيت كلمة المرور؟</a>
@@ -310,12 +465,20 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
             <h3 id="profileName" style="margin-top:8px;font-weight:800">---</h3>
             <p id="profileEmail" style="font-size:.8rem;color:var(--text-secondary)">---</p>
         </div>
+
+        <!-- VIP request status -->
+        <div id="profileVipRequestStatus"></div>
+
         <div class="profile-row"><span>حالة الاشتراك:</span><span id="profileSubStatus" style="font-weight:800">---</span></div>
         <div class="profile-row"><span>تاريخ انتهاء الاشتراك:</span><span id="profileExpireDate" style="font-weight:700">---</span></div>
         <div class="profile-row"><span>الأيام المتبقية:</span><span id="profileDaysLeft" style="font-weight:800;color:var(--vip-gold)">---</span></div>
-        <div style="margin-top:18px;display:flex;gap:8px">
-            <button class="btn btn-vip" style="flex:1;justify-content:center" onclick="closeModal('profileModal');openSubModal()"><i class="fa-solid fa-crown"></i> ترقية / تجديد</button>
-            <button class="btn btn-outline" style="padding:8px 12px" onclick="logout()">خروج</button>
+        <div class="profile-row"><span>المفضلة:</span><span id="profileFavCount" style="font-weight:700">0</span></div>
+
+        <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-vip" style="flex:1;min-width:130px;justify-content:center" onclick="closeModal('profileModal');openSubModal()">
+                <i class="fa-solid fa-crown"></i> <span id="profileVipBtnText">ترقية / تجديد</span>
+            </button>
+            <button class="btn btn-outline" style="padding:8px 12px" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
         </div>
     </div>
 </div>
@@ -331,16 +494,20 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
             <p>احصل على تجربة مشاهدة وتحميل بلا حدود</p>
         </div>
         <ul class="vip-benefits">
-            <li><i class="fa-solid fa-download"></i> تحميل مباشر بدون إعلانات لكل المحتوى</li>
-            <li><i class="fa-solid fa-unlock"></i> فتح المحتوى الحصري VIP (أفلام + مسلسلات)</li>
-            <li><i class="fa-solid fa-bolt"></i> سيرفرات بجودة عالية 4K/1080p</li>
-            <li><i class="fa-solid fa-headset"></i> دعم فني أولوية</li>
-            <li><i class="fa-solid fa-circle-check"></i> بدون إعلانات منبثقة</li>
+            <li><i class="fa-solid fa-download"></i> <span><strong>تحميل مباشر</strong> بدون إعلانات لكل المحتوى</span></li>
+            <li><i class="fa-solid fa-unlock"></i> <span><strong>فتح المحتوى الحصري VIP</strong> (أفلام + مسلسلات + قنوات)</span></li>
+            <li><i class="fa-solid fa-bolt"></i> <span>سيرفرات بجودة عالية <strong>4K/1080p</strong></span></li>
+            <li><i class="fa-solid fa-headset"></i> <span>دعم فني <strong>أولوية</strong></span></li>
+            <li><i class="fa-solid fa-circle-check"></i> <span>بدون <strong>إعلانات منبثقة</strong></span></li>
         </ul>
-        <button class="btn btn-vip" style="width:100%;justify-content:center;padding:12px" onclick="contactAdminForSub()">
-            <i class="fa-solid fa-comments"></i> تواصل مع الإدارة للاشتراك
+
+        <!-- VIP status inside modal -->
+        <div id="subModalStatusBox"></div>
+
+        <button class="btn btn-whatsapp" id="btnRequestVip">
+            <i class="fa-brands fa-whatsapp"></i> اطلب الاشتراك عبر واتساب
         </button>
-        <button class="btn btn-outline" style="width:100%;justify-content:center;padding:10px;margin-top:8px" onclick="closeModal('subModal')">لاحقاً</button>
+        <button class="btn btn-outline btn-block" style="margin-top:8px;padding:10px" onclick="closeModal('subModal')">لاحقاً</button>
     </div>
 </div>
 
@@ -350,8 +517,8 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
         <div class="modal-grab"></div>
         <div style="font-size:3.5rem;color:var(--accent-color);margin-bottom:8px"><i class="fa-solid fa-user-slash"></i></div>
         <h3 style="font-weight:800;margin-bottom:8px;color:var(--accent-color)">حسابك معطل / محظور</h3>
-        <p style="color:var(--text-secondary);font-size:.85rem;line-height:1.5;margin-bottom:15px">تم حظر حسابك من قبل إدارة المنصة.</p>
-        <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="logout()">تسجيل الخروج</button>
+        <p style="color:var(--text-secondary);font-size:.85rem;line-height:1.5;margin-bottom:15px">تم حظر حسابك من قبل إدارة المنصة. للاستفسار تواصل مع الدعم.</p>
+        <button class="btn btn-outline btn-block" onclick="logout()">تسجيل الخروج</button>
     </div>
 </div>
 
@@ -361,7 +528,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
         <div class="modal-grab"></div>
         <div style="font-size:3rem;color:var(--vip-gold);margin-bottom:8px"><i class="fa-solid fa-bullhorn"></i></div>
         <p id="popupBannerText" style="font-size:.95rem;line-height:1.6;margin:15px 0"></p>
-        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="closeModal('popupBannerModal')">إغلاق</button>
+        <button class="btn btn-primary btn-block" onclick="closeModal('popupBannerModal')">إغلاق</button>
     </div>
 </div>
 
@@ -372,15 +539,17 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
         <div id="playerContainer" class="player-wrapper"></div>
         <div class="player-info-body">
             <h3 id="modalTitle" style="font-size:1.1rem;font-weight:800">عنوان المحتوى</h3>
-            <div style="display:flex;gap:12px;font-size:.78rem;color:var(--text-secondary);margin-top:4px">
+            <div style="display:flex;gap:12px;font-size:.78rem;color:var(--text-secondary);margin-top:4px;flex-wrap:wrap">
                 <span><i class="fa-regular fa-eye"></i> <span id="modalViews">0</span> مشاهدة</span>
                 <span><i class="fa-solid fa-folder"></i> <span id="modalCategory">عام</span></span>
             </div>
 
-            <!-- Download button inside player -->
             <div class="player-actions" id="playerDlWrap" style="display:none">
                 <button class="btn dl-btn-player" id="playerDlBtn">
                     <i class="fa-solid fa-download"></i> تحميل الفيديو
+                </button>
+                <button class="btn fav-btn-player" id="playerFavBtn">
+                    <i class="fa-regular fa-heart"></i> <span>المفضلة</span>
                 </button>
             </div>
 
@@ -395,8 +564,22 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:70px;min-
 
 <!-- =============== Download Options Modal =============== -->
 <div id="dlModal" class="modal">
-    <div class="modal-card" id="dlModalCard">
-        <!-- Will be filled dynamically -->
+    <div class="modal-card" id="dlModalCard"></div>
+</div>
+
+<!-- =============== Confirm Modal =============== -->
+<div id="confirmModal" class="modal">
+    <div class="modal-card" style="max-width:420px;text-align:center">
+        <div class="modal-grab"></div>
+        <div style="width:64px;height:64px;border-radius:50%;margin:0 auto 12px;background:rgba(229,9,20,.15);display:flex;align-items:center;justify-content:center;font-size:1.7rem;color:var(--accent-color)" id="cfIcon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 id="cfTitle" style="font-weight:800;margin-bottom:8px;font-size:1.05rem">تأكيد</h3>
+        <p id="cfMsg" style="color:var(--text-secondary);font-size:.85rem;line-height:1.6;margin-bottom:14px">هل أنت متأكد؟</p>
+        <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" style="flex:1;justify-content:center" id="cfYes">تأكيد</button>
+            <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="closeModal('confirmModal');if(confirmResolver)confirmResolver(false)">إلغاء</button>
+        </div>
     </div>
 </div>
 
@@ -430,14 +613,19 @@ let allLiveChannels=[], allLiveCategories=[];
 let siteSettings={};
 let activeTab='all';
 let activeLiveTab='all';
-let currentView='vod'; // 'vod' | 'live'
+let currentView='vod';
 let isAuthLoginMode=true;
 let hlsPlayerInstance=null, dashPlayerInstance=null;
 let currentPlayingId=null;
 let hasHandledUrlHash=false;
 let userListenerRef=null, userListenerCallback=null;
-let currentDlItem=null; // item being downloaded
+let currentDlItem=null;
 let countdownTimer=null;
+let currentPlayerItem=null;
+let vipRequestListenerRef=null, vipRequestListenerCb=null;
+let lastVipRequestStatus=null;
+let confirmResolver=null;
+let favorites = JSON.parse(localStorage.getItem('faresflix_favs') || '[]');
 
 /* =========================================================
    Utilities
@@ -446,6 +634,8 @@ const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const debounce = (fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}};
+const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}) : '—';
+const fmtTime = ts => ts ? new Date(ts).toLocaleString('ar-EG',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
 
 const getUserVipExpire = u => u ? (u.vipExpireDate || u.expireAt || 0) : 0;
 const getUserIsVip = u => {
@@ -456,24 +646,73 @@ const getUserIsVip = u => {
 };
 const getUserIsBanned = u => !!(u && (u.isBanned === true || u.isBlocked === true));
 
-function toast(msg, type=''){
+/* =========================================================
+   Toast
+   ========================================================= */
+function toast(msg, type='', title=''){
     const w = $('#toasts');
     const t = document.createElement('div');
     t.className = 'toast ' + type;
-    const icon = type === 'ok' ? 'fa-circle-check' : type === 'err' ? 'fa-circle-exclamation' : 'fa-circle-info';
-    t.innerHTML = `<i class="fa-solid ${icon}"></i><span>${esc(msg)}</span>`;
+    const icon = type === 'ok' ? 'fa-circle-check' : type === 'err' ? 'fa-circle-exclamation' : type === 'warn' ? 'fa-triangle-exclamation' : 'fa-circle-info';
+    t.innerHTML = `
+        <div class="toast-i"><i class="fa-solid ${icon}"></i></div>
+        <div class="toast-body">
+            ${title ? `<div class="toast-title">${esc(title)}</div>` : ''}
+            <div class="toast-msg" style="${title?'':'color:#fff;font-weight:700'}">${esc(msg)}</div>
+        </div>`;
     w.appendChild(t);
-    setTimeout(()=>{t.style.transition='opacity .3s,transform .3s';t.style.opacity='0';t.style.transform='translateY(-10px)';setTimeout(()=>t.remove(),320);}, 3200);
+    setTimeout(()=>{
+        t.style.transition='opacity .3s, transform .3s';
+        t.style.opacity='0'; t.style.transform='translateY(-12px)';
+        setTimeout(()=>t.remove(), 320);
+    }, 3400);
 }
 
 /* =========================================================
-   Auth Listener
+   Confirm modal
+   ========================================================= */
+function askConfirm({title='تأكيد', msg='هل أنت متأكد؟', okText='تأكيد', type='danger'}={}){
+    return new Promise(res => {
+        $('#cfTitle').textContent = title;
+        $('#cfMsg').textContent = msg;
+        $('#cfYes').innerHTML = `<i class="fa-solid fa-check"></i> ${esc(okText)}`;
+        const iconBox = $('#cfIcon');
+        const iconEl = iconBox.querySelector('i');
+        if(type === 'warn'){
+            iconBox.style.background = 'rgba(245,158,11,.15)';
+            iconBox.style.color = 'var(--warning-color)';
+            iconEl.className = 'fa-solid fa-triangle-exclamation';
+        }else{
+            iconBox.style.background = 'rgba(229,9,20,.15)';
+            iconBox.style.color = 'var(--accent-color)';
+            iconEl.className = 'fa-solid fa-triangle-exclamation';
+        }
+        $('#confirmModal').classList.add('active');
+        confirmResolver = res;
+    });
+}
+$('#cfYes').addEventListener('click', () => {
+    closeModal('confirmModal');
+    if(confirmResolver){ confirmResolver(true); confirmResolver = null; }
+});
+$('#confirmModal').addEventListener('click', e => {
+    if(e.target.id === 'confirmModal' && confirmResolver){ confirmResolver(false); confirmResolver = null; }
+});
+
+/* =========================================================
+   Auth
    ========================================================= */
 auth.onAuthStateChanged(user => {
+    // cleanup previous listener
     if(userListenerRef && userListenerCallback){
         userListenerRef.off('value', userListenerCallback);
     }
+    if(vipRequestListenerRef && vipRequestListenerCb){
+        vipRequestListenerRef.off('value', vipRequestListenerCb);
+    }
     userListenerRef = null; userListenerCallback = null;
+    vipRequestListenerRef = null; vipRequestListenerCb = null;
+    lastVipRequestStatus = null;
 
     if(user){
         currentUser = user;
@@ -500,6 +739,22 @@ auth.onAuthStateChanged(user => {
             renderGridItems();
             renderLiveChannels();
         });
+
+        // Listen to user's latest VIP request
+        vipRequestListenerRef = db.ref('vipRequests').orderByChild('uid').equalTo(user.uid);
+        vipRequestListenerCb = vipRequestListenerRef.on('value', snap => {
+            lastVipRequestStatus = null;
+            if(snap.exists()){
+                let latest = null;
+                snap.forEach(c => {
+                    const r = { id: c.key, ...c.val() };
+                    if(!latest || (r.createdAt || 0) > (latest.createdAt || 0)) latest = r;
+                });
+                lastVipRequestStatus = latest;
+            }
+            if($('#profileModal').classList.contains('active')) updateProfileVipStatus();
+            if($('#subModal').classList.contains('active')) updateSubModalStatus();
+        });
     }else{
         currentUser = null; userData = null;
         renderNavUserArea();
@@ -512,14 +767,17 @@ function renderNavUserArea(){
     const navArea = $('#navUserArea');
     if(currentUser && userData){
         const isVip = getUserIsVip(userData);
-        const subTag = isVip
-            ? `<span class="sub-status-tag active"><i class="fa-solid fa-crown"></i> VIP</span>`
-            : `<span class="sub-status-tag expired">عادي</span>`;
+        const hasPending = lastVipRequestStatus && lastVipRequestStatus.status === 'pending';
+        let tag;
+        if(isVip) tag = `<span class="sub-status-tag active"><i class="fa-solid fa-crown"></i> VIP</span>`;
+        else if(hasPending) tag = `<span class="sub-status-tag pending"><i class="fa-solid fa-clock"></i> قيد المراجعة</span>`;
+        else tag = `<span class="sub-status-tag expired">عادي</span>`;
+
         navArea.innerHTML = `
             <div class="user-badge-info" id="openProfileBtn">
                 <i class="fa-solid fa-circle-user" style="font-size:1.1rem;color:var(--accent-color)"></i>
-                <span style="font-size:.78rem;font-weight:700">${esc(userData.name||'حسابي')}</span>
-                ${subTag}
+                <span style="font-size:.78rem;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(userData.name||'حسابي')}</span>
+                ${tag}
             </div>`;
         $('#openProfileBtn').addEventListener('click', openProfileModal);
     }else{
@@ -548,9 +806,8 @@ function loadSiteSettings(){
             document.documentElement.style.setProperty('--vip-gold', siteSettings.vipColor);
         }
         if(siteSettings.tickerText){
-            const bar = $('#tickerBar');
+            $('#tickerBar').style.display = 'block';
             $('#tickerContent').textContent = siteSettings.tickerText;
-            bar.style.display = 'block';
         }
         if(siteSettings.popupBanner && !sessionStorage.getItem('popupDismissed')){
             $('#popupBannerText').textContent = siteSettings.popupBanner;
@@ -563,7 +820,7 @@ function loadSiteSettings(){
 }
 
 /* =========================================================
-   Fetch VOD data
+   Fetch VOD
    ========================================================= */
 function fetchMediaData(){
     db.ref('videos').on('value', snap => {
@@ -572,39 +829,31 @@ function fetchMediaData(){
             snap.forEach(c => allFetchedItems.push({id:c.key, ...c.val()}));
         }
         renderGridItems();
+        renderContinueWatching();
         checkUrlForDirectPlay();
     }, err => {
         console.error('DB err:', err);
-        $('#itemsGrid').innerHTML = `<div class="status-box"><p style="color:var(--accent-color)">تعذّر قراءة البيانات.</p></div>`;
+        $('#itemsGrid').innerHTML = `<div class="status-box"><i class="fa-solid fa-circle-exclamation empty-icon" style="color:var(--accent-color)"></i><p>تعذّر قراءة البيانات.</p></div>`;
     });
 }
 
 function fetchCategories(){
     db.ref('categories').on('value', snap => {
         allCategoryObjects = [];
-        if(snap.exists()){
-            snap.forEach(c => allCategoryObjects.push({id:c.key, ...c.val()}));
-        }
+        if(snap.exists()) snap.forEach(c => allCategoryObjects.push({id:c.key, ...c.val()}));
         buildVodTabs();
     });
 }
 
-/* =========================================================
-   Fetch Live data
-   ========================================================= */
 function fetchLiveData(){
     db.ref('liveCategories').on('value', snap => {
         allLiveCategories = [];
-        if(snap.exists()){
-            snap.forEach(c => allLiveCategories.push({id:c.key, ...c.val()}));
-        }
+        if(snap.exists()) snap.forEach(c => allLiveCategories.push({id:c.key, ...c.val()}));
         buildLiveTabs();
     });
     db.ref('liveChannels').on('value', snap => {
         allLiveChannels = [];
-        if(snap.exists()){
-            snap.forEach(c => allLiveChannels.push({id:c.key, ...c.val()}));
-        }
+        if(snap.exists()) snap.forEach(c => allLiveChannels.push({id:c.key, ...c.val()}));
         renderLiveChannels();
     });
 }
@@ -637,6 +886,7 @@ function buildVodTabs(){
 
     let html = `
         <button class="tab-btn ${activeTab==='all'?'active':''}" data-tab="all"><i class="fa-solid fa-border-all"></i> الكل</button>
+        <button class="tab-btn fav-tab ${activeTab==='fav'?'active':''}" data-tab="fav"><i class="fa-solid fa-heart"></i> المفضلة</button>
         <button class="tab-btn ${activeTab==='free'?'active':''}" data-tab="free"><i class="fa-solid fa-film"></i> مجاني</button>
         <button class="tab-btn vip-tab ${activeTab==='vip'?'active':''}" data-tab="vip"><i class="fa-solid fa-crown" style="color:var(--vip-gold)"></i> المميز VIP</button>`;
     set.forEach(cat => {
@@ -690,23 +940,79 @@ function switchLiveTab(tab){
 function switchView(view){
     currentView = view;
     $$('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    $$('.bn-item').forEach(b => b.classList.remove('active'));
+    const bn = $(`.bn-item[data-bn="${view}"]`);
+    if(bn) bn.classList.add('active');
+
     if(view === 'live'){
         $('#vodTabs').style.display = 'none';
         $('#liveTabs').style.display = 'flex';
         $('#searchInput').placeholder = 'ابحث في القنوات...';
         $('#searchInput').value = '';
+        updateSearchClear();
         renderLiveChannels();
     }else{
         $('#vodTabs').style.display = 'flex';
         $('#liveTabs').style.display = 'none';
         $('#searchInput').placeholder = 'بحث عن فيلم، مسلسل...';
         $('#searchInput').value = '';
+        updateSearchClear();
         renderGridItems();
     }
     window.scrollTo({top:0, behavior:'smooth'});
 }
 
 $$('.view-btn').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
+
+/* =========================================================
+   Bottom Nav
+   ========================================================= */
+$$('.bn-item').forEach(b => b.addEventListener('click', () => {
+    const bn = b.dataset.bn;
+    if(bn === 'vod'){ switchView('vod'); }
+    else if(bn === 'live'){ switchView('live'); }
+    else if(bn === 'search'){
+        $('#searchInput').focus();
+        window.scrollTo({top:0, behavior:'smooth'});
+        $$('.bn-item').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        setTimeout(()=>{ $$('.bn-item').forEach(x => x.classList.remove('active')); const r = $(`.bn-item[data-bn="${currentView}"]`); if(r) r.classList.add('active'); }, 3000);
+    }
+    else if(bn === 'favorites'){
+        if(currentView !== 'vod') switchView('vod');
+        switchVodTab('fav');
+        $$('.bn-item').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+    }
+    else if(bn === 'profile'){
+        if(currentUser && userData) openProfileModal();
+        else openAuthModal('login');
+        $$('.bn-item').forEach(x => x.classList.remove('active'));
+        const r = $(`.bn-item[data-bn="${currentView}"]`); if(r) r.classList.add('active');
+    }
+}));
+
+/* =========================================================
+   Favorites
+   ========================================================= */
+function isFav(id){ return favorites.includes(id); }
+function toggleFav(id){
+    const idx = favorites.indexOf(id);
+    if(idx >= 0) favorites.splice(idx, 1);
+    else favorites.push(id);
+    localStorage.setItem('faresflix_favs', JSON.stringify(favorites));
+    renderGridItems();
+    if(currentPlayerItem && currentPlayerItem.id === id) updatePlayerFavBtn();
+}
+function updatePlayerFavBtn(){
+    if(!currentPlayerItem) return;
+    const btn = $('#playerFavBtn');
+    if(!btn) return;
+    const isActive = isFav(currentPlayerItem.id);
+    btn.classList.toggle('active', isActive);
+    btn.querySelector('i').className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    btn.querySelector('span').textContent = isActive ? 'في المفضلة' : 'المفضلة';
+}
 
 /* =========================================================
    Render VOD Grid
@@ -722,6 +1028,7 @@ function renderGridItems(){
         const category = (item.category||'').toLowerCase();
         const matchesSearch = !searchVal || title.includes(searchVal) || desc.includes(searchVal) || category.includes(searchVal);
         if(!matchesSearch) return false;
+        if(activeTab === 'fav') return isFav(item.id);
         if(activeTab === 'vip') return item.isVip === true;
         if(activeTab === 'free') return !item.isVip;
         if(activeTab !== 'all') return item.category === activeTab;
@@ -729,7 +1036,11 @@ function renderGridItems(){
     });
 
     if(filtered.length === 0){
-        grid.innerHTML = '<div class="status-box"><p>لا يوجد محتوى مطابق.</p></div>';
+        if(activeTab === 'fav'){
+            grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-heart empty-icon"></i><p>لم تضف أي محتوى للمفضلة بعد</p><p style="font-size:.75rem;margin-top:6px">اضغط على أيقونة القلب في أي بطاقة لإضافتها</p></div>`;
+        }else{
+            grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-film empty-icon"></i><p>لا يوجد محتوى مطابق.</p></div>`;
+        }
         return;
     }
 
@@ -741,6 +1052,7 @@ function renderGridItems(){
         const views = item.views || 0;
         const isVip = item.isVip === true;
         const hasDownload = !!(item.downloadUrl || item.adDownloadUrl);
+        const fav = isFav(item.id);
         html += `
             <div class="item-card ${isVip?'is-vip':''}" data-id="${esc(item.id)}">
                 <div class="thumb-container" data-action="play">
@@ -749,6 +1061,9 @@ function renderGridItems(){
                     ${isVip ? '<span class="vip-card-badge"><i class="fa-solid fa-crown"></i> VIP</span>' : ''}
                     <span class="category-badge">${category}</span>
                     ${hasDownload ? '<span class="download-flag"><i class="fa-solid fa-download"></i> تحميل</span>' : ''}
+                    <button class="fav-btn ${fav?'active':''}" data-action="fav" data-id="${esc(item.id)}" title="المفضلة">
+                        <i class="${fav?'fa-solid':'fa-regular'} fa-heart"></i>
+                    </button>
                     <div class="play-overlay"><i class="fa-solid fa-circle-play"></i></div>
                 </div>
                 <div class="card-details">
@@ -776,18 +1091,66 @@ function renderGridItems(){
         grid.addEventListener('click', e => {
             const btn = e.target.closest('[data-action]');
             if(!btn) return;
-            const card = e.target.closest('.item-card');
-            if(!card) return;
-            const id = btn.dataset.id || card.dataset.id;
+            const id = btn.dataset.id || e.target.closest('.item-card')?.dataset.id;
+            if(!id) return;
             const action = btn.dataset.action;
             if(action === 'play') handleCardClick(id);
             else if(action === 'download') handleDownloadClick(id);
+            else if(action === 'fav'){ toggleFav(id); e.stopPropagation(); }
         });
     }
 }
 
 /* =========================================================
-   Render Live Channels
+   Continue Watching
+   ========================================================= */
+function getContinueList(){
+    try{
+        const list = JSON.parse(localStorage.getItem('faresflix_continue') || '[]');
+        return list;
+    }catch(e){ return []; }
+}
+function saveContinue(id){
+    let list = getContinueList();
+    list = list.filter(x => x.id !== id);
+    list.unshift({ id, t: Date.now() });
+    localStorage.setItem('faresflix_continue', JSON.stringify(list.slice(0, 10)));
+    renderContinueWatching();
+}
+function clearContinue(){
+    localStorage.removeItem('faresflix_continue');
+    renderContinueWatching();
+}
+function renderContinueWatching(){
+    const box = $('#continueSection');
+    const scroll = $('#continueScroll');
+    const list = getContinueList();
+    if(currentView !== 'vod' || !list.length){ box.classList.remove('show'); return; }
+
+    const items = list.map(x => allFetchedItems.find(i => i.id === x.id)).filter(Boolean);
+    if(!items.length){ box.classList.remove('show'); return; }
+
+    box.classList.add('show');
+    scroll.innerHTML = items.slice(0, 8).map(item => `
+        <div class="continue-card" data-continue-id="${esc(item.id)}">
+            <div class="continue-thumb">
+                <img src="${esc(item.thumbnailUrl || 'https://via.placeholder.com/320x180/15171e/ffffff?text=FARESFLIX')}" onerror="this.src='https://via.placeholder.com/320x180/15171e/ffffff?text=FARESFLIX'">
+                ${item.isVip ? '<span class="vip-card-badge" style="top:6px;left:6px;font-size:.6rem;padding:1px 5px"><i class="fa-solid fa-crown"></i></span>' : ''}
+            </div>
+            <div class="continue-title">${esc(item.title || 'بدون عنوان')}</div>
+        </div>`).join('');
+
+    scroll.querySelectorAll('.continue-card').forEach(c => {
+        c.addEventListener('click', () => handleCardClick(c.dataset.continueId));
+    });
+}
+$('#clearContinueBtn').addEventListener('click', async () => {
+    const ok = await askConfirm({title:'مسح "أكمل المشاهدة"', msg:'حذف سجل المشاهدة من هذا الجهاز؟', okText:'مسح'});
+    if(ok){ clearContinue(); toast('تم المسح','','ok'); }
+});
+
+/* =========================================================
+   Render Live
    ========================================================= */
 function renderLiveChannels(){
     if(currentView !== 'live') return;
@@ -803,19 +1166,16 @@ function renderLiveChannels(){
         return true;
     });
 
-    if(filtered.length === 0){
-        grid.innerHTML = `<div class="status-box">
-            <i class="fa-solid fa-tower-broadcast" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:12px"></i>
-            <p>لا توجد قنوات بث مباشر متاحة حالياً.</p>
-            <p style="font-size:.75rem;margin-top:6px;color:var(--text-secondary)">يمكن للإدارة إضافة القنوات من لوحة التحكم</p>
-        </div>`;
-        grid.classList.remove('items-grid');
-        grid.classList.add('live-grid');
-        return;
-    }
-
     grid.classList.remove('items-grid');
     grid.classList.add('live-grid');
+
+    if(filtered.length === 0){
+        grid.innerHTML = `<div class="status-box" style="grid-column:1/-1">
+            <i class="fa-solid fa-tower-broadcast empty-icon"></i>
+            <p>لا توجد قنوات بث مباشر متاحة حالياً.</p>
+        </div>`;
+        return;
+    }
 
     let html = '';
     filtered.forEach(ch => {
@@ -834,7 +1194,7 @@ function renderLiveChannels(){
                     <div class="play-overlay"><i class="fa-solid fa-circle-play"></i></div>
                 </div>
                 <div class="live-details">
-                    <div class="live-name" data-action="play">${name}</div>
+                    <div class="live-name">${name}</div>
                     <div class="live-meta">
                         <span><i class="fa-solid fa-tv"></i> ${category}</span>
                         <span><i class="fa-regular fa-eye"></i> ${viewers}</span>
@@ -858,9 +1218,20 @@ function renderLiveChannels(){
    Search
    ========================================================= */
 $('#searchInput').addEventListener('input', debounce(() => {
+    updateSearchClear();
     if(currentView === 'live') renderLiveChannels();
     else renderGridItems();
-}, 250));
+}, 220));
+function updateSearchClear(){
+    $('#searchClear').classList.toggle('show', !!$('#searchInput').value);
+}
+$('#searchClear').addEventListener('click', () => {
+    $('#searchInput').value = '';
+    updateSearchClear();
+    if(currentView === 'live') renderLiveChannels();
+    else renderGridItems();
+    $('#searchInput').focus();
+});
 
 /* =========================================================
    Handle clicks
@@ -895,9 +1266,6 @@ function handleLiveClick(id){
     db.ref('liveChannels/' + ch.id + '/viewers').set(firebase.database.ServerValue.increment(1));
 }
 
-/* =========================================================
-   SEO
-   ========================================================= */
 function updateSEOTags(item){
     const t = `${item.title || 'مشاهدة'} - ${siteSettings.siteName || 'FARESFLIX'}`;
     document.title = t;
@@ -908,9 +1276,6 @@ function updateSEOTags(item){
     if(item.thumbnailUrl){ const og3 = $('#ogImage'); if(og3) og3.setAttribute('content', item.thumbnailUrl); }
 }
 
-/* =========================================================
-   URL hash deep-link
-   ========================================================= */
 function checkUrlForDirectPlay(){
     if(hasHandledUrlHash) return;
     const hash = window.location.hash;
@@ -928,18 +1293,18 @@ window.addEventListener('hashchange', () => {
 });
 
 /* =========================================================
-   Player Modal
+   Player
    ========================================================= */
 function openPlayerModal(item){
     if(currentPlayingId === item.id && $('#playerModal').classList.contains('active')) return;
     currentPlayingId = item.id;
+    currentPlayerItem = item;
 
     $('#modalTitle').innerText = item.title || 'بدون عنوان';
     $('#modalDesc').innerText = item.description || 'لا يوجد وصف متوفر.';
     $('#modalViews').innerText = (item.views || 0) + 1;
     $('#modalCategory').innerText = item.category || 'عام';
 
-    // Download button setup
     const dlWrap = $('#playerDlWrap');
     const dlBtn = $('#playerDlBtn');
     const hasDownload = !!(item.downloadUrl || item.adDownloadUrl);
@@ -950,22 +1315,20 @@ function openPlayerModal(item){
         dlWrap.style.display = 'none';
         dlBtn.onclick = null;
     }
+    updatePlayerFavBtn();
+    $('#playerFavBtn').onclick = () => toggleFav(item.id);
 
     const serversSection = $('#serversSection');
     const serversGrid = $('#serversGrid');
     serversGrid.innerHTML = '';
 
     let servers = [];
-    if(Array.isArray(item.servers) && item.servers.length){
-        servers = item.servers;
-    }else if(item.embedScript || item.script){
-        servers = [{name:'سيرفر رئيسي', script: item.embedScript || item.script}];
-    }else if(item.videoUrl || item.url){
-        servers = [{name:'سيرفر رئيسي', url: item.videoUrl || item.url}];
-    }
+    if(Array.isArray(item.servers) && item.servers.length) servers = item.servers;
+    else if(item.embedScript || item.script) servers = [{name:'سيرفر رئيسي', script: item.embedScript || item.script}];
+    else if(item.videoUrl || item.url) servers = [{name:'سيرفر رئيسي', url: item.videoUrl || item.url}];
 
     if(servers.length === 0){
-        toast('لا يوجد سيرفر بث متاح', 'err');
+        toast('لا يوجد سيرفر بث متاح','err');
         currentPlayingId = null;
         return;
     }
@@ -991,25 +1354,23 @@ function openPlayerModal(item){
     playUniversalSource(first.url || first.embedCode || first.script);
     $('#playerModal').classList.add('active');
     db.ref('videos/' + item.id + '/views').set(firebase.database.ServerValue.increment(1));
+    // Save continue watching
+    saveContinue(item.id);
 }
 
 function openLivePlayer(ch){
     currentPlayingId = 'live-' + ch.id;
+    currentPlayerItem = null;
     $('#modalTitle').innerText = ch.name || 'بث مباشر';
-    $('#modalDesc').innerText = ch.description || 'بث مباشر مباشر الآن';
+    $('#modalDesc').innerText = ch.description || 'بث مباشر يعمل الآن';
     $('#modalViews').innerText = (ch.viewers || 0) + 1;
     $('#modalCategory').innerText = ch.category || 'بث مباشر';
-
     $('#playerDlWrap').style.display = 'none';
     $('#serversSection').style.display = 'none';
     $('#serversGrid').innerHTML = '';
 
     const url = ch.url || ch.streamUrl;
-    if(!url){
-        playUniversalSource('');
-        $('#playerModal').classList.add('active');
-        return;
-    }
+    if(!url){ playUniversalSource(''); $('#playerModal').classList.add('active'); return; }
     playUniversalSource(url);
     $('#playerModal').classList.add('active');
 }
@@ -1059,30 +1420,23 @@ function playUniversalSource(source, isExplicitScript = false){
         if(window.dashjs){
             dashPlayerInstance = dashjs.MediaPlayer().create();
             dashPlayerInstance.initialize(video, source, true);
-        }else{
-            showPlayerError('مشغل DASH غير محمّل.');
-        }
+        }else{ showPlayerError('مشغل DASH غير محمّل.'); }
         return;
     }
 
-    // HLS (m3u8) — before ok.ru
     if(/\.m3u8(\?|$)/i.test(source) || /m3u8/i.test(source)){
         const video = makeVideoEl();
         container.appendChild(video);
         if(window.Hls && Hls.isSupported()){
             hlsPlayerInstance = new Hls({
-                enableWorker:true,
-                lowLatencyMode:false,
+                enableWorker:true, lowLatencyMode:false,
                 xhrSetup: xhr => { xhr.withCredentials = false; },
-                manifestLoadingTimeOut:20000,
-                manifestLoadingMaxRetry:3,
-                levelLoadingMaxRetry:4,
-                fragLoadingMaxRetry:6
+                manifestLoadingTimeOut:20000, manifestLoadingMaxRetry:3,
+                levelLoadingMaxRetry:4, fragLoadingMaxRetry:6
             });
             hlsPlayerInstance.loadSource(source);
             hlsPlayerInstance.attachMedia(video);
             hlsPlayerInstance.on(Hls.Events.ERROR, (evt,data) => {
-                console.warn('HLS err:', data);
                 if(data.fatal){
                     switch(data.type){
                         case Hls.ErrorTypes.NETWORK_ERROR: hlsPlayerInstance.startLoad(); break;
@@ -1093,9 +1447,7 @@ function playUniversalSource(source, isExplicitScript = false){
             });
         }else if(video.canPlayType('application/vnd.apple.mpegurl')){
             video.src = source;
-        }else{
-            showPlayerError('متصفحك لا يدعم تشغيل HLS.');
-        }
+        }else{ showPlayerError('متصفحك لا يدعم تشغيل HLS.'); }
         return;
     }
 
@@ -1137,31 +1489,26 @@ function closePlayer(){
     $('#playerModal').classList.remove('active');
     $('#playerContainer').innerHTML = '';
     currentPlayingId = null;
+    currentPlayerItem = null;
     if(window.location.hash){
         history.replaceState(null,'',window.location.pathname + window.location.search);
     }
 }
 
 /* =========================================================
-   ★ DOWNLOAD FLOW
+   DOWNLOAD FLOW
    ========================================================= */
 function handleDownloadClick(id){
     const item = allFetchedItems.find(i => i.id === id);
     if(!item){ toast('المحتوى غير متوفر','err'); return; }
-
-    // Banned check
     if(currentUser && getUserIsBanned(userData)){
         $('#bannedModal').classList.add('active');
         return;
     }
-
     const isVip = getUserIsVip(userData);
     const directUrl = item.downloadUrl || '';
     const adUrl = item.adDownloadUrl || '';
 
-    // Determine URLs
-    // - VIP user: use directUrl if available, else adUrl (fallback)
-    // - Non-VIP user: use adUrl (with ad) if available, else directUrl (with ad)
     if(isVip){
         const url = directUrl || adUrl;
         if(!url){ toast('لا يوجد رابط تحميل متاح','err'); return; }
@@ -1169,8 +1516,6 @@ function handleDownloadClick(id){
         toast('بدأ التحميل المباشر ✓','ok');
         return;
     }
-
-    // Non-VIP: show options modal
     currentDlItem = item;
     showDownloadOptions(item);
 }
@@ -1222,37 +1567,18 @@ function startAdDownloadFlow(item){
         </div>
         <div class="ad-container" id="adBox"></div>
         <div class="countdown-wrap">
-            <div class="countdown-circle" id="cntCircle">
-                <span class="countdown-num" id="cntNum">10</span>
-            </div>
+            <div class="countdown-circle" id="cntCircle"><span class="countdown-num" id="cntNum">10</span></div>
             <p class="countdown-txt">الرجاء الانتظار <strong id="cntLabel">10 ثواني</strong></p>
         </div>
-        <button class="dl-ready-btn" id="dlReadyBtn">
-            <i class="fa-solid fa-download"></i> تحميل الآن
-        </button>
-    `;
-
-    // Load ad
+        <button class="dl-ready-btn" id="dlReadyBtn"><i class="fa-solid fa-download"></i> تحميل الآن</button>`;
     loadAdIntoBox();
-
-    // Close handler
-    $('#dlCloseAd').addEventListener('click', () => {
-        stopCountdown();
-        closeModal('dlModal');
-    });
-
-    // Start countdown
+    $('#dlCloseAd').addEventListener('click', () => { stopCountdown(); closeModal('dlModal'); });
     startCountdown(10, () => {
         $('#dlReadyBtn').classList.add('show');
         $('#dlReadyBtn').addEventListener('click', () => {
             const url = item.adDownloadUrl || item.downloadUrl;
-            if(url){
-                triggerDownload(url);
-                toast('بدأ التحميل ✓','ok');
-                closeModal('dlModal');
-            }else{
-                toast('لا يوجد رابط تحميل','err');
-            }
+            if(url){ triggerDownload(url); toast('بدأ التحميل ✓','ok'); closeModal('dlModal'); }
+            else toast('لا يوجد رابط تحميل','err');
         });
     });
 }
@@ -1260,13 +1586,10 @@ function startAdDownloadFlow(item){
 function loadAdIntoBox(){
     const box = $('#adBox');
     box.innerHTML = '<div class="spinner"></div>';
-
-    // Try loading ad from Firebase
     db.ref('ads/downloadAd').once('value').then(snap => {
         const adHTML = snap.exists() ? snap.val() : null;
         if(adHTML && typeof adHTML === 'string'){
             box.innerHTML = adHTML;
-            // Re-execute scripts
             box.querySelectorAll('script').forEach(old => {
                 const s = document.createElement('script');
                 Array.from(old.attributes).forEach(a => s.setAttribute(a.name, a.value));
@@ -1274,20 +1597,10 @@ function loadAdIntoBox(){
                 old.parentNode.replaceChild(s, old);
             });
         }else{
-            // Fallback: friendly placeholder
-            box.innerHTML = `
-                <div style="text-align:center;padding:20px;color:var(--text-secondary)">
-                    <i class="fa-solid fa-bullhorn" style="font-size:2.2rem;color:var(--vip-gold);margin-bottom:10px;display:block"></i>
-                    <p style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:4px">مساحة الإعلان</p>
-                    <p style="font-size:.75rem">يمكن للإدارة إضافة الإعلان من لوحة التحكم</p>
-                </div>`;
+            box.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-secondary)"><i class="fa-solid fa-bullhorn" style="font-size:2.2rem;color:var(--vip-gold);margin-bottom:10px;display:block"></i><p style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:4px">مساحة الإعلان</p><p style="font-size:.75rem">يمكن للإدارة إضافة الإعلان من لوحة التحكم</p></div>`;
         }
     }).catch(() => {
-        box.innerHTML = `
-            <div style="text-align:center;padding:20px;color:var(--text-secondary)">
-                <i class="fa-solid fa-bullhorn" style="font-size:2.2rem;color:var(--vip-gold);margin-bottom:10px;display:block"></i>
-                <p style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:4px">مساحة الإعلان</p>
-            </div>`;
+        box.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-secondary)"><i class="fa-solid fa-bullhorn" style="font-size:2.2rem;color:var(--vip-gold);margin-bottom:10px;display:block"></i><p style="font-size:.85rem;font-weight:700;color:#fff">مساحة الإعلان</p></div>`;
     });
 }
 
@@ -1297,11 +1610,9 @@ function startCountdown(seconds, onDone){
     const num = $('#cntNum');
     const label = $('#cntLabel');
     const total = seconds;
-
-    updateCircle(0);
+    circle.style.setProperty('--progress', '0%');
     num.textContent = remaining;
     label.textContent = remaining + ' ثواني';
-
     stopCountdown();
     countdownTimer = setInterval(() => {
         remaining--;
@@ -1309,41 +1620,201 @@ function startCountdown(seconds, onDone){
             stopCountdown();
             num.textContent = '✓';
             label.textContent = 'جاهز للتحميل';
-            updateCircle(100);
+            circle.style.setProperty('--progress','100%');
             if(onDone) onDone();
             return;
         }
         num.textContent = remaining;
         label.textContent = remaining + ' ثواني';
-        updateCircle(((total - remaining) / total) * 100);
+        circle.style.setProperty('--progress', (((total - remaining)/total)*100) + '%');
     }, 1000);
-
-    function updateCircle(pct){
-        circle.style.setProperty('--progress', pct + '%');
-    }
 }
-
-function stopCountdown(){
-    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
-}
+function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; } }
 
 function triggerDownload(url){
     if(!url) return;
     try{
-        // Create hidden anchor
         const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
+        a.href = url; a.target = '_blank';
         a.rel = 'noopener noreferrer';
-        // Try same-origin download attribute
         a.download = '';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-    }catch(e){
-        // Fallback: open in new tab
-        window.open(url, '_blank', 'noopener');
+    }catch(e){ window.open(url, '_blank', 'noopener'); }
+}
+
+/* =========================================================
+   ⭐ VIP REQUEST SYSTEM
+   ========================================================= */
+function getWhatsAppLink(){
+    const s = siteSettings || {};
+    const link = s.whatsappLink || s.contactLink || '';
+    const num = (s.whatsappNumber || '').replace(/\D/g, '');
+    let base = '';
+    if(link && /^https?:\/\//i.test(link)) base = link;
+    else if(num) base = `https://wa.me/${num}`;
+    else if(link && /^\d+$/.test(link.replace(/\D/g,''))) base = `https://wa.me/${link.replace(/\D/g,'')}`;
+    return base;
+}
+
+function buildWhatsAppMessage(){
+    const name = (userData?.name || '').trim();
+    const email = (currentUser?.email || '').trim();
+    const siteName = siteSettings?.siteName || 'FARESFLIX';
+    const lines = [
+        `السلام عليكم، أرغب في الاشتراك بـ VIP في منصة ${siteName}.`,
+        name ? `الاسم: ${name}` : '',
+        email ? `البريد: ${email}` : '',
+        '',
+        'برجاء إبلاغي بتفاصيل الاشتراك. شكراً.'
+    ].filter(Boolean);
+    return lines.join('\n');
+}
+
+function openWhatsAppForVip(){
+    const base = getWhatsAppLink();
+    const msg = buildWhatsAppMessage();
+    if(!base){
+        toast('لم يتم إضافة رقم واتساب بعد. تواصل مع الإدارة عبر البريد.','err','لا يوجد رقم واتساب');
+        return false;
     }
+    const url = base.includes('?') ? `${base}&text=${encodeURIComponent(msg)}` : `${base}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank', 'noopener');
+    return true;
+}
+
+async function requestVipSubscription(){
+    // 1. must be logged in
+    if(!currentUser){ openAuthModal('login'); toast('يجب تسجيل الدخول أولاً','warn'); return; }
+
+    // 2. check banned
+    if(getUserIsBanned(userData)){
+        $('#bannedModal').classList.add('active');
+        return;
+    }
+
+    // 3. already VIP?
+    if(getUserIsVip(userData)){
+        toast('أنت مشترك VIP بالفعل 🎉','ok','حساب مميز');
+        if(getWhatsAppLink()) openWhatsAppForVip();
+        return;
+    }
+
+    // 4. already has pending request?
+    if(lastVipRequestStatus && lastVipRequestStatus.status === 'pending'){
+        const ago = Math.round((Date.now() - (lastVipRequestStatus.createdAt || Date.now())) / 60000);
+        toast(`طلبك قيد المراجعة منذ ${ago} دقيقة`,'warn','الطلب مُرسل مسبقاً');
+        if(getWhatsAppLink()) openWhatsAppForVip();
+        return;
+    }
+
+    // 5. confirm
+    const ok = await askConfirm({
+        title: 'تأكيد طلب الاشتراك',
+        msg: 'سيتم إنشاء طلب اشتراك VIP وفتح واتساب للتواصل مع الإدارة.',
+        okText: 'تأكيد وإرسال'
+    });
+    if(!ok) return;
+
+    // 6. save request
+    try{
+        const payload = {
+            uid: currentUser.uid,
+            name: userData?.name || '',
+            email: currentUser.email || '',
+            status: 'pending',
+            createdAt: Date.now(),
+            source: 'web'
+        };
+        const reqRef = db.ref('vipRequests').push();
+        await reqRef.set(payload);
+        // also save last request on user
+        await db.ref('users/' + currentUser.uid + '/lastVipRequest').set({
+            id: reqRef.key, status: 'pending', createdAt: Date.now()
+        });
+        toast('تم إرسال طلبك','سيتم مراجعته من الإدارة','ok');
+        // 7. open whatsapp
+        openWhatsAppForVip();
+        // 8. close modal
+        closeModal('subModal');
+    }catch(err){
+        console.error(err);
+        toast('فشل حفظ الطلب: ' + err.message,'err');
+    }
+}
+
+function updateProfileVipStatus(){
+    const box = $('#profileVipRequestStatus');
+    if(!box) return;
+    if(!lastVipRequestStatus || getUserIsVip(userData)){ box.innerHTML = ''; return; }
+    const r = lastVipRequestStatus;
+    const status = r.status || 'pending';
+    let html = '';
+    if(status === 'pending'){
+        html = `<div class="vip-status-card pending">
+            <div class="vsc-icon"><i class="fa-solid fa-clock"></i></div>
+            <div class="vsc-body">
+                <div class="vsc-title">طلبك قيد المراجعة</div>
+                <div class="vsc-sub">أرسلته ${fmtTime(r.createdAt)} — سيتم التواصل قريباً عبر واتساب</div>
+            </div>
+        </div>`;
+    }else if(status === 'approved'){
+        html = `<div class="vip-status-card approved">
+            <div class="vsc-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="vsc-body">
+                <div class="vsc-title">تم قبول طلبك 🎉</div>
+                <div class="vsc-sub">تمت الموافقة ${fmtTime(r.approvedAt || r.updatedAt)}</div>
+            </div>
+        </div>`;
+    }else if(status === 'rejected'){
+        html = `<div class="vip-status-card rejected">
+            <div class="vsc-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+            <div class="vsc-body">
+                <div class="vsc-title">تم رفض الطلب</div>
+                <div class="vsc-sub">${esc(r.rejectReason || 'تواصل مع الإدارة للمزيد')}</div>
+            </div>
+        </div>`;
+    }
+    box.innerHTML = html;
+}
+
+function updateSubModalStatus(){
+    const box = $('#subModalStatusBox');
+    const btn = $('#btnRequestVip');
+    if(!box || !btn) return;
+    box.innerHTML = '';
+    if(!currentUser){
+        btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> اطلب الاشتراك عبر واتساب';
+        btn.onclick = () => { closeModal('subModal'); openAuthModal('register'); toast('أنشئ حساباً أولاً ثم اطلب الاشتراك','','لتأكيد الطلب'); };
+        return;
+    }
+    if(getUserIsVip(userData)){
+        box.innerHTML = `<div class="vip-status-card approved">
+            <div class="vsc-icon"><i class="fa-solid fa-crown"></i></div>
+            <div class="vsc-body">
+                <div class="vsc-title">أنت مشترك VIP</div>
+                <div class="vsc-sub">استمتع بكل المزايا الحصرية</div>
+            </div>
+        </div>`;
+        btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> تجديد الاشتراك';
+        btn.onclick = () => { if(getWhatsAppLink()) openWhatsAppForVip(); else toast('لم يتم إضافة رقم واتساب بعد','warn'); };
+        return;
+    }
+    if(lastVipRequestStatus && lastVipRequestStatus.status === 'pending'){
+        box.innerHTML = `<div class="vip-status-card pending">
+            <div class="vsc-icon"><i class="fa-solid fa-clock"></i></div>
+            <div class="vsc-body">
+                <div class="vsc-title">الطلب قيد المراجعة</div>
+                <div class="vsc-sub">أرسلته ${fmtTime(lastVipRequestStatus.createdAt)}</div>
+            </div>
+        </div>`;
+        btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> متابعة على واتساب';
+        btn.onclick = () => { if(getWhatsAppLink()) openWhatsAppForVip(); else toast('لم يتم إضافة رقم واتساب بعد','warn'); };
+        return;
+    }
+    btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> اطلب الاشتراك الآن';
+    btn.onclick = requestVipSubscription;
 }
 
 /* =========================================================
@@ -1362,30 +1833,29 @@ function openProfileModal(){
 
     if(isVip && exp > 0){
         statusBox.innerHTML = `<span style="color:var(--success-color)"><i class="fa-solid fa-crown"></i> VIP نشط</span>`;
-        expireBox.innerText = new Date(exp).toLocaleDateString('ar-EG');
+        expireBox.innerText = fmtDate(exp);
         const diff = Math.ceil((exp - Date.now()) / 86400000);
         daysBox.innerText = diff + ' يوم';
+        $('#profileVipBtnText').textContent = 'تجديد الاشتراك';
     }else if(isVip){
         statusBox.innerHTML = `<span style="color:var(--success-color)"><i class="fa-solid fa-crown"></i> VIP مفتوح</span>`;
         expireBox.innerText = 'غير محدد';
         daysBox.innerText = '∞';
+        $('#profileVipBtnText').textContent = 'إدارة الاشتراك';
     }else{
         statusBox.innerHTML = `<span style="color:var(--accent-color)">حساب عادي</span>`;
-        expireBox.innerText = exp ? new Date(exp).toLocaleDateString('ar-EG') : 'غير محدد';
+        expireBox.innerText = exp ? fmtDate(exp) : 'غير محدد';
         daysBox.innerText = '0 يوم';
+        $('#profileVipBtnText').textContent = 'ترقية إلى VIP';
     }
+    $('#profileFavCount').textContent = favorites.length;
+    updateProfileVipStatus();
     $('#profileModal').classList.add('active');
 }
 
-function openSubModal(){ $('#subModal').classList.add('active'); }
-
-function contactAdminForSub(){
-    const wa = siteSettings.whatsappLink || siteSettings.contactLink || '';
-    if(wa){
-        window.open(wa, '_blank');
-    }else{
-        toast('تواصل مع الإدارة عبر وسائل الاتصال المتاحة','');
-    }
+function openSubModal(){
+    updateSubModalStatus();
+    $('#subModal').classList.add('active');
 }
 
 /* =========================================================
@@ -1408,9 +1878,7 @@ $('#forgotPassLink').addEventListener('click', async e => {
     try{
         await auth.sendPasswordResetEmail(email);
         toast('تم إرسال رابط الاستعادة إلى بريدك','ok');
-    }catch(err){
-        toast('خطأ: ' + err.message,'err');
-    }
+    }catch(err){ toast('خطأ: ' + err.message,'err'); }
 });
 function updateAuthModalUI(){
     $('#authTitle').innerText = isAuthLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
@@ -1429,6 +1897,7 @@ $('#authForm').addEventListener('submit', async e => {
         if(isAuthLoginMode){
             await auth.signInWithEmailAndPassword(email, password);
             closeModal('authModal');
+            toast('مرحباً بك 👋','تم تسجيل الدخول','ok');
         }else{
             const res = await auth.createUserWithEmailAndPassword(email, password);
             await db.ref('users/' + res.user.uid).set({
@@ -1438,15 +1907,20 @@ $('#authForm').addEventListener('submit', async e => {
                 createdAt: Date.now()
             });
             closeModal('authModal');
+            toast('تم إنشاء الحساب بنجاح 🎉','','ok');
         }
     }catch(err){
         toast('خطأ: ' + err.message,'err');
     }
 });
-function logout(){
+async function logout(){
+    const ok = await askConfirm({title:'تسجيل الخروج', msg:'هل تريد تسجيل الخروج من الحساب؟', okText:'خروج', type:'warn'});
+    if(!ok) return;
     auth.signOut().then(() => {
         closeModal('bannedModal');
         closeModal('profileModal');
+        closeModal('subModal');
+        toast('تم تسجيل الخروج','','ok');
     });
 }
 
@@ -1454,12 +1928,15 @@ function logout(){
    Modals Utilities
    ========================================================= */
 function closeModal(id){
-    document.getElementById(id).classList.remove('active');
+    const m = document.getElementById(id);
+    if(!m) return;
+    m.classList.remove('active');
     if(id === 'dlModal') stopCountdown();
 }
 $$('.modal').forEach(m => m.addEventListener('click', e => {
     if(e.target === m){
         if(m.id === 'playerModal') closePlayer();
+        else if(m.id === 'confirmModal'){ m.classList.remove('active'); if(confirmResolver){confirmResolver(false); confirmResolver=null;} }
         else m.classList.remove('active');
         if(m.id === 'dlModal') stopCountdown();
     }
@@ -1469,6 +1946,7 @@ document.addEventListener('keydown', e => {
         if($('#playerModal').classList.contains('active')){ closePlayer(); return; }
         $$('.modal.active').forEach(m => m.classList.remove('active'));
         stopCountdown();
+        if(confirmResolver){ confirmResolver(false); confirmResolver = null; }
     }
 });
 
@@ -1481,6 +1959,7 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchLiveData();
     fetchAds();
     loadSiteSettings();
+    updateSearchClear();
 });
 </script>
 </body>
