@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم والإدارة | منصة عرض الميديا</title>
+    <title>لوحة التحكم والإدارة الشاملة | منصة عرض الميديا VIP</title>
     
     <!-- CSS / Fonts / Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -19,11 +19,13 @@
             --card-bg: #1f1f1f;
             --accent-color: #e50914;
             --accent-hover: #b80710;
+            --vip-gold: #f59e0b;
+            --vip-gold-hover: #d97706;
             --text-color: #ffffff;
             --text-secondary: #aaaaaa;
             --border-color: #333333;
             --success-color: #22c55e;
-            --warning-color: #f59e0b;
+            --danger-color: #dc2626;
         }
 
         * {
@@ -37,6 +39,54 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             padding-bottom: 50px;
+        }
+
+        /* Login Overlay */
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #050505;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 35px 25px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .login-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .pin-input {
+            width: 100%;
+            font-size: 2rem;
+            letter-spacing: 12px;
+            text-align: center;
+            padding: 12px;
+            background: #121212;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--vip-gold);
+            margin: 20px 0;
+            outline: none;
+        }
+
+        .pin-input:focus {
+            border-color: var(--vip-gold);
         }
 
         /* Top Navbar */
@@ -62,10 +112,50 @@
             gap: 10px;
         }
 
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .container {
-            max-width: 1200px;
+            max-width: 1250px;
             margin: 30px auto;
             padding: 0 20px;
+        }
+
+        /* Quick Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-info h4 {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .stat-info .stat-number {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.8;
         }
 
         .card {
@@ -85,7 +175,12 @@
             border-bottom: 2px solid var(--accent-color);
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
+        }
+
+        .card-header.vip-header {
+            border-bottom-color: var(--vip-gold);
         }
 
         .form-grid {
@@ -110,7 +205,7 @@
             color: #ddd;
         }
 
-        input[type="text"], input[type="url"], select, textarea {
+        input[type="text"], input[type="url"], input[type="password"], input[type="email"], select, textarea {
             width: 100%;
             padding: 11px 14px;
             background: #121212;
@@ -165,10 +260,20 @@
             align-items: center;
             gap: 8px;
             transition: background 0.2s ease;
+            text-decoration: none;
         }
 
         .btn:hover {
             background-color: var(--accent-hover);
+        }
+
+        .btn-vip {
+            background-color: var(--vip-gold);
+            color: #000;
+        }
+
+        .btn-vip:hover {
+            background-color: var(--vip-gold-hover);
         }
 
         .btn-secondary {
@@ -182,11 +287,16 @@
         }
 
         .btn-danger {
-            background-color: #dc2626;
+            background-color: var(--danger-color);
         }
 
         .btn-danger:hover {
             background-color: #991b1b;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: #fff;
         }
 
         .btn-sm {
@@ -231,11 +341,34 @@
             border-radius: 4px;
             font-size: 0.8rem;
             color: #bbb;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-vip {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--vip-gold);
+            border: 1px solid var(--vip-gold);
+            font-weight: bold;
+        }
+
+        .badge-blocked {
+            background: rgba(220, 38, 38, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .badge-active {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
         }
 
         .actions-cell {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         /* Modal */
@@ -284,27 +417,82 @@
         @media (max-width: 650px) {
             .server-row { flex-direction: column; }
             .container { padding: 0 12px; }
+            .nav-actions { flex-direction: column; gap: 5px; }
         }
     </style>
 </head>
 <body>
 
+    <!-- 🔐 شاشة قفل الأمان والتحقق بالرمز 171002 -->
+    <div id="loginOverlay">
+        <div class="login-card">
+            <i class="fa-solid fa-user-shield" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 15px;"></i>
+            <h2>دخول لوحة التحكم والإدارة</h2>
+            <p style="color: var(--text-secondary); font-size: 0.88rem;">أدخل رمز الأمان المكون من 6 أرقام للمتابعة</p>
+            <input type="password" id="pinInput" class="pin-input" maxlength="6" placeholder="******" autofocus>
+            <button class="btn btn-vip" style="width: 100%; justify-content: center;" onclick="verifyPin()">
+                <i class="fa-solid fa-lock-open"></i> تأكيد وتأمين الدخول
+            </button>
+            <p id="loginError" style="color: var(--danger-color); margin-top: 12px; display: none; font-weight: bold;"></p>
+        </div>
+    </div>
+
     <!-- Header Navbar -->
     <nav class="navbar">
         <a href="#" class="navbar-brand">
-            <i class="fa-solid fa-sliders"></i> لوحة الإدارة والتحكم
+            <i class="fa-solid fa-sliders"></i> لوحة الإدارة والتحكم الشاملة
         </a>
-        <a href="index.html" target="_blank" class="btn btn-secondary btn-sm">
-            <i class="fa-solid fa-tv"></i> فتح منصة العرض
-        </a>
+        <div class="nav-actions">
+            <a href="index.html" target="_blank" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-tv"></i> فتح منصة العرض
+            </a>
+            <button class="btn btn-danger btn-sm" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i> قفل اللوحة
+            </button>
+        </div>
     </nav>
 
     <div class="container">
         
-        <!-- بطاقة إضافة عنصر جديد -->
+        <!-- 📊 كروت الإحصائيات السريعة -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h4>إجمالي المحتوى</h4>
+                    <div class="stat-number" id="statTotalVideos">0</div>
+                </div>
+                <i class="fa-solid fa-film stat-icon" style="color: var(--accent-color);"></i>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h4>محتوى VIP المميز</h4>
+                    <div class="stat-number" id="statVipVideos">0</div>
+                </div>
+                <i class="fa-solid fa-crown stat-icon" style="color: var(--vip-gold);"></i>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h4>إجمالي المستخدمين</h4>
+                    <div class="stat-number" id="statTotalUsers">0</div>
+                </div>
+                <i class="fa-solid fa-users stat-icon" style="color: #3b82f6;"></i>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h4>إجمالي المشاهدات</h4>
+                    <div class="stat-number" id="statTotalViews">0</div>
+                </div>
+                <i class="fa-solid fa-eye stat-icon" style="color: var(--success-color);"></i>
+            </div>
+        </div>
+
+        <!-- 👑 بطاقة إضافة عنصر جديد (مع دعم محتوى VIP المميز للشركات) -->
         <div class="card">
             <div class="card-header">
-                <i class="fa-solid fa-plus-circle"></i> إضافة فيديو / قناة جديدة
+                <span><i class="fa-solid fa-plus-circle"></i> إضافة فيديو / قناة جديدة</span>
             </div>
             <form id="addForm">
                 <div class="form-grid">
@@ -316,11 +504,15 @@
                     <div class="form-group">
                         <label><i class="fa-solid fa-layer-group"></i> التصنيف / القسم:</label>
                         <select id="addCategory">
-                            <option value="بث مباشر">بث مباشر</option>
-                            <option value="أفلام">أفلام</option>
-                            <option value="مسلسلات">مسلسلات</option>
-                            <option value="رياضة">رياضة</option>
-                            <option value="عام">عام</option>
+                            <!-- سيتم تعبئتها ديناميكياً -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-gem"></i> نوع الاشتراك والمستوى:</label>
+                        <select id="addIsVip" style="border-color: var(--vip-gold);">
+                            <option value="false">عام (محتوى مجاني لجميع المستخدمين)</option>
+                            <option value="true">👑 VIP (خاص بالشركات والاشتراكات المميزة)</option>
                         </select>
                     </div>
 
@@ -357,10 +549,17 @@
             </form>
         </div>
 
-        <!-- بطاقة عرض وإدارة الفيديوهات -->
+        <!-- 🎬 بطاقة عرض وإدارة الفيديوهات والقنوات -->
         <div class="card">
             <div class="card-header">
-                <i class="fa-solid fa-list-check"></i> المحتوى المضاف حالياً
+                <span><i class="fa-solid fa-list-check"></i> إدارة المحتوى والقنوات المضافة</span>
+                <div>
+                    <select id="filterVip" onchange="loadVideosTable()" style="padding: 5px 10px; font-size: 0.85rem; width: auto;">
+                        <option value="all">عرض كل المحتوى</option>
+                        <option value="free">المحتوى المجاني فقط</option>
+                        <option value="vip">محتوى VIP المميز فقط</option>
+                    </select>
+                </div>
             </div>
             <div class="table-responsive">
                 <table>
@@ -369,6 +568,7 @@
                             <th>البوستر</th>
                             <th>العنوان</th>
                             <th>التصنيف</th>
+                            <th>النوع</th>
                             <th>السيرفرات</th>
                             <th>المشاهدات</th>
                             <th>التحكم</th>
@@ -376,8 +576,81 @@
                     </thead>
                     <tbody id="videosTableBody">
                         <tr>
-                            <td colspan="6" style="text-align: center; color: var(--text-secondary);">
+                            <td colspan="7" style="text-align: center; color: var(--text-secondary);">
                                 جاري تحميل البيانات...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 🗂️ بطاقة إدارة الأقسام والتصنيفات بالكامل -->
+        <div class="card">
+            <div class="card-header">
+                <span><i class="fa-solid fa-folder-tree"></i> إدارة الأقسام والتصنيفات</span>
+            </div>
+            <form id="addCategoryForm" style="margin-bottom: 20px;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>اسم القسم الجديد:</label>
+                        <input type="text" id="newCategoryName" placeholder="مثال: وثائقيات، أفلام VIP..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>نوع القسم:</label>
+                        <select id="newCategoryType">
+                            <option value="عام">قسم عام (للكل)</option>
+                            <option value="VIP">قسم VIP مميز (للشركات والمشتركين)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button type="submit" class="btn btn-success" style="width: 100%;">
+                            <i class="fa-solid fa-folder-plus"></i> إضافة القسم
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم القسم</th>
+                            <th>نوع القسم</th>
+                            <th>التحكم</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody">
+                        <!-- تعبئة ديناميكية -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 👥 بطاقة إدارة حسابات المستخدمين والشركات VIP بالكامل -->
+        <div class="card">
+            <div class="card-header vip-header">
+                <span><i class="fa-solid fa-users-gear"></i> إدارة الحسابات والشركات المميزة (VIP)</span>
+                <button class="btn btn-vip btn-sm" onclick="openAddUserModal()">
+                    <i class="fa-solid fa-user-plus"></i> إضافة حساب جديد
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم الحساب / الشركة</th>
+                            <th>البريد / المعرف</th>
+                            <th>حالة الاشتراك VIP</th>
+                            <th>الحالة</th>
+                            <th>تاريخ التسجيل</th>
+                            <th>التحكم بالكامل</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-secondary);">
+                                جاري تحميل الحسابات...
                             </td>
                         </tr>
                     </tbody>
@@ -387,12 +660,12 @@
 
     </div>
 
-    <!-- Modal التعديل -->
+    <!-- ✏️ Modal التعديل للمحتوى -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <button class="close-modal" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></button>
             <div class="card-header" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
-                <i class="fa-solid fa-pen-to-square"></i> تعديل بيانات المحتوى
+                <i class="fa-solid fa-pen-to-square"></i> تعديل بيانات المحتوى والقناة
             </div>
             
             <form id="editForm">
@@ -405,11 +678,15 @@
                 <div class="form-group">
                     <label>التصنيف:</label>
                     <select id="editCategory">
-                        <option value="بث مباشر">بث مباشر</option>
-                        <option value="أفلام">أفلام</option>
-                        <option value="مسلسلات">مسلسلات</option>
-                        <option value="رياضة">رياضة</option>
-                        <option value="عام">عام</option>
+                        <!-- تعبئة ديناميكية -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>نوع الاشتراك:</label>
+                    <select id="editIsVip">
+                        <option value="false">عام (مجاني)</option>
+                        <option value="true">👑 VIP مميز للشركات</option>
                     </select>
                 </div>
 
@@ -439,20 +716,61 @@
         </div>
     </div>
 
+    <!-- 👤 Modal إضافة / تعديل حساب مستخدم -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeUserModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="card-header vip-header" style="border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
+                <i class="fa-solid fa-user-gear"></i> <span id="userModalTitle">إضافة حساب جديد</span>
+            </div>
+            
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label>اسم المستخدم / الشركة:</label>
+                    <input type="text" id="userName" placeholder="مثال: شركة الأمل / أحمد علي" required>
+                </div>
+
+                <div class="form-group">
+                    <label>البريد الإلكتروني / معرف الحساب:</label>
+                    <input type="email" id="userEmail" placeholder="user@domain.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>كلمة المرور:</label>
+                    <input type="text" id="userPassword" placeholder="كلمة السر..." required>
+                </div>
+
+                <div class="form-group">
+                    <label>اشتراك VIP مخصص للشركات:</label>
+                    <select id="userIsVip">
+                        <option value="false">حساب عادي (مجاني)</option>
+                        <option value="true">👑 VIP مميز (صلاحية المحتوى الخاص)</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-vip"><i class="fa-solid fa-floppy-disk"></i> حفظ الحساب</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeUserModal()">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // =========================================================
-        // 1. إعدادات Firebase (نفس الإعدادات الموجودة بصفحة العرض)
+        // 1. إعدادات Firebase
         // =========================================================
         const firebaseConfig = {
-  apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
-  authDomain: "voip17.firebaseapp.com",
-  databaseURL: "https://voip17-default-rtdb.firebaseio.com",
-  projectId: "voip17",
-  storageBucket: "voip17.firebasestorage.app",
-  messagingSenderId: "608379006778",
-  appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
-  measurementId: "G-GZNJZLM701"
-};
+            apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
+            authDomain: "voip17.firebaseapp.com",
+            databaseURL: "https://voip17-default-rtdb.firebaseio.com",
+            projectId: "voip17",
+            storageBucket: "voip17.firebasestorage.app",
+            messagingSenderId: "608379006778",
+            appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
+            measurementId: "G-GZNJZLM701"
+        };
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -460,7 +778,46 @@
         const db = firebase.database();
 
         // =========================================================
-        // 2. الديناميكية الخاصة بحقول السيرفرات (إضافة / حذف حقل)
+        // 🔒 2. نظام الأمان والتحقق من الرقم السري (171002)
+        // =========================================================
+        const SECURITY_PIN = "171002";
+
+        function checkAuth() {
+            if (sessionStorage.getItem('adminAuthenticated') === 'true') {
+                document.getElementById('loginOverlay').style.display = 'none';
+            } else {
+                document.getElementById('loginOverlay').style.display = 'flex';
+            }
+        }
+
+        function verifyPin() {
+            const pin = document.getElementById('pinInput').value.trim();
+            const errEl = document.getElementById('loginError');
+
+            if (pin === SECURITY_PIN) {
+                sessionStorage.setItem('adminAuthenticated', 'true');
+                document.getElementById('loginOverlay').style.display = 'none';
+                errEl.style.display = 'none';
+            } else {
+                errEl.innerText = "❌ رمز الأمان غير صحيح! حاول مرة أخرى.";
+                errEl.style.display = 'block';
+                document.getElementById('pinInput').value = '';
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('adminAuthenticated');
+            location.reload();
+        }
+
+        document.getElementById('pinInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyPin();
+        });
+
+        checkAuth();
+
+        // =========================================================
+        // 3. الديناميكية الخاصة بحقول السيرفرات (إضافة / حذف حقل)
         // =========================================================
         document.getElementById('btnAddServerField').addEventListener('click', () => {
             appendServerRow('addServersContainer', '', '');
@@ -485,7 +842,83 @@
         }
 
         // =========================================================
-        // 3. إضافة فيديو / قناة جديدة لـ Firebase
+        // 4. إدارة الأقسام والتصنيفات (Categories Management)
+        // =========================================================
+        const defaultCategories = ["بث مباشر", "أفلام", "مسلسلات", "رياضة", "عام", "محتوى VIP شركات"];
+
+        function initCategories() {
+            db.ref('categories').on('value', (snapshot) => {
+                const addCatSelect = document.getElementById('addCategory');
+                const editCatSelect = document.getElementById('editCategory');
+                const tbody = document.getElementById('categoriesTableBody');
+                
+                addCatSelect.innerHTML = '';
+                editCatSelect.innerHTML = '';
+                tbody.innerHTML = '';
+
+                let cats = [];
+
+                if (!snapshot.exists()) {
+                    // إنشاء الأقسام الافتراضية
+                    defaultCategories.forEach(cat => {
+                        const newRef = db.ref('categories').push();
+                        newRef.set({ name: cat, type: cat.includes('VIP') ? 'VIP' : 'عام' });
+                    });
+                    return;
+                }
+
+                snapshot.forEach(child => {
+                    const id = child.key;
+                    const cat = child.val();
+                    cats.push({ id, ...cat });
+
+                    // إضافة للقوائم المنسدلة
+                    const opt1 = new Option(cat.name, cat.name);
+                    const opt2 = new Option(cat.name, cat.name);
+                    addCatSelect.add(opt1);
+                    editCatSelect.add(opt2);
+
+                    // تعبئة جدول الأقسام
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${cat.name}</strong></td>
+                        <td><span class="badge ${cat.type === 'VIP' ? 'badge-vip' : ''}">${cat.type || 'عام'}</span></td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deleteCategory('${id}')">
+                                <i class="fa-solid fa-trash"></i> حذف
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('newCategoryName').value.trim();
+            const type = document.getElementById('newCategoryType').value;
+
+            if (!name) return;
+
+            await db.ref('categories').push().set({
+                name,
+                type,
+                createdAt: Date.now()
+            });
+
+            document.getElementById('newCategoryName').value = '';
+            alert('تمت إضافة القسم بنجاح!');
+        });
+
+        function deleteCategory(id) {
+            if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
+                db.ref('categories/' + id).remove();
+            }
+        }
+
+        // =========================================================
+        // 5. إضافة فيديو / قناة جديدة لـ Firebase (عام / VIP)
         // =========================================================
         document.getElementById('addForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -496,6 +929,7 @@
 
             const title = document.getElementById('addTitle').value.trim();
             const category = document.getElementById('addCategory').value;
+            const isVip = document.getElementById('addIsVip').value === 'true';
             const thumbnailUrl = document.getElementById('addThumbnail').value.trim();
             const description = document.getElementById('addDescription').value.trim();
 
@@ -515,6 +949,7 @@
                 await newRef.set({
                     title,
                     category,
+                    isVip,
                     thumbnailUrl,
                     description,
                     servers,
@@ -539,29 +974,49 @@
         });
 
         // =========================================================
-        // 4. قراءة القائمة وعرضها في الجدول لحظياً
+        // 6. قراءة المحتوى وعرضه بالجدول + الإحصائيات
         // =========================================================
-        window.addEventListener('DOMContentLoaded', () => {
+        function loadVideosTable() {
+            const filter = document.getElementById('filterVip').value;
+
             db.ref('videos').on('value', (snapshot) => {
                 const tbody = document.getElementById('videosTableBody');
                 tbody.innerHTML = '';
 
+                let totalCount = 0;
+                let vipCount = 0;
+                let totalViews = 0;
+
                 if (!snapshot.exists()) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا يوجد محتوى مضاف حالياً.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">لا يوجد محتوى مضاف حالياً.</td></tr>';
+                    updateStats(0, 0, 0);
                     return;
                 }
 
                 snapshot.forEach((childSnapshot) => {
                     const id = childSnapshot.key;
                     const item = childSnapshot.val();
+                    
+                    totalCount++;
+                    if (item.isVip) vipCount++;
+                    totalViews += (item.views || 0);
+
+                    // تطبيق التصفية
+                    if (filter === 'free' && item.isVip) return;
+                    if (filter === 'vip' && !item.isVip) return;
+
                     const thumb = item.thumbnailUrl || 'https://via.placeholder.com/50x30/1f1f1f/ffffff?text=N/A';
                     const serversCount = item.servers ? item.servers.length : 0;
+                    const vipBadge = item.isVip 
+                        ? `<span class="badge badge-vip"><i class="fa-solid fa-crown"></i> VIP شركات</span>` 
+                        : `<span class="badge">عام مجاني</span>`;
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><img src="${thumb}" alt="${item.title}"></td>
                         <td><strong>${item.title || 'بدون عنوان'}</strong></td>
                         <td><span class="badge">${item.category || 'عام'}</span></td>
+                        <td>${vipBadge}</td>
                         <td>${serversCount} سيرفرات</td>
                         <td><i class="fa-regular fa-eye"></i> ${item.views || 0}</td>
                         <td>
@@ -577,11 +1032,19 @@
                     `;
                     tbody.appendChild(tr);
                 });
+
+                updateStats(totalCount, vipCount, totalViews);
             });
-        });
+        }
+
+        function updateStats(total, vip, views) {
+            document.getElementById('statTotalVideos').innerText = total;
+            document.getElementById('statVipVideos').innerText = vip;
+            document.getElementById('statTotalViews').innerText = views;
+        }
 
         // =========================================================
-        // 5. حذف عنصر
+        // 7. حذف محتوى
         // =========================================================
         function deleteItem(id) {
             if (confirm('هل أنت متأكد من حذف هذا المحتوى نهائياً؟')) {
@@ -590,7 +1053,7 @@
         }
 
         // =========================================================
-        // 6. فتح نافذة التعديل وحفظها
+        // 8. تعديل محتوى
         // =========================================================
         async function openEditModal(id) {
             const snapshot = await db.ref('videos/' + id).once('value');
@@ -600,6 +1063,7 @@
             document.getElementById('editId').value = id;
             document.getElementById('editTitle').value = item.title || '';
             document.getElementById('editCategory').value = item.category || 'عام';
+            document.getElementById('editIsVip').value = item.isVip ? "true" : "false";
             document.getElementById('editThumbnail').value = item.thumbnailUrl || '';
             document.getElementById('editDescription').value = item.description || '';
 
@@ -627,6 +1091,7 @@
             const id = document.getElementById('editId').value;
             const title = document.getElementById('editTitle').value.trim();
             const category = document.getElementById('editCategory').value;
+            const isVip = document.getElementById('editIsVip').value === 'true';
             const thumbnailUrl = document.getElementById('editThumbnail').value.trim();
             const description = document.getElementById('editDescription').value.trim();
 
@@ -645,6 +1110,7 @@
                 await db.ref('videos/' + id).update({
                     title,
                     category,
+                    isVip,
                     thumbnailUrl,
                     description,
                     servers
@@ -655,6 +1121,125 @@
             } catch (err) {
                 alert('حدث خطأ في التحديث: ' + err.message);
             }
+        });
+
+        // =========================================================
+        // 👥 9. إدارة الحسابات والمستخدمين بالكامل (Users Control)
+        // =========================================================
+        function loadUsersTable() {
+            db.ref('users').on('value', (snapshot) => {
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '';
+
+                let userCount = 0;
+
+                if (!snapshot.exists()) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا يوجد مستخدمون مسجلون حالياً.</td></tr>';
+                    document.getElementById('statTotalUsers').innerText = 0;
+                    return;
+                }
+
+                snapshot.forEach((child) => {
+                    userCount++;
+                    const id = child.key;
+                    const u = child.val();
+
+                    const vipStatus = u.isVip 
+                        ? `<span class="badge badge-vip"><i class="fa-solid fa-crown"></i> VIP شركات</span>` 
+                        : `<span class="badge">عادي</span>`;
+
+                    const blockStatus = u.isBlocked 
+                        ? `<span class="badge badge-blocked">محظور</span>` 
+                        : `<span class="badge badge-active">نشط</span>`;
+
+                    const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ar-EG') : 'غير محدد';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${u.name || 'مستخدم'}</strong></td>
+                        <td>${u.email || 'بدون بريد'}</td>
+                        <td>${vipStatus}</td>
+                        <td>${blockStatus}</td>
+                        <td>${dateStr}</td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="btn ${u.isVip ? 'btn-secondary' : 'btn-vip'} btn-sm" onclick="toggleUserVip('${id}', ${!u.isVip})">
+                                    <i class="fa-solid fa-crown"></i> ${u.isVip ? 'إلغاء VIP' : 'ترقية VIP'}
+                                </button>
+                                <button class="btn ${u.isBlocked ? 'btn-success' : 'btn-danger'} btn-sm" onclick="toggleUserBlock('${id}', ${!u.isBlocked})">
+                                    <i class="fa-solid ${u.isBlocked ? 'fa-lock-open' : 'fa-ban'}"></i> ${u.isBlocked ? 'فك الحظر' : 'حظر'}
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteUser('${id}')" title="حذف الحساب">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('statTotalUsers').innerText = userCount;
+            });
+        }
+
+        function toggleUserVip(id, status) {
+            db.ref('users/' + id).update({ isVip: status });
+        }
+
+        function toggleUserBlock(id, status) {
+            db.ref('users/' + id).update({ isBlocked: status });
+        }
+
+        function deleteUser(id) {
+            if (confirm('هل أنت متأكد من حذف هذا الحساب نهائياً؟')) {
+                db.ref('users/' + id).remove();
+            }
+        }
+
+        function openAddUserModal() {
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('userModalTitle').innerText = 'إضافة حساب جديد / شركة';
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('active');
+        }
+
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('userName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const password = document.getElementById('userPassword').value.trim();
+            const isVip = document.getElementById('userIsVip').value === 'true';
+
+            try {
+                const newRef = db.ref('users').push();
+                await newRef.set({
+                    name,
+                    email,
+                    password,
+                    isVip,
+                    isBlocked: false,
+                    createdAt: Date.now()
+                });
+
+                alert('تم إنشاء الحساب بنجاح!');
+                closeUserModal();
+            } catch (err) {
+                alert('خطأ أثناء حفظ الحساب: ' + err.message);
+            }
+        });
+
+        // =========================================================
+        // 🚀 10. التشغيل عند التحميل
+        // =========================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initCategories();
+            loadVideosTable();
+            loadUsersTable();
         });
     </script>
 </body>
