@@ -588,7 +588,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 
 <script>
 /* =========================================================
-   Firebase
+   Firebase Configuration & Initialization
    ========================================================= */
 const firebaseConfig = {
     apiKey:"AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
@@ -605,7 +605,7 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 /* =========================================================
-   State
+   Application State
    ========================================================= */
 let currentUser=null, userData=null;
 let allFetchedItems=[], allCategoryObjects=[];
@@ -628,7 +628,7 @@ let confirmResolver=null;
 let favorites = JSON.parse(localStorage.getItem('faresflix_favs') || '[]');
 
 /* =========================================================
-   Utilities
+   Utilities & Helper Functions
    ========================================================= */
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
@@ -647,10 +647,11 @@ const getUserIsVip = u => {
 const getUserIsBanned = u => !!(u && (u.isBanned === true || u.isBlocked === true));
 
 /* =========================================================
-   Toast
+   Toast Notification System
    ========================================================= */
 function toast(msg, type='', title=''){
     const w = $('#toasts');
+    if(!w) return;
     const t = document.createElement('div');
     t.className = 'toast ' + type;
     const icon = type === 'ok' ? 'fa-circle-check' : type === 'err' ? 'fa-circle-exclamation' : type === 'warn' ? 'fa-triangle-exclamation' : 'fa-circle-info';
@@ -669,7 +670,19 @@ function toast(msg, type='', title=''){
 }
 
 /* =========================================================
-   Confirm modal
+   Modal Management
+   ========================================================= */
+function openModal(id){
+    const m = $('#' + id);
+    if(m) m.classList.add('active');
+}
+function closeModal(id){
+    const m = $('#' + id);
+    if(m) m.classList.remove('active');
+}
+
+/* =========================================================
+   Confirm Modal Logic
    ========================================================= */
 function askConfirm({title='تأكيد', msg='هل أنت متأكد؟', okText='تأكيد', type='danger'}={}){
     return new Promise(res => {
@@ -700,10 +713,9 @@ $('#confirmModal').addEventListener('click', e => {
 });
 
 /* =========================================================
-   Auth
+   Firebase Authentication State Listener
    ========================================================= */
 auth.onAuthStateChanged(user => {
-    // cleanup previous listener
     if(userListenerRef && userListenerCallback){
         userListenerRef.off('value', userListenerCallback);
     }
@@ -740,7 +752,6 @@ auth.onAuthStateChanged(user => {
             renderLiveChannels();
         });
 
-        // Listen to user's latest VIP request
         vipRequestListenerRef = db.ref('vipRequests').orderByChild('uid').equalTo(user.uid);
         vipRequestListenerCb = vipRequestListenerRef.on('value', snap => {
             lastVipRequestStatus = null;
@@ -765,6 +776,7 @@ auth.onAuthStateChanged(user => {
 
 function renderNavUserArea(){
     const navArea = $('#navUserArea');
+    if(!navArea) return;
     if(currentUser && userData){
         const isVip = getUserIsVip(userData);
         const hasPending = lastVipRequestStatus && lastVipRequestStatus.status === 'pending';
@@ -790,7 +802,172 @@ function renderNavUserArea(){
 }
 
 /* =========================================================
-   Settings
+   Auth Modal & Actions
+   ========================================================= */
+function openAuthModal(mode='login'){
+    isAuthLoginMode = (mode === 'login');
+    $('#authTitle').textContent = isAuthLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
+    $('#nameGroup').style.display = isAuthLoginMode ? 'none' : 'block';
+    $('#authSubmitBtn').textContent = isAuthLoginMode ? 'دخول' : 'إنشاء حساب';
+    $('#authToggleText').textContent = isAuthLoginMode ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟';
+    $('#authToggleBtn').textContent = isAuthLoginMode ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
+    openModal('authModal');
+}
+
+$('#authToggleBtn').addEventListener('click', (e)=>{
+    e.preventDefault();
+    openAuthModal(isAuthLoginMode ? 'register' : 'login');
+});
+
+$('#authForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = $('#authEmail').value.trim();
+    const pass = $('#authPassword').value;
+    const name = $('#authName').value.trim();
+
+    try{
+        if(isAuthLoginMode){
+            await auth.signInWithEmailAndPassword(email, pass);
+            toast('تم تسجيل الدخول بنجاح', 'ok');
+        }else{
+            const res = await auth.createUserWithEmailAndPassword(email, pass);
+            if(res.user){
+                await res.user.updateProfile({ displayName: name });
+                await db.ref('users/' + res.user.uid).set({
+                    email: email,
+                    name: name || 'مستخدم جديد',
+                    isBanned: false,
+                    isBlocked: false,
+                    isVip: false,
+                    vipExpireDate: 0,
+                    expireAt: 0,
+                    createdAt: Date.now()
+                });
+            }
+            toast('تم إنشاء الحساب بنجاح', 'ok');
+        }
+        closeModal('authModal');
+        $('#authForm').reset();
+    }catch(err){
+        toast(err.message, 'err', 'خطأ في المصادقة');
+    }
+});
+
+$('#forgotPassLink').addEventListener('click', async (e)=>{
+    e.preventDefault();
+    const email = $('#authEmail').value.trim();
+    if(!email){
+        toast('يرجى كتابة البريد الإلكتروني أولاً', 'warn');
+        return;
+    }
+    try{
+        await auth.sendPasswordResetEmail(email);
+        toast('تم إرسال رابط إعادة ضبط كلمة المرور إلى بريدك', 'ok');
+    }catch(err){
+        toast(err.message, 'err');
+    }
+});
+
+function logout(){
+    auth.signOut().then(()=>{
+        toast('تم تسجيل الخروج', 'ok');
+        closeModal('profileModal');
+        closeModal('bannedModal');
+    });
+}
+
+/* =========================================================
+   Profile Modal Logic
+   ========================================================= */
+function openProfileModal(){
+    if(!userData) return;
+    $('#profileName').textContent = userData.name || 'مستخدم';
+    $('#profileEmail').textContent = userData.email || '---';
+    
+    const isVip = getUserIsVip(userData);
+    const exp = getUserVipExpire(userData);
+    $('#profileSubStatus').textContent = isVip ? 'VIP مفعل' : 'اشتراك عادي';
+    $('#profileSubStatus').style.color = isVip ? 'var(--success-color)' : 'var(--accent-color)';
+    
+    $('#profileExpireDate').textContent = exp ? fmtDate(exp) : 'غير محدود / غير مفعل';
+    
+    if(isVip && exp > 0){
+        const days = Math.ceil((exp - Date.now()) / (1000*60*60*24));
+        $('#profileDaysLeft').textContent = `${days} يوم`;
+    }else{
+        $('#profileDaysLeft').textContent = isVip ? 'دائم' : '0';
+    }
+    
+    $('#profileFavCount').textContent = favorites.length;
+    updateProfileVipStatus();
+    openModal('profileModal');
+}
+
+function updateProfileVipStatus(){
+    const box = $('#profileVipRequestStatus');
+    if(!box) return;
+    if(lastVipRequestStatus && lastVipRequestStatus.status === 'pending'){
+        box.innerHTML = `
+            <div class="vip-status-card pending">
+                <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="vsc-body">
+                    <div class="vsc-title">طلب VIP قيد المراجعة</div>
+                    <div class="vsc-sub">سيتم تفعيل حسابك فور التحقق من عملية الدفع.</div>
+                </div>
+            </div>`;
+    }else{
+        box.innerHTML = '';
+    }
+}
+
+/* =========================================================
+   VIP / Subscription Modal Logic
+   ========================================================= */
+function openSubModal(){
+    updateSubModalStatus();
+    openModal('subModal');
+}
+
+function updateSubModalStatus(){
+    const box = $('#subModalStatusBox');
+    if(!box) return;
+    if(lastVipRequestStatus && lastVipRequestStatus.status === 'pending'){
+        box.innerHTML = `
+            <div class="vip-status-card pending">
+                <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="vsc-body">
+                    <div class="vsc-title">طلبك الحالي قيد المراجعة</div>
+                    <div class="vsc-sub">تم إرسال طلبك للإدارة، وسيتم تفعيله قريباً.</div>
+                </div>
+            </div>`;
+    }else{
+        box.innerHTML = '';
+    }
+}
+
+$('#btnRequestVip').addEventListener('click', async ()=>{
+    const waNum = siteSettings.whatsappNumber || '201000000000';
+    const waMsg = encodeURIComponent(`مرحباً، أود الاشتراك في VIP على منصة ${siteSettings.siteName || 'FARESFLIX'}.\nالبريد: ${currentUser ? currentUser.email : 'غير مسجل'}`);
+    
+    if(currentUser){
+        try{
+            await db.ref('vipRequests').push({
+                uid: currentUser.uid,
+                email: currentUser.email,
+                name: userData ? userData.name : '',
+                status: 'pending',
+                createdAt: Date.now()
+            });
+            toast('تم تسجيل طلبك، جاري تحويلك للواتساب', 'ok');
+        }catch(e){
+            console.error(e);
+        }
+    }
+    window.open(`https://wa.me/${waNum}?text=${waMsg}`, '_blank');
+});
+
+/* =========================================================
+   Settings Management
    ========================================================= */
 function loadSiteSettings(){
     db.ref('settings').on('value', snap => {
@@ -820,7 +997,7 @@ function loadSiteSettings(){
 }
 
 /* =========================================================
-   Fetch VOD
+   Fetch VOD & Categories
    ========================================================= */
 function fetchMediaData(){
     db.ref('videos').on('value', snap => {
@@ -845,6 +1022,9 @@ function fetchCategories(){
     });
 }
 
+/* =========================================================
+   Fetch Live Channels & Categories
+   ========================================================= */
 function fetchLiveData(){
     db.ref('liveCategories').on('value', snap => {
         allLiveCategories = [];
@@ -853,8 +1033,14 @@ function fetchLiveData(){
     });
     db.ref('liveChannels').on('value', snap => {
         allLiveChannels = [];
-        if(snap.exists()) snap.forEach(c => allLiveChannels.push({id:c.key, ...c.val()}));
-        renderLiveChannels();
+        if(snap.exists()){
+            snap.forEach(c => {
+                allLiveChannels.push({ id: c.key, ...c.val() });
+            });
+        }
+        if(currentView === 'live'){
+            renderLiveChannels();
+        }
     });
 }
 
@@ -876,142 +1062,55 @@ function fetchAds(){
 }
 
 /* =========================================================
-   VOD Tabs
+   Tabs Construction
    ========================================================= */
 function buildVodTabs(){
     const tabs = $('#vodTabs');
+    if(!tabs) return;
     const set = new Set();
     allCategoryObjects.forEach(c => { if(c.name) set.add(c.name); });
     allFetchedItems.forEach(i => { if(i.category) set.add(i.category); });
 
-    let html = `
-        <button class="tab-btn ${activeTab==='all'?'active':''}" data-tab="all"><i class="fa-solid fa-border-all"></i> الكل</button>
-        <button class="tab-btn fav-tab ${activeTab==='fav'?'active':''}" data-tab="fav"><i class="fa-solid fa-heart"></i> المفضلة</button>
-        <button class="tab-btn ${activeTab==='free'?'active':''}" data-tab="free"><i class="fa-solid fa-film"></i> مجاني</button>
-        <button class="tab-btn vip-tab ${activeTab==='vip'?'active':''}" data-tab="vip"><i class="fa-solid fa-crown" style="color:var(--vip-gold)"></i> المميز VIP</button>`;
+    let html = `<button class="tab-btn ${activeTab==='all'?'active':''}" data-tab="all"><i class="fa-solid fa-border-all"></i> الكل</button>`;
+    html += `<button class="tab-btn vip-tab ${activeTab==='vip'?'active':''}" data-tab="vip"><i class="fa-solid fa-crown"></i> VIP</button>`;
+    html += `<button class="tab-btn fav-tab ${activeTab==='fav'?'active':''}" data-tab="fav"><i class="fa-solid fa-heart"></i> المفضلة</button>`;
+
     set.forEach(cat => {
-        html += `<button class="tab-btn ${activeTab===cat?'active':''}" data-tab="${esc(cat)}"><i class="fa-solid fa-folder"></i> ${esc(cat)}</button>`;
+        html += `<button class="tab-btn ${activeTab===cat?'active':''}" data-tab="${esc(cat)}">${esc(cat)}</button>`;
     });
+
     tabs.innerHTML = html;
-    tabs.querySelectorAll('.tab-btn').forEach(b => {
-        b.addEventListener('click', () => switchVodTab(b.dataset.tab));
+    $$('#vodTabs .tab-btn').forEach(btn => {         btn.addEventListener('click', ()=>{             $$
+('#vodTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            activeTab = btn.getAttribute('data-tab');
+            renderGridItems();
+        });
     });
 }
 
-function switchVodTab(tab){
-    activeTab = tab;
-    $$('#vodTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    renderGridItems();
-}
-
-/* =========================================================
-   Live Tabs
-   ========================================================= */
 function buildLiveTabs(){
     const tabs = $('#liveTabs');
+    if(!tabs) return;
     const set = new Set();
     allLiveCategories.forEach(c => { if(c.name) set.add(c.name); });
     allLiveChannels.forEach(c => { if(c.category) set.add(c.category); });
 
-    if(set.size === 0 && allLiveChannels.length === 0){
-        tabs.innerHTML = '';
-        return;
-    }
+    let html = `<button class="tab-btn live-cat-tab ${activeLiveTab==='all'?'active':''}" data-livetab="all"><i class="fa-solid fa-tower-broadcast"></i> جميع القنوات</button>`;
+    html += `<button class="tab-btn vip-tab ${activeLiveTab==='vip'?'active':''}" data-livetab="vip"><i class="fa-solid fa-crown"></i> قنوات VIP</button>`;
 
-    let html = `<button class="tab-btn live-cat-tab ${activeLiveTab==='all'?'active':''}" data-ltab="all"><i class="fa-solid fa-tower-broadcast"></i> كل القنوات</button>`;
     set.forEach(cat => {
-        html += `<button class="tab-btn live-cat-tab ${activeLiveTab===cat?'active':''}" data-ltab="${esc(cat)}"><i class="fa-solid fa-tv"></i> ${esc(cat)}</button>`;
+        html += `<button class="tab-btn live-cat-tab ${activeLiveTab===cat?'active':''}" data-livetab="${esc(cat)}">${esc(cat)}</button>`;
     });
+
     tabs.innerHTML = html;
-    tabs.querySelectorAll('.tab-btn').forEach(b => {
-        b.addEventListener('click', () => switchLiveTab(b.dataset.ltab));
+    $$('#liveTabs .tab-btn').forEach(btn => {         btn.addEventListener('click', ()=>{             $$
+('#liveTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            activeLiveTab = btn.getAttribute('data-livetab');
+            renderLiveChannels();
+        });
     });
-}
-
-function switchLiveTab(tab){
-    activeLiveTab = tab;
-    $$('#liveTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.ltab === tab));
-    renderLiveChannels();
-}
-
-/* =========================================================
-   View Switching
-   ========================================================= */
-function switchView(view){
-    currentView = view;
-    $$('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-    $$('.bn-item').forEach(b => b.classList.remove('active'));
-    const bn = $(`.bn-item[data-bn="${view}"]`);
-    if(bn) bn.classList.add('active');
-
-    if(view === 'live'){
-        $('#vodTabs').style.display = 'none';
-        $('#liveTabs').style.display = 'flex';
-        $('#searchInput').placeholder = 'ابحث في القنوات...';
-        $('#searchInput').value = '';
-        updateSearchClear();
-        renderLiveChannels();
-    }else{
-        $('#vodTabs').style.display = 'flex';
-        $('#liveTabs').style.display = 'none';
-        $('#searchInput').placeholder = 'بحث عن فيلم، مسلسل...';
-        $('#searchInput').value = '';
-        updateSearchClear();
-        renderGridItems();
-    }
-    window.scrollTo({top:0, behavior:'smooth'});
-}
-
-$$('.view-btn').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
-
-/* =========================================================
-   Bottom Nav
-   ========================================================= */
-$$('.bn-item').forEach(b => b.addEventListener('click', () => {
-    const bn = b.dataset.bn;
-    if(bn === 'vod'){ switchView('vod'); }
-    else if(bn === 'live'){ switchView('live'); }
-    else if(bn === 'search'){
-        $('#searchInput').focus();
-        window.scrollTo({top:0, behavior:'smooth'});
-        $$('.bn-item').forEach(x => x.classList.remove('active'));
-        b.classList.add('active');
-        setTimeout(()=>{ $$('.bn-item').forEach(x => x.classList.remove('active')); const r = $(`.bn-item[data-bn="${currentView}"]`); if(r) r.classList.add('active'); }, 3000);
-    }
-    else if(bn === 'favorites'){
-        if(currentView !== 'vod') switchView('vod');
-        switchVodTab('fav');
-        $$('.bn-item').forEach(x => x.classList.remove('active'));
-        b.classList.add('active');
-    }
-    else if(bn === 'profile'){
-        if(currentUser && userData) openProfileModal();
-        else openAuthModal('login');
-        $$('.bn-item').forEach(x => x.classList.remove('active'));
-        const r = $(`.bn-item[data-bn="${currentView}"]`); if(r) r.classList.add('active');
-    }
-}));
-
-/* =========================================================
-   Favorites
-   ========================================================= */
-function isFav(id){ return favorites.includes(id); }
-function toggleFav(id){
-    const idx = favorites.indexOf(id);
-    if(idx >= 0) favorites.splice(idx, 1);
-    else favorites.push(id);
-    localStorage.setItem('faresflix_favs', JSON.stringify(favorites));
-    renderGridItems();
-    if(currentPlayerItem && currentPlayerItem.id === id) updatePlayerFavBtn();
-}
-function updatePlayerFavBtn(){
-    if(!currentPlayerItem) return;
-    const btn = $('#playerFavBtn');
-    if(!btn) return;
-    const isActive = isFav(currentPlayerItem.id);
-    btn.classList.toggle('active', isActive);
-    btn.querySelector('i').className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-    btn.querySelector('span').textContent = isActive ? 'في المفضلة' : 'المفضلة';
 }
 
 /* =========================================================
@@ -1020,946 +1119,538 @@ function updatePlayerFavBtn(){
 function renderGridItems(){
     if(currentView !== 'vod') return;
     const grid = $('#itemsGrid');
-    const searchVal = ($('#searchInput').value||'').toLowerCase().trim();
+    if(!grid) return;
+    const q = $('#searchInput').value.trim().toLowerCase();
 
-    const filtered = allFetchedItems.filter(item => {
-        const title = (item.title||'').toLowerCase();
-        const desc = (item.description||'').toLowerCase();
-        const category = (item.category||'').toLowerCase();
-        const matchesSearch = !searchVal || title.includes(searchVal) || desc.includes(searchVal) || category.includes(searchVal);
-        if(!matchesSearch) return false;
-        if(activeTab === 'fav') return isFav(item.id);
-        if(activeTab === 'vip') return item.isVip === true;
-        if(activeTab === 'free') return !item.isVip;
-        if(activeTab !== 'all') return item.category === activeTab;
-        return true;
+    let items = allFetchedItems.filter(item => {
+        const titleMatch = (item.title || '').toLowerCase().includes(q);
+        const descMatch = (item.description || '').toLowerCase().includes(q);
+        const catMatch = (item.category || '').toLowerCase().includes(q);
+        return titleMatch || descMatch || catMatch;
     });
 
-    if(filtered.length === 0){
-        if(activeTab === 'fav'){
-            grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-heart empty-icon"></i><p>لم تضف أي محتوى للمفضلة بعد</p><p style="font-size:.75rem;margin-top:6px">اضغط على أيقونة القلب في أي بطاقة لإضافتها</p></div>`;
-        }else{
-            grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-film empty-icon"></i><p>لا يوجد محتوى مطابق.</p></div>`;
-        }
+    if(activeTab === 'vip'){
+        items = items.filter(i => i.isVip);
+    }else if(activeTab === 'fav'){
+        items = items.filter(i => favorites.includes(i.id));
+    }else if(activeTab !== 'all'){
+        items = items.filter(i => i.category === activeTab);
+    }
+
+    if(items.length === 0){
+        grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-film empty-icon"></i><p>لا توجد محتويات مطابقة.</p></div>`;
         return;
     }
 
-    let html = '';
-    filtered.forEach(item => {
-        const thumb = item.thumbnailUrl || 'https://via.placeholder.com/320x180/15171e/ffffff?text=FARESFLIX';
-        const title = esc(item.title || 'بدون عنوان');
-        const category = esc(item.category || 'فيديو');
-        const views = item.views || 0;
-        const isVip = item.isVip === true;
-        const hasDownload = !!(item.downloadUrl || item.adDownloadUrl);
-        const fav = isFav(item.id);
-        html += `
-            <div class="item-card ${isVip?'is-vip':''}" data-id="${esc(item.id)}">
-                <div class="thumb-container" data-action="play">
-                    <img src="${esc(thumb)}" alt="${title}" loading="lazy"
-                         onerror="this.src='https://via.placeholder.com/320x180/15171e/ffffff?text=FARESFLIX'">
-                    ${isVip ? '<span class="vip-card-badge"><i class="fa-solid fa-crown"></i> VIP</span>' : ''}
-                    <span class="category-badge">${category}</span>
-                    ${hasDownload ? '<span class="download-flag"><i class="fa-solid fa-download"></i> تحميل</span>' : ''}
-                    <button class="fav-btn ${fav?'active':''}" data-action="fav" data-id="${esc(item.id)}" title="المفضلة">
-                        <i class="${fav?'fa-solid':'fa-regular'} fa-heart"></i>
-                    </button>
+    grid.className = 'items-grid';
+    grid.innerHTML = items.map(item => {
+        const isFav = favorites.includes(item.id);
+        const defaultThumb = 'https://via.placeholder.com/400x225/15171e/ffffff?text=' + encodeURIComponent(item.title||'FARESFLIX');
+        const thumb = item.image || item.poster || item.thumbnail || defaultThumb;
+        
+        return `
+            <div class="item-card ${item.isVip ? 'is-vip' : ''}" data-id="${item.id}">
+                <button class="fav-btn ${isFav?'active':''}" onclick="toggleFavorite(event, '${item.id}')" title="المفضلة">
+                    <i class="fa-${isFav?'solid':'regular'} fa-heart"></i>
+                </button>
+                <div class="thumb-container" onclick="openPlayer('${item.id}', 'vod')">
+                    <img src="${esc(thumb)}" alt="${esc(item.title)}" loading="lazy" onerror="this.src='${defaultThumb}'">
                     <div class="play-overlay"><i class="fa-solid fa-circle-play"></i></div>
+                    ${item.isVip ? `<div class="vip-card-badge"><i class="fa-solid fa-crown"></i> VIP</div>` : ''}
+                    ${item.category ? `<div class="category-badge">${esc(item.category)}</div>` : ''}
                 </div>
                 <div class="card-details">
-                    <div class="card-title" data-action="play">${title}</div>
+                    <div class="card-title" onclick="openPlayer('${item.id}', 'vod')">${esc(item.title)}</div>
                     <div class="card-meta">
-                        <span><i class="fa-regular fa-eye"></i> ${views}</span>
-                        <span>${hasDownload ? '<i class="fa-solid fa-download" style="color:var(--success-color)"></i>' : ''}</span>
+                        <span><i class="fa-regular fa-eye"></i> ${item.views || 0}</span>
+                        <span>${item.year || ''}</span>
                     </div>
                     <div class="card-actions">
-                        <button class="card-action-btn play" data-action="play" data-id="${esc(item.id)}">
-                            <i class="fa-solid fa-play"></i><span>تشغيل</span>
+                        <button class="card-action-btn play" onclick="openPlayer('${item.id}', 'vod')">
+                            <i class="fa-solid fa-play"></i> <span>مشاهدة</span>
                         </button>
-                        ${hasDownload ? `
-                        <button class="card-action-btn dl ${isVip?'vip-dl':''}" data-action="download" data-id="${esc(item.id)}">
-                            <i class="fa-solid fa-download"></i><span>تحميل</span>
-                        </button>` : ''}
+                        <button class="card-action-btn dl ${item.isVip?'vip-dl':''}" onclick="openDownloadModal(event, '${item.id}')">
+                            <i class="fa-solid fa-download"></i> <span>تحميل</span>
+                        </button>
                     </div>
                 </div>
             </div>`;
-    });
-    grid.innerHTML = html;
-
-    if(!grid.dataset.bound){
-        grid.dataset.bound = '1';
-        grid.addEventListener('click', e => {
-            const btn = e.target.closest('[data-action]');
-            if(!btn) return;
-            const id = btn.dataset.id || e.target.closest('.item-card')?.dataset.id;
-            if(!id) return;
-            const action = btn.dataset.action;
-            if(action === 'play') handleCardClick(id);
-            else if(action === 'download') handleDownloadClick(id);
-            else if(action === 'fav'){ toggleFav(id); e.stopPropagation(); }
-        });
-    }
+    }).join('');
 }
 
 /* =========================================================
-   Continue Watching
-   ========================================================= */
-function getContinueList(){
-    try{
-        const list = JSON.parse(localStorage.getItem('faresflix_continue') || '[]');
-        return list;
-    }catch(e){ return []; }
-}
-function saveContinue(id){
-    let list = getContinueList();
-    list = list.filter(x => x.id !== id);
-    list.unshift({ id, t: Date.now() });
-    localStorage.setItem('faresflix_continue', JSON.stringify(list.slice(0, 10)));
-    renderContinueWatching();
-}
-function clearContinue(){
-    localStorage.removeItem('faresflix_continue');
-    renderContinueWatching();
-}
-function renderContinueWatching(){
-    const box = $('#continueSection');
-    const scroll = $('#continueScroll');
-    const list = getContinueList();
-    if(currentView !== 'vod' || !list.length){ box.classList.remove('show'); return; }
-
-    const items = list.map(x => allFetchedItems.find(i => i.id === x.id)).filter(Boolean);
-    if(!items.length){ box.classList.remove('show'); return; }
-
-    box.classList.add('show');
-    scroll.innerHTML = items.slice(0, 8).map(item => `
-        <div class="continue-card" data-continue-id="${esc(item.id)}">
-            <div class="continue-thumb">
-                <img src="${esc(item.thumbnailUrl || 'https://via.placeholder.com/320x180/15171e/ffffff?text=FARESFLIX')}" onerror="this.src='https://via.placeholder.com/320x180/15171e/ffffff?text=FARESFLIX'">
-                ${item.isVip ? '<span class="vip-card-badge" style="top:6px;left:6px;font-size:.6rem;padding:1px 5px"><i class="fa-solid fa-crown"></i></span>' : ''}
-            </div>
-            <div class="continue-title">${esc(item.title || 'بدون عنوان')}</div>
-        </div>`).join('');
-
-    scroll.querySelectorAll('.continue-card').forEach(c => {
-        c.addEventListener('click', () => handleCardClick(c.dataset.continueId));
-    });
-}
-$('#clearContinueBtn').addEventListener('click', async () => {
-    const ok = await askConfirm({title:'مسح "أكمل المشاهدة"', msg:'حذف سجل المشاهدة من هذا الجهاز؟', okText:'مسح'});
-    if(ok){ clearContinue(); toast('تم المسح','','ok'); }
-});
-
-/* =========================================================
-   Render Live
+   Render Live Channels Grid
    ========================================================= */
 function renderLiveChannels(){
     if(currentView !== 'live') return;
     const grid = $('#itemsGrid');
-    const searchVal = ($('#searchInput').value||'').toLowerCase().trim();
+    if(!grid) return;
+    const q = $('#searchInput').value.trim().toLowerCase();
 
-    const filtered = allLiveChannels.filter(ch => {
-        const name = (ch.name||'').toLowerCase();
-        const cat = (ch.category||'').toLowerCase();
-        const matchesSearch = !searchVal || name.includes(searchVal) || cat.includes(searchVal);
-        if(!matchesSearch) return false;
-        if(activeLiveTab !== 'all') return ch.category === activeLiveTab;
-        return true;
+    let channels = allLiveChannels.filter(ch => {
+        const nameMatch = (ch.name || ch.title || '').toLowerCase().includes(q);
+        const catMatch = (ch.category || '').toLowerCase().includes(q);
+        return nameMatch || catMatch;
     });
 
-    grid.classList.remove('items-grid');
-    grid.classList.add('live-grid');
+    if(activeLiveTab === 'vip'){
+        channels = channels.filter(c => c.isVip);
+    }else if(activeLiveTab !== 'all'){
+        channels = channels.filter(c => c.category === activeLiveTab);
+    }
 
-    if(filtered.length === 0){
-        grid.innerHTML = `<div class="status-box" style="grid-column:1/-1">
-            <i class="fa-solid fa-tower-broadcast empty-icon"></i>
-            <p>لا توجد قنوات بث مباشر متاحة حالياً.</p>
-        </div>`;
+    if(channels.length === 0){
+        grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-tower-broadcast empty-icon"></i><p>لا توجد قنوات بث مباشر متاحة.</p></div>`;
         return;
     }
 
-    let html = '';
-    filtered.forEach(ch => {
-        const logo = ch.logo || 'https://via.placeholder.com/200x200/15171e/ffffff?text=LIVE';
-        const name = esc(ch.name || 'قناة');
-        const category = esc(ch.category || 'عام');
-        const isVip = ch.isVip === true;
-        const viewers = ch.viewers || 0;
-        html += `
-            <div class="live-card ${isVip?'is-vip':''}" data-id="${esc(ch.id)}">
-                <div class="live-thumb" data-action="play">
-                    <span class="live-indicator">LIVE</span>
-                    ${isVip ? '<span class="vip-card-badge"><i class="fa-solid fa-crown"></i> VIP</span>' : ''}
-                    <img src="${esc(logo)}" alt="${name}" loading="lazy"
-                         onerror="this.src='https://via.placeholder.com/200x200/15171e/ffffff?text=LIVE'">
-                    <div class="play-overlay"><i class="fa-solid fa-circle-play"></i></div>
+    grid.className = 'live-grid';
+    grid.innerHTML = channels.map(ch => {
+        const defaultLogo = 'https://via.placeholder.com/300x168/15171e/ef4444?text=' + encodeURIComponent(ch.name || ch.title || 'LIVE');
+        const logo = ch.logo || ch.image || ch.poster || defaultLogo;
+        const channelName = ch.name || ch.title || 'قناة بث مباشر';
+
+        return `
+            <div class="live-card ${ch.isVip ? 'is-vip' : ''}" onclick="openPlayer('${ch.id}', 'live')">
+                <div class="live-thumb">
+                    <div class="live-indicator">مباشر</div>
+                    ${ch.isVip ? `<div class="vip-card-badge" style="top:8px;right:8px;left:auto"><i class="fa-solid fa-crown"></i> VIP</div>` : ''}
+                    <img src="${esc(logo)}" alt="${esc(channelName)}" loading="lazy" onerror="this.src='${defaultLogo}'">
                 </div>
                 <div class="live-details">
-                    <div class="live-name">${name}</div>
+                    <div class="live-name">${esc(channelName)}</div>
                     <div class="live-meta">
-                        <span><i class="fa-solid fa-tv"></i> ${category}</span>
-                        <span><i class="fa-regular fa-eye"></i> ${viewers}</span>
+                        <span><i class="fa-solid fa-tv"></i> ${esc(ch.category || 'بث مباشر')}</span>
+                        <span><i class="fa-solid fa-bolt" style="color:var(--success-color)"></i> مباشر</span>
                     </div>
                 </div>
             </div>`;
-    });
-    grid.innerHTML = html;
-
-    if(!grid.dataset.liveBound){
-        grid.dataset.liveBound = '1';
-        grid.addEventListener('click', e => {
-            const card = e.target.closest('.live-card');
-            if(!card) return;
-            handleLiveClick(card.dataset.id);
-        });
-    }
+    }).join('');
 }
 
 /* =========================================================
-   Search
+   View Switcher (VOD / Live)
    ========================================================= */
-$('#searchInput').addEventListener('input', debounce(() => {
-    updateSearchClear();
-    if(currentView === 'live') renderLiveChannels();
-    else renderGridItems();
-}, 220));
-function updateSearchClear(){
-    $('#searchClear').classList.toggle('show', !!$('#searchInput').value);
-}
-$('#searchClear').addEventListener('click', () => {
-    $('#searchInput').value = '';
-    updateSearchClear();
-    if(currentView === 'live') renderLiveChannels();
-    else renderGridItems();
-    $('#searchInput').focus();
+function switchView(view){
+    currentView = view;
+    $$('.view-btn').forEach(b => {         b.classList.toggle('active', b.getAttribute('data-view') === view);     });$$
+('.bn-item').forEach(b => {
+        if(b.getAttribute('data-bn') === 'vod' || b.getAttribute('data-bn') === 'live'){
+            b.classList.toggle('active', b.getAttribute('data-bn') === view);
+        }
+    });
+
+    if(view === 'vod'){
+        $('#vodTabs').style.display = 'flex';
+        $('#liveTabs').style.display = 'none';
+        renderGridItems();
+    }else{
+        $('#vodTabs').style.display = 'none';
+        $('#liveTabs').style.display = 'flex';         renderLiveChannels();     } }  $$('.view-btn').forEach(btn => {
+    btn.addEventListener('click', ()=> switchView(btn.getAttribute('data-view')));
 });
 
 /* =========================================================
-   Handle clicks
+   Search Logic
    ========================================================= */
-function handleCardClick(id){
-    const item = allFetchedItems.find(i => i.id === id);
-    if(!item) return;
-    if(currentUser && getUserIsBanned(userData)){
-        $('#bannedModal').classList.add('active');
-        return;
+const handleSearch = debounce(()=>{
+    const val = $('#searchInput').value.trim();
+    $('#searchClear').classList.toggle('show', val.length > 0);
+    if(currentView === 'vod') renderGridItems();
+    else renderLiveChannels();
+}, 200);
+
+$('#searchInput').addEventListener('input', handleSearch);
+$('#searchClear').addEventListener('click', ()=>{
+    $('#searchInput').value = '';
+    $('#searchClear').classList.remove('show');
+    if(currentView === 'vod') renderGridItems();
+    else renderLiveChannels();
+});
+
+/* =========================================================
+   Favorites System
+   ========================================================= */
+function toggleFavorite(e, id){
+    if(e) e.stopPropagation();
+    const idx = favorites.indexOf(id);
+    if(idx > -1){
+        favorites.splice(idx, 1);
+        toast('تمت الإزالة من المفضلة', 'warn');
+    }else{
+        favorites.push(id);
+        toast('تمت الإضافة للمفضلة', 'ok');
     }
-    if(item.isVip){
-        if(!currentUser){ openAuthModal('login'); return; }
-        if(!getUserIsVip(userData)){ openSubModal(); return; }
-    }
-    updateSEOTags(item);
-    openPlayerModal(item);
+    localStorage.setItem('faresflix_favs', JSON.stringify(favorites));
+    if(currentView === 'vod') renderGridItems();
+    if(currentPlayerItem && currentPlayerItem.id === id) updatePlayerFavBtn();
 }
 
-function handleLiveClick(id){
-    const ch = allLiveChannels.find(c => c.id === id);
-    if(!ch) return;
-    if(currentUser && getUserIsBanned(userData)){
-        $('#bannedModal').classList.add('active');
-        return;
-    }
-    if(ch.isVip){
-        if(!currentUser){ openAuthModal('login'); return; }
-        if(!getUserIsVip(userData)){ openSubModal(); return; }
-    }
-    openLivePlayer(ch);
-    db.ref('liveChannels/' + ch.id + '/viewers').set(firebase.database.ServerValue.increment(1));
+/* =========================================================
+   Continue Watching Feature
+   ========================================================= */
+function saveContinueWatching(item){
+    let list = JSON.parse(localStorage.getItem('faresflix_continue') || '[]');
+    list = list.filter(x => x.id !== item.id);
+    list.unshift({ id: item.id, title: item.title, image: item.image || item.poster, time: Date.now() });
+    if(list.length > 10) list.pop();
+    localStorage.setItem('faresflix_continue', JSON.stringify(list));
+    renderContinueWatching();
 }
 
-function updateSEOTags(item){
-    const t = `${item.title || 'مشاهدة'} - ${siteSettings.siteName || 'FARESFLIX'}`;
-    document.title = t;
-    const d = $('#dynamicPageTitle'); if(d) d.innerText = t;
-    const md = $('#metaDescription'); if(md) md.setAttribute('content', item.description || t);
-    const og1 = $('#ogTitle'); if(og1) og1.setAttribute('content', t);
-    const og2 = $('#ogDescription'); if(og2) og2.setAttribute('content', item.description || t);
-    if(item.thumbnailUrl){ const og3 = $('#ogImage'); if(og3) og3.setAttribute('content', item.thumbnailUrl); }
+function renderContinueWatching(){
+    const sec = $('#continueSection');
+    const scroll = $('#continueScroll');
+    if(!sec || !scroll) return;
+
+    let list = JSON.parse(localStorage.getItem('faresflix_continue') || '[]');
+    if(list.length === 0){
+        sec.classList.remove('show');
+        return;
+    }
+    sec.classList.add('show');
+    scroll.innerHTML = list.map(item => `
+        <div class="continue-card" onclick="openPlayer('${item.id}', 'vod')">
+            <div class="continue-thumb">
+                <img src="${esc(item.image || 'https://via.placeholder.com/160x90')}" alt="${esc(item.title)}">
+            </div>
+            <div class="continue-title">${esc(item.title)}</div>
+        </div>
+    `).join('');
+}
+
+$('#clearContinueBtn').addEventListener('click', async ()=>{
+    const ok = await askConfirm({ title: 'مسح السجل', msg: 'هل ترغب في مسح سجل متابعة المشاهدة؟' });
+    if(ok){
+        localStorage.removeItem('faresflix_continue');
+        renderContinueWatching();
+        toast('تم مسح السجل', 'ok');
+    }
+});
+
+/* =========================================================
+   Player Logic & Video Engine (HLS, DASH, Embeds)
+   ========================================================= */
+function openPlayer(id, type='vod'){
+    let item = null;
+    if(type === 'live'){
+        item = allLiveChannels.find(c => c.id === id);
+    }else{
+        item = allFetchedItems.find(i => i.id === id);
+    }
+
+    if(!item){
+        toast('لم يتم العثور على المحتوى المطلوب', 'err');
+        return;
+    }
+
+    // VIP Protection Check
+    if(item.isVip && !getUserIsVip(userData)){
+        openSubModal();
+        toast('هذا المحتوى مخصص للمشتركين VIP فقط', 'warn');
+        return;
+    }
+
+    currentPlayerItem = item;
+    currentPlayingId = id;
+
+    // UI Updates
+    $('#modalTitle').textContent = item.title || item.name || 'عرض الفيديو';
+    $('#modalViews').textContent = (item.views || 0) + 1;
+    $('#modalCategory').textContent = item.category || (type === 'live' ? 'بث مباشر' : 'عام');
+    $('#modalDesc').textContent = item.description || 'لا يوجد وصف إضافي.';
+
+    const dlWrap = $('#playerDlWrap');
+    if(type === 'vod'){
+        dlWrap.style.display = 'flex';
+        $('#playerDlBtn').onclick = (e) => openDownloadModal(e, item.id);
+        updatePlayerFavBtn();
+    }else{
+        dlWrap.style.display = 'none';
+    }
+
+    // Setup Servers Selection
+    setupServersList(item, type);
+
+    // Update Views in DB
+    if(type === 'vod'){
+        db.ref('videos/' + id + '/views').transaction(v => (v || 0) + 1);
+        saveContinueWatching(item);
+    }
+
+    openModal('playerModal');
+}
+
+function updatePlayerFavBtn(){
+    const btn = $('#playerFavBtn');
+    if(!btn || !currentPlayerItem) return;
+    const isFav = favorites.includes(currentPlayerItem.id);
+    btn.className = `btn fav-btn-player ${isFav?'active':''}`;
+    btn.innerHTML = `<i class="fa-${isFav?'solid':'regular'} fa-heart"></i> <span>${isFav?'المفضلة':'إضافة للمفضلة'}</span>`;
+    btn.onclick = (e) => toggleFavorite(e, currentPlayerItem.id);
+}
+
+function setupServersList(item, type){
+    const section = $('#serversSection');
+    const grid = $('#serversGrid');
+    grid.innerHTML = '';
+
+    let servers = [];
+    if(item.servers && Array.isArray(item.servers) && item.servers.length > 0){
+        servers = item.servers;
+    }else if(item.url || item.streamUrl || item.link){
+        servers = [{ name: 'السيرفر الرئيسي', url: item.url || item.streamUrl || item.link, type: item.streamType || item.type || 'auto' }];
+    }
+
+    if(servers.length === 0){
+        section.style.display = 'none';
+        renderPlayerEngine(item.url || item.streamUrl || item.link || '', item.type || 'auto');
+        return;
+    }
+
+    section.style.display = 'block';
+    servers.forEach((srv, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `server-btn ${idx===0?'active':''}`;
+        btn.textContent = srv.name || `سيرفر ${idx+1}`;
+        btn.onclick = () => {
+            $$('#serversGrid .server-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderPlayerEngine(srv.url, srv.type || 'auto');
+        };
+        grid.appendChild(btn);
+    });
+
+    renderPlayerEngine(servers[0].url, servers[0].type || 'auto');
+}
+
+function renderPlayerEngine(url, type='auto'){
+    destroyPlayerInstances();
+    const container = $('#playerContainer');
+    container.innerHTML = '';
+
+    if(!url){
+        container.innerHTML = `<div class="player-error"><i class="fa-solid fa-triangle-exclamation"></i><p>رابط البث غير متوفر حالياً.</p></div>`;
+        return;
+    }
+
+    const cleanUrl = url.trim();
+    const isHls = cleanUrl.includes('.m3u8') || type === 'hls';
+    const isDash = cleanUrl.includes('.mpd') || type === 'dash';
+    const isDirectVideo = cleanUrl.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i) || type === 'video';
+
+    if(isHls){
+        const video = document.createElement('video');
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.style.width = '100%'; video.style.height = '100%';
+        container.appendChild(video);
+
+        if(Hls.isSupported()){
+            hlsPlayerInstance = new Hls({ enableWorker: true });
+            hlsPlayerInstance.loadSource(cleanUrl);
+            hlsPlayerInstance.attachMedia(video);
+            hlsPlayerInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
+            hlsPlayerInstance.on(Hls.Events.ERROR, (e, data) => {
+                if(data.fatal){
+                    container.innerHTML = `<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i><p>تعذر تحميل البث المباشر (HLS Error).</p></div>`;
+                }
+            });
+        }else if(video.canPlayType('application/vnd.apple.mpegurl')){
+            video.src = cleanUrl;
+            video.play().catch(()=>{});
+        }
+    }else if(isDash){
+        const video = document.createElement('video');
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.style.width = '100%'; video.style.height = '100%';
+        container.appendChild(video);
+
+        dashPlayerInstance = dashjs.MediaPlayer().create();
+        dashPlayerInstance.initialize(video, cleanUrl, true);
+    }else if(isDirectVideo){
+        const video = document.createElement('video');
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.src = cleanUrl;
+        video.style.width = '100%'; video.style.height = '100%';
+        container.appendChild(video);
+        video.play().catch(()=>{});
+    }else{
+        // Embed Iframe Player
+        const iframe = document.createElement('iframe');
+        iframe.src = cleanUrl;
+        iframe.allow = 'autoplay; encrypted-media; fullscreen';
+        iframe.allowFullscreen = true;
+        container.appendChild(iframe);
+    }
+}
+
+function destroyPlayerInstances(){
+    if(hlsPlayerInstance){
+        hlsPlayerInstance.destroy();
+        hlsPlayerInstance = null;
+    }
+    if(dashPlayerInstance){
+        dashPlayerInstance.reset();
+        dashPlayerInstance = null;
+    }
+    const container = $('#playerContainer');
+    if(container) container.innerHTML = '';
+}
+
+function closePlayer(){
+    destroyPlayerInstances();
+    closeModal('playerModal');
+    currentPlayerItem = null;
+    currentPlayingId = null;
 }
 
 function checkUrlForDirectPlay(){
     if(hasHandledUrlHash) return;
     const hash = window.location.hash;
-    if(!hash || !hash.startsWith('#watch-')) return;
-    hasHandledUrlHash = true;
-    const id = hash.replace('#watch-', '');
+    if(hash.startsWith('#watch=')){
+        const id = hash.replace('#watch=', '');
+        if(id){
+            hasHandledUrlHash = true;
+            setTimeout(()=> openPlayer(id, 'vod'), 600);
+        }
+    }else if(hash.startsWith('#live=')){
+        const id = hash.replace('#live=', '');
+        if(id){
+            hasHandledUrlHash = true;
+            switchView('live');
+            setTimeout(()=> openPlayer(id, 'live'), 600);
+        }
+    }
+}
+
+/* =========================================================
+   Download Flow & Timer
+   ========================================================= */
+function openDownloadModal(e, id){
+    if(e) e.stopPropagation();
     const item = allFetchedItems.find(i => i.id === id);
-    if(item) handleCardClick(id);
-}
-window.addEventListener('hashchange', () => {
-    const hash = window.location.hash;
-    if(!hash || !hash.startsWith('#watch-')){
-        if($('#playerModal').classList.contains('active')) closePlayer();
-    }
-});
-
-/* =========================================================
-   Player
-   ========================================================= */
-function openPlayerModal(item){
-    if(currentPlayingId === item.id && $('#playerModal').classList.contains('active')) return;
-    currentPlayingId = item.id;
-    currentPlayerItem = item;
-
-    $('#modalTitle').innerText = item.title || 'بدون عنوان';
-    $('#modalDesc').innerText = item.description || 'لا يوجد وصف متوفر.';
-    $('#modalViews').innerText = (item.views || 0) + 1;
-    $('#modalCategory').innerText = item.category || 'عام';
-
-    const dlWrap = $('#playerDlWrap');
-    const dlBtn = $('#playerDlBtn');
-    const hasDownload = !!(item.downloadUrl || item.adDownloadUrl);
-    if(hasDownload){
-        dlWrap.style.display = 'flex';
-        dlBtn.onclick = () => handleDownloadClick(item.id);
-    }else{
-        dlWrap.style.display = 'none';
-        dlBtn.onclick = null;
-    }
-    updatePlayerFavBtn();
-    $('#playerFavBtn').onclick = () => toggleFav(item.id);
-
-    const serversSection = $('#serversSection');
-    const serversGrid = $('#serversGrid');
-    serversGrid.innerHTML = '';
-
-    let servers = [];
-    if(Array.isArray(item.servers) && item.servers.length) servers = item.servers;
-    else if(item.embedScript || item.script) servers = [{name:'سيرفر رئيسي', script: item.embedScript || item.script}];
-    else if(item.videoUrl || item.url) servers = [{name:'سيرفر رئيسي', url: item.videoUrl || item.url}];
-
-    if(servers.length === 0){
-        toast('لا يوجد سيرفر بث متاح','err');
-        currentPlayingId = null;
+    if(!item){
+        toast('العنصر غير موجود', 'err');
         return;
     }
 
-    if(servers.length > 1){
-        serversSection.style.display = 'block';
-        servers.forEach((srv,i) => {
-            const btn = document.createElement('button');
-            btn.className = `server-btn ${i===0?'active':''}`;
-            btn.innerHTML = `<i class="fa-solid fa-play"></i> ${esc(srv.name||('سيرفر '+(i+1)))}`;
-            btn.addEventListener('click', () => {
-                serversGrid.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                playUniversalSource(srv.url || srv.embedCode || srv.script);
-            });
-            serversGrid.appendChild(btn);
-        });
-    }else{
-        serversSection.style.display = 'none';
-    }
-
-    const first = servers[0];
-    playUniversalSource(first.url || first.embedCode || first.script);
-    $('#playerModal').classList.add('active');
-    db.ref('videos/' + item.id + '/views').set(firebase.database.ServerValue.increment(1));
-    // Save continue watching
-    saveContinue(item.id);
-}
-
-function openLivePlayer(ch){
-    currentPlayingId = 'live-' + ch.id;
-    currentPlayerItem = null;
-    $('#modalTitle').innerText = ch.name || 'بث مباشر';
-    $('#modalDesc').innerText = ch.description || 'بث مباشر يعمل الآن';
-    $('#modalViews').innerText = (ch.viewers || 0) + 1;
-    $('#modalCategory').innerText = ch.category || 'بث مباشر';
-    $('#playerDlWrap').style.display = 'none';
-    $('#serversSection').style.display = 'none';
-    $('#serversGrid').innerHTML = '';
-
-    const url = ch.url || ch.streamUrl;
-    if(!url){ playUniversalSource(''); $('#playerModal').classList.add('active'); return; }
-    playUniversalSource(url);
-    $('#playerModal').classList.add('active');
-}
-
-/* =========================================================
-   Universal Play Engine
-   ========================================================= */
-function playUniversalSource(source, isExplicitScript = false){
-    const container = $('#playerContainer');
-    destroyPlayers();
-    container.innerHTML = '';
-    if(!source) return;
-    source = String(source).trim();
-
-    if(isExplicitScript || source.startsWith('<') || source.includes('<iframe') || source.includes('<script')){
-        const wrapper = document.createElement('div');
-        wrapper.id = 'customScriptContainer';
-        wrapper.style.width = '100%'; wrapper.style.height = '100%';
-        wrapper.innerHTML = source;
-        container.appendChild(wrapper);
-        wrapper.querySelectorAll('script').forEach(oldScript => {
-            const s = document.createElement('script');
-            Array.from(oldScript.attributes).forEach(a => s.setAttribute(a.name,a.value));
-            s.appendChild(document.createTextNode(oldScript.innerHTML));
-            oldScript.parentNode.replaceChild(s, oldScript);
-        });
-        return;
-    }
-
-    if(/youtube\.com|youtu\.be/.test(source)){
-        const m = source.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
-        const vid = (m && m[2] && m[2].length === 11) ? m[2] : null;
-        const url = vid ? `https://www.youtube.com/embed/${vid}?autoplay=1&mute=1` : source;
-        container.innerHTML = `<iframe src="${esc(url)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
-        return;
-    }
-
-    if(source.includes('drive.google.com')){
-        const url = source.replace('/view','/preview');
-        container.innerHTML = `<iframe src="${esc(url)}" allow="autoplay" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
-        return;
-    }
-
-    if(source.includes('.mpd')){
-        const video = makeVideoEl();
-        container.appendChild(video);
-        if(window.dashjs){
-            dashPlayerInstance = dashjs.MediaPlayer().create();
-            dashPlayerInstance.initialize(video, source, true);
-        }else{ showPlayerError('مشغل DASH غير محمّل.'); }
-        return;
-    }
-
-    if(/\.m3u8(\?|$)/i.test(source) || /m3u8/i.test(source)){
-        const video = makeVideoEl();
-        container.appendChild(video);
-        if(window.Hls && Hls.isSupported()){
-            hlsPlayerInstance = new Hls({
-                enableWorker:true, lowLatencyMode:false,
-                xhrSetup: xhr => { xhr.withCredentials = false; },
-                manifestLoadingTimeOut:20000, manifestLoadingMaxRetry:3,
-                levelLoadingMaxRetry:4, fragLoadingMaxRetry:6
-            });
-            hlsPlayerInstance.loadSource(source);
-            hlsPlayerInstance.attachMedia(video);
-            hlsPlayerInstance.on(Hls.Events.ERROR, (evt,data) => {
-                if(data.fatal){
-                    switch(data.type){
-                        case Hls.ErrorTypes.NETWORK_ERROR: hlsPlayerInstance.startLoad(); break;
-                        case Hls.ErrorTypes.MEDIA_ERROR: hlsPlayerInstance.recoverMediaError(); break;
-                        default: showPlayerError('تعذّر تشغيل البث. تحقق من الرابط.');
-                    }
-                }
-            });
-        }else if(video.canPlayType('application/vnd.apple.mpegurl')){
-            video.src = source;
-        }else{ showPlayerError('متصفحك لا يدعم تشغيل HLS.'); }
-        return;
-    }
-
-    if(/\.(mp4|mkv|webm|mov|ts|flv|m4v|3gp|mp3|ogg|aac)(\?|$)/i.test(source)){
-        const video = makeVideoEl();
-        video.src = source;
-        container.appendChild(video);
-        return;
-    }
-
-    if(/ok\.ru\/video\/(\d+)/.test(source)){
-        const m = source.match(/ok\.ru\/video\/(\d+)/);
-        const embed = `https://ok.ru/videoembed/${m[1]}`;
-        container.innerHTML = `<iframe src="${esc(embed)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
-        return;
-    }
-
-    container.innerHTML = `<iframe src="${esc(source)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
-}
-
-function makeVideoEl(){
-    const v = document.createElement('video');
-    v.controls = true; v.playsInline = true; v.autoplay = true; v.muted = true;
-    v.style.width = '100%'; v.style.height = '100%';
-    return v;
-}
-function showPlayerError(msg){
-    const c = $('#playerContainer');
-    c.innerHTML = `<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i>
-        <p style="font-weight:700">تعذّر تشغيل السيرفر</p>
-        <p style="font-size:.85rem;color:#9aa0a6">${esc(msg)}</p></div>`;
-}
-function destroyPlayers(){
-    if(hlsPlayerInstance){ try{hlsPlayerInstance.destroy();}catch(e){} hlsPlayerInstance = null; }
-    if(dashPlayerInstance){ try{dashPlayerInstance.reset();}catch(e){} dashPlayerInstance = null; }
-}
-function closePlayer(){
-    destroyPlayers();
-    $('#playerModal').classList.remove('active');
-    $('#playerContainer').innerHTML = '';
-    currentPlayingId = null;
-    currentPlayerItem = null;
-    if(window.location.hash){
-        history.replaceState(null,'',window.location.pathname + window.location.search);
-    }
-}
-
-/* =========================================================
-   DOWNLOAD FLOW
-   ========================================================= */
-function handleDownloadClick(id){
-    const item = allFetchedItems.find(i => i.id === id);
-    if(!item){ toast('المحتوى غير متوفر','err'); return; }
-    if(currentUser && getUserIsBanned(userData)){
-        $('#bannedModal').classList.add('active');
-        return;
-    }
-    const isVip = getUserIsVip(userData);
-    const directUrl = item.downloadUrl || '';
-    const adUrl = item.adDownloadUrl || '';
-
-    if(isVip){
-        const url = directUrl || adUrl;
-        if(!url){ toast('لا يوجد رابط تحميل متاح','err'); return; }
-        triggerDownload(url);
-        toast('بدأ التحميل المباشر ✓','ok');
-        return;
-    }
     currentDlItem = item;
-    showDownloadOptions(item);
-}
-
-function showDownloadOptions(item){
     const card = $('#dlModalCard');
+    const isVipUser = getUserIsVip(userData);
+    const downloadUrl = item.downloadUrl || item.url || '#';
+
     card.innerHTML = `
-        <div class="modal-grab"></div>
-        <button class="close-modal" onclick="closeModal('dlModal')"><i class="fa-solid fa-xmark"></i></button>
+        <button class="close-modal" onclick="closeModal('dlModal');clearDlTimer();"><i class="fa-solid fa-xmark"></i></button>
         <div class="dl-hero">
             <div class="dl-hero-icon"><i class="fa-solid fa-download"></i></div>
-            <h3>تحميل: ${esc(item.title || '')}</h3>
-            <p>اختر طريقة التحميل المناسبة لك</p>
+            <h3>تحميل: ${esc(item.title)}</h3>
+            <p>اختر وسيلة التحميل المناسبة لك</p>
         </div>
         <div class="dl-options">
-            <button class="dl-option-btn vip-option" id="optVip">
-                <div class="dl-opt-icon"><i class="fa-solid fa-crown"></i></div>
+            <button class="dl-option-btn vip-option" onclick="startVipDownload('${esc(downloadUrl)}')">
+                <div class="dl-opt-icon"><i class="fa-solid fa-bolt"></i></div>
                 <div class="dl-opt-text">
-                    <div class="dl-opt-title">اشترك VIP — تحميل مباشر</div>
-                    <div class="dl-opt-sub">تحميل فوري بجودة كاملة وبدون إعلانات</div>
+                    <div class="dl-opt-title">تحميل فوري VIP</div>
+                    <div class="dl-opt-sub">بدون فترات انتظار - روابط مباشرة فائقة السرعة</div>
                 </div>
-                <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <button class="dl-option-btn free-option" id="optFree">
-                <div class="dl-opt-icon"><i class="fa-solid fa-play"></i></div>
+            <button class="dl-option-btn free-option" onclick="startFreeDownloadTimer('${esc(downloadUrl)}')">
+                <div class="dl-opt-icon"><i class="fa-solid fa-hourglass-start"></i></div>
                 <div class="dl-opt-text">
-                    <div class="dl-opt-title">تحميل مجاني (إعلان واحد)</div>
-                    <div class="dl-opt-sub">شاهد إعلان قصير ثم ابدأ التحميل</div>
+                    <div class="dl-opt-title">تحميل مجاني (انتظار 15 ثانية)</div>
+                    <div class="dl-opt-sub">رابط عادي مع إعلانات بسيطة</div>
                 </div>
-                <i class="fa-solid fa-chevron-left"></i>
             </button>
-        </div>`;
-    $('#dlModal').classList.add('active');
-    $('#optVip').addEventListener('click', () => {
-        closeModal('dlModal');
-        setTimeout(openSubModal, 200);
-    });
-    $('#optFree').addEventListener('click', () => startAdDownloadFlow(item));
+        </div>
+        <div id="dlTimerArea" style="margin-top:15px"></div>
+    `;
+
+    openModal('dlModal');
 }
 
-function startAdDownloadFlow(item){
-    const card = $('#dlModalCard');
-    card.innerHTML = `
-        <div class="modal-grab"></div>
-        <button class="close-modal" id="dlCloseAd"><i class="fa-solid fa-xmark"></i></button>
-        <div class="dl-hero" style="padding-bottom:6px">
-            <h3 style="font-size:1rem">شاهد الإعلان لبدء التحميل</h3>
-            <p style="font-size:.78rem">سيفتح رابط التحميل تلقائياً بعد انتهاء العدّاد</p>
-        </div>
-        <div class="ad-container" id="adBox"></div>
+function clearDlTimer(){
+    if(countdownTimer){
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+    }
+}
+
+function startVipDownload(url){
+    if(!getUserIsVip(userData)){
+        openSubModal();
+        toast('التحميل الفوري متاح لأعضاء VIP فقط', 'warn');
+        return;
+    }
+    toast('جاري بدء التحميل...', 'ok');
+    window.open(url, '_blank');
+}
+
+function startFreeDownloadTimer(url){
+    clearDlTimer();
+    const area = $('#dlTimerArea');
+    let sec = 15;
+
+    area.innerHTML = `
         <div class="countdown-wrap">
-            <div class="countdown-circle" id="cntCircle"><span class="countdown-num" id="cntNum">10</span></div>
-            <p class="countdown-txt">الرجاء الانتظار <strong id="cntLabel">10 ثواني</strong></p>
+            <div class="countdown-circle" id="cdCircle">
+                <span class="countdown-num" id="cdNum">15</span>
+            </div>
+            <div class="countdown-txt">جاري تحضير رابط التحميل، يرجى الانتظار...</div>
         </div>
-        <button class="dl-ready-btn" id="dlReadyBtn"><i class="fa-solid fa-download"></i> تحميل الآن</button>`;
-    loadAdIntoBox();
-    $('#dlCloseAd').addEventListener('click', () => { stopCountdown(); closeModal('dlModal'); });
-    startCountdown(10, () => {
-        $('#dlReadyBtn').classList.add('show');
-        $('#dlReadyBtn').addEventListener('click', () => {
-            const url = item.adDownloadUrl || item.downloadUrl;
-            if(url){ triggerDownload(url); toast('بدأ التحميل ✓','ok'); closeModal('dlModal'); }
-            else toast('لا يوجد رابط تحميل','err');
-        });
-    });
-}
+        <button class="dl-ready-btn" id="dlReadyBtn" onclick="window.open('${url}', '_blank')">
+            <i class="fa-solid fa-cloud-arrow-down"></i> اضغط هنا للتحميل الآن
+        </button>
+    `;
 
-function loadAdIntoBox(){
-    const box = $('#adBox');
-    box.innerHTML = '<div class="spinner"></div>';
-    db.ref('ads/downloadAd').once('value').then(snap => {
-        const adHTML = snap.exists() ? snap.val() : null;
-        if(adHTML && typeof adHTML === 'string'){
-            box.innerHTML = adHTML;
-            box.querySelectorAll('script').forEach(old => {
-                const s = document.createElement('script');
-                Array.from(old.attributes).forEach(a => s.setAttribute(a.name, a.value));
-                s.appendChild(document.createTextNode(old.innerHTML));
-                old.parentNode.replaceChild(s, old);
-            });
-        }else{
-            box.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-secondary)"><i class="fa-solid fa-bullhorn" style="font-size:2.2rem;color:var(--vip-gold);margin-bottom:10px;display:block"></i><p style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:4px">مساحة الإعلان</p><p style="font-size:.75rem">يمكن للإدارة إضافة الإعلان من لوحة التحكم</p></div>`;
+    countdownTimer = setInterval(()=>{
+        sec--;
+        const num = $('#cdNum');
+        const circle = $('#cdCircle');
+        if(num) num.textContent = sec;
+        if(circle){
+            const pct = ((15 - sec) / 15) * 100;
+            circle.style.setProperty('--progress', `${pct}%`);
         }
-    }).catch(() => {
-        box.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-secondary)"><i class="fa-solid fa-bullhorn" style="font-size:2.2rem;color:var(--vip-gold);margin-bottom:10px;display:block"></i><p style="font-size:.85rem;font-weight:700;color:#fff">مساحة الإعلان</p></div>`;
-    });
-}
 
-function startCountdown(seconds, onDone){
-    let remaining = seconds;
-    const circle = $('#cntCircle');
-    const num = $('#cntNum');
-    const label = $('#cntLabel');
-    const total = seconds;
-    circle.style.setProperty('--progress', '0%');
-    num.textContent = remaining;
-    label.textContent = remaining + ' ثواني';
-    stopCountdown();
-    countdownTimer = setInterval(() => {
-        remaining--;
-        if(remaining <= 0){
-            stopCountdown();
-            num.textContent = '✓';
-            label.textContent = 'جاهز للتحميل';
-            circle.style.setProperty('--progress','100%');
-            if(onDone) onDone();
-            return;
+        if(sec <= 0){
+            clearDlTimer();
+            const btn = $('#dlReadyBtn');             if(btn) btn.classList.add('show');             toast('رابط التحميل جاهز الآن', 'ok');         }     }, 1000); }  /* =========================================================    Bottom Navigation Handler (Mobile)    ========================================================= */ $$('.bottom-nav .bn-item').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+        const bn = btn.getAttribute('data-bn');
+        if(bn === 'vod'){
+            switchView('vod');
+        }else if(bn === 'live'){
+            switchView('live');
+        }else if(bn === 'search'){
+            $('#searchInput').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }else if(bn === 'favorites'){
+            switchView('vod');
+            activeTab = 'fav';
+            buildVodTabs();
+            renderGridItems();
+        }else if(bn === 'profile'){
+            if(currentUser) openProfileModal();
+            else openAuthModal('login');
         }
-        num.textContent = remaining;
-        label.textContent = remaining + ' ثواني';
-        circle.style.setProperty('--progress', (((total - remaining)/total)*100) + '%');
-    }, 1000);
-}
-function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; } }
-
-function triggerDownload(url){
-    if(!url) return;
-    try{
-        const a = document.createElement('a');
-        a.href = url; a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.download = '';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }catch(e){ window.open(url, '_blank', 'noopener'); }
-}
-
-/* =========================================================
-   ⭐ VIP REQUEST SYSTEM
-   ========================================================= */
-function getWhatsAppLink(){
-    const s = siteSettings || {};
-    const link = s.whatsappLink || s.contactLink || '';
-    const num = (s.whatsappNumber || '').replace(/\D/g, '');
-    let base = '';
-    if(link && /^https?:\/\//i.test(link)) base = link;
-    else if(num) base = `https://wa.me/${num}`;
-    else if(link && /^\d+$/.test(link.replace(/\D/g,''))) base = `https://wa.me/${link.replace(/\D/g,'')}`;
-    return base;
-}
-
-function buildWhatsAppMessage(){
-    const name = (userData?.name || '').trim();
-    const email = (currentUser?.email || '').trim();
-    const siteName = siteSettings?.siteName || 'FARESFLIX';
-    const lines = [
-        `السلام عليكم، أرغب في الاشتراك بـ VIP في منصة ${siteName}.`,
-        name ? `الاسم: ${name}` : '',
-        email ? `البريد: ${email}` : '',
-        '',
-        'برجاء إبلاغي بتفاصيل الاشتراك. شكراً.'
-    ].filter(Boolean);
-    return lines.join('\n');
-}
-
-function openWhatsAppForVip(){
-    const base = getWhatsAppLink();
-    const msg = buildWhatsAppMessage();
-    if(!base){
-        toast('لم يتم إضافة رقم واتساب بعد. تواصل مع الإدارة عبر البريد.','err','لا يوجد رقم واتساب');
-        return false;
-    }
-    const url = base.includes('?') ? `${base}&text=${encodeURIComponent(msg)}` : `${base}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank', 'noopener');
-    return true;
-}
-
-async function requestVipSubscription(){
-    // 1. must be logged in
-    if(!currentUser){ openAuthModal('login'); toast('يجب تسجيل الدخول أولاً','warn'); return; }
-
-    // 2. check banned
-    if(getUserIsBanned(userData)){
-        $('#bannedModal').classList.add('active');
-        return;
-    }
-
-    // 3. already VIP?
-    if(getUserIsVip(userData)){
-        toast('أنت مشترك VIP بالفعل 🎉','ok','حساب مميز');
-        if(getWhatsAppLink()) openWhatsAppForVip();
-        return;
-    }
-
-    // 4. already has pending request?
-    if(lastVipRequestStatus && lastVipRequestStatus.status === 'pending'){
-        const ago = Math.round((Date.now() - (lastVipRequestStatus.createdAt || Date.now())) / 60000);
-        toast(`طلبك قيد المراجعة منذ ${ago} دقيقة`,'warn','الطلب مُرسل مسبقاً');
-        if(getWhatsAppLink()) openWhatsAppForVip();
-        return;
-    }
-
-    // 5. confirm
-    const ok = await askConfirm({
-        title: 'تأكيد طلب الاشتراك',
-        msg: 'سيتم إنشاء طلب اشتراك VIP وفتح واتساب للتواصل مع الإدارة.',
-        okText: 'تأكيد وإرسال'
     });
-    if(!ok) return;
-
-    // 6. save request
-    try{
-        const payload = {
-            uid: currentUser.uid,
-            name: userData?.name || '',
-            email: currentUser.email || '',
-            status: 'pending',
-            createdAt: Date.now(),
-            source: 'web'
-        };
-        const reqRef = db.ref('vipRequests').push();
-        await reqRef.set(payload);
-        // also save last request on user
-        await db.ref('users/' + currentUser.uid + '/lastVipRequest').set({
-            id: reqRef.key, status: 'pending', createdAt: Date.now()
-        });
-        toast('تم إرسال طلبك','سيتم مراجعته من الإدارة','ok');
-        // 7. open whatsapp
-        openWhatsAppForVip();
-        // 8. close modal
-        closeModal('subModal');
-    }catch(err){
-        console.error(err);
-        toast('فشل حفظ الطلب: ' + err.message,'err');
-    }
-}
-
-function updateProfileVipStatus(){
-    const box = $('#profileVipRequestStatus');
-    if(!box) return;
-    if(!lastVipRequestStatus || getUserIsVip(userData)){ box.innerHTML = ''; return; }
-    const r = lastVipRequestStatus;
-    const status = r.status || 'pending';
-    let html = '';
-    if(status === 'pending'){
-        html = `<div class="vip-status-card pending">
-            <div class="vsc-icon"><i class="fa-solid fa-clock"></i></div>
-            <div class="vsc-body">
-                <div class="vsc-title">طلبك قيد المراجعة</div>
-                <div class="vsc-sub">أرسلته ${fmtTime(r.createdAt)} — سيتم التواصل قريباً عبر واتساب</div>
-            </div>
-        </div>`;
-    }else if(status === 'approved'){
-        html = `<div class="vip-status-card approved">
-            <div class="vsc-icon"><i class="fa-solid fa-circle-check"></i></div>
-            <div class="vsc-body">
-                <div class="vsc-title">تم قبول طلبك 🎉</div>
-                <div class="vsc-sub">تمت الموافقة ${fmtTime(r.approvedAt || r.updatedAt)}</div>
-            </div>
-        </div>`;
-    }else if(status === 'rejected'){
-        html = `<div class="vip-status-card rejected">
-            <div class="vsc-icon"><i class="fa-solid fa-circle-xmark"></i></div>
-            <div class="vsc-body">
-                <div class="vsc-title">تم رفض الطلب</div>
-                <div class="vsc-sub">${esc(r.rejectReason || 'تواصل مع الإدارة للمزيد')}</div>
-            </div>
-        </div>`;
-    }
-    box.innerHTML = html;
-}
-
-function updateSubModalStatus(){
-    const box = $('#subModalStatusBox');
-    const btn = $('#btnRequestVip');
-    if(!box || !btn) return;
-    box.innerHTML = '';
-    if(!currentUser){
-        btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> اطلب الاشتراك عبر واتساب';
-        btn.onclick = () => { closeModal('subModal'); openAuthModal('register'); toast('أنشئ حساباً أولاً ثم اطلب الاشتراك','','لتأكيد الطلب'); };
-        return;
-    }
-    if(getUserIsVip(userData)){
-        box.innerHTML = `<div class="vip-status-card approved">
-            <div class="vsc-icon"><i class="fa-solid fa-crown"></i></div>
-            <div class="vsc-body">
-                <div class="vsc-title">أنت مشترك VIP</div>
-                <div class="vsc-sub">استمتع بكل المزايا الحصرية</div>
-            </div>
-        </div>`;
-        btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> تجديد الاشتراك';
-        btn.onclick = () => { if(getWhatsAppLink()) openWhatsAppForVip(); else toast('لم يتم إضافة رقم واتساب بعد','warn'); };
-        return;
-    }
-    if(lastVipRequestStatus && lastVipRequestStatus.status === 'pending'){
-        box.innerHTML = `<div class="vip-status-card pending">
-            <div class="vsc-icon"><i class="fa-solid fa-clock"></i></div>
-            <div class="vsc-body">
-                <div class="vsc-title">الطلب قيد المراجعة</div>
-                <div class="vsc-sub">أرسلته ${fmtTime(lastVipRequestStatus.createdAt)}</div>
-            </div>
-        </div>`;
-        btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> متابعة على واتساب';
-        btn.onclick = () => { if(getWhatsAppLink()) openWhatsAppForVip(); else toast('لم يتم إضافة رقم واتساب بعد','warn'); };
-        return;
-    }
-    btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> اطلب الاشتراك الآن';
-    btn.onclick = requestVipSubscription;
-}
-
-/* =========================================================
-   Profile / VIP
-   ========================================================= */
-function openProfileModal(){
-    if(!userData) return;
-    $('#profileName').innerText = userData.name || 'بدون اسم';
-    $('#profileEmail').innerText = userData.email || '';
-
-    const isVip = getUserIsVip(userData);
-    const exp = getUserVipExpire(userData);
-    const statusBox = $('#profileSubStatus');
-    const expireBox = $('#profileExpireDate');
-    const daysBox = $('#profileDaysLeft');
-
-    if(isVip && exp > 0){
-        statusBox.innerHTML = `<span style="color:var(--success-color)"><i class="fa-solid fa-crown"></i> VIP نشط</span>`;
-        expireBox.innerText = fmtDate(exp);
-        const diff = Math.ceil((exp - Date.now()) / 86400000);
-        daysBox.innerText = diff + ' يوم';
-        $('#profileVipBtnText').textContent = 'تجديد الاشتراك';
-    }else if(isVip){
-        statusBox.innerHTML = `<span style="color:var(--success-color)"><i class="fa-solid fa-crown"></i> VIP مفتوح</span>`;
-        expireBox.innerText = 'غير محدد';
-        daysBox.innerText = '∞';
-        $('#profileVipBtnText').textContent = 'إدارة الاشتراك';
-    }else{
-        statusBox.innerHTML = `<span style="color:var(--accent-color)">حساب عادي</span>`;
-        expireBox.innerText = exp ? fmtDate(exp) : 'غير محدد';
-        daysBox.innerText = '0 يوم';
-        $('#profileVipBtnText').textContent = 'ترقية إلى VIP';
-    }
-    $('#profileFavCount').textContent = favorites.length;
-    updateProfileVipStatus();
-    $('#profileModal').classList.add('active');
-}
-
-function openSubModal(){
-    updateSubModalStatus();
-    $('#subModal').classList.add('active');
-}
-
-/* =========================================================
-   Auth
-   ========================================================= */
-function openAuthModal(mode){
-    isAuthLoginMode = (mode === 'login');
-    updateAuthModalUI();
-    $('#authModal').classList.add('active');
-}
-$('#authToggleBtn').addEventListener('click', e => {
-    e.preventDefault();
-    isAuthLoginMode = !isAuthLoginMode;
-    updateAuthModalUI();
-});
-$('#forgotPassLink').addEventListener('click', async e => {
-    e.preventDefault();
-    const email = prompt('أدخل بريدك الإلكتروني لاستعادة كلمة المرور:');
-    if(!email) return;
-    try{
-        await auth.sendPasswordResetEmail(email);
-        toast('تم إرسال رابط الاستعادة إلى بريدك','ok');
-    }catch(err){ toast('خطأ: ' + err.message,'err'); }
-});
-function updateAuthModalUI(){
-    $('#authTitle').innerText = isAuthLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
-    $('#nameGroup').style.display = isAuthLoginMode ? 'none' : 'block';
-    $('#authSubmitBtn').innerText = isAuthLoginMode ? 'دخول' : 'تسجيل الحساب';
-    $('#authToggleText').innerText = isAuthLoginMode ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟';
-    $('#authToggleBtn').innerText = isAuthLoginMode ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
-    $('#forgotPassLink').style.display = isAuthLoginMode ? 'inline' : 'none';
-}
-$('#authForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const email = $('#authEmail').value.trim();
-    const password = $('#authPassword').value;
-    const name = $('#authName').value.trim();
-    try{
-        if(isAuthLoginMode){
-            await auth.signInWithEmailAndPassword(email, password);
-            closeModal('authModal');
-            toast('مرحباً بك 👋','تم تسجيل الدخول','ok');
-        }else{
-            const res = await auth.createUserWithEmailAndPassword(email, password);
-            await db.ref('users/' + res.user.uid).set({
-                email, name: name || 'مستخدم جديد',
-                isBanned: false, isBlocked: false,
-                isVip: false, vipExpireDate: 0, expireAt: 0,
-                createdAt: Date.now()
-            });
-            closeModal('authModal');
-            toast('تم إنشاء الحساب بنجاح 🎉','','ok');
-        }
-    }catch(err){
-        toast('خطأ: ' + err.message,'err');
-    }
-});
-async function logout(){
-    const ok = await askConfirm({title:'تسجيل الخروج', msg:'هل تريد تسجيل الخروج من الحساب؟', okText:'خروج', type:'warn'});
-    if(!ok) return;
-    auth.signOut().then(() => {
-        closeModal('bannedModal');
-        closeModal('profileModal');
-        closeModal('subModal');
-        toast('تم تسجيل الخروج','','ok');
-    });
-}
-
-/* =========================================================
-   Modals Utilities
-   ========================================================= */
-function closeModal(id){
-    const m = document.getElementById(id);
-    if(!m) return;
-    m.classList.remove('active');
-    if(id === 'dlModal') stopCountdown();
-}
-$$('.modal').forEach(m => m.addEventListener('click', e => {
-    if(e.target === m){
-        if(m.id === 'playerModal') closePlayer();
-        else if(m.id === 'confirmModal'){ m.classList.remove('active'); if(confirmResolver){confirmResolver(false); confirmResolver=null;} }
-        else m.classList.remove('active');
-        if(m.id === 'dlModal') stopCountdown();
-    }
-}));
-document.addEventListener('keydown', e => {
-    if(e.key === 'Escape'){
-        if($('#playerModal').classList.contains('active')){ closePlayer(); return; }
-        $$('.modal.active').forEach(m => m.classList.remove('active'));
-        stopCountdown();
-        if(confirmResolver){ confirmResolver(false); confirmResolver = null; }
-    }
 });
 
 /* =========================================================
-   Init
+   Initialization
    ========================================================= */
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', ()=>{
+    loadSiteSettings();
     fetchMediaData();
     fetchCategories();
     fetchLiveData();
     fetchAds();
-    loadSiteSettings();
-    updateSearchClear();
 });
 </script>
 </body>
