@@ -3,28 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة عرض الميديا والبث المباشر</title>
+    <title>منصة البث المباشر والميديا المتكاملة VIP</title>
     
     <!-- CSS / Fonts / Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- HLS.js Support for .m3u8 IPTV & Live Streams -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
-    <!-- Firebase Compatibility SDKs -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
         :root {
-            --bg-color: #0f0f0f;
-            --card-bg: #1f1f1f;
+            --bg-color: #0b0c10;
+            --card-bg: #15171e;
+            --card-hover: #1f222e;
             --accent-color: #e50914;
-            --accent-hover: #b80710;
+            --accent-hover: #ff0f1a;
+            --vip-gold: #ffb703;
+            --vip-gold-dark: #d49a00;
             --text-color: #ffffff;
-            --text-secondary: #aaaaaa;
-            --border-color: #333333;
+            --text-secondary: #9aa0a6;
+            --border-color: #272a37;
+            --success-color: #2ec4b6;
         }
 
         * {
@@ -32,47 +37,61 @@
             margin: 0;
             padding: 0;
             font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            padding-bottom: 40px;
+            padding-bottom: 50px;
+            min-height: 100vh;
             overflow-x: hidden;
         }
 
-        /* Top Navbar */
+        /* Top Navigation Bar */
         .navbar {
-            background-color: #000;
-            padding: 15px 25px;
+            background-color: rgba(11, 12, 16, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 25px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1000;
         }
 
         .navbar-brand {
-            font-size: 1.4rem;
-            font-weight: 800;
+            font-size: 1.5rem;
+            font-weight: 900;
             color: var(--accent-color);
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .navbar-brand span {
+            color: #fff;
         }
 
         .search-box {
             display: flex;
             align-items: center;
-            background: #181818;
+            background: #1a1d26;
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 5px 15px;
+            border-radius: 30px;
+            padding: 6px 18px;
             width: 100%;
-            max-width: 350px;
+            max-width: 380px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(229, 9, 20, 0.3);
         }
 
         .search-box input {
@@ -81,43 +100,145 @@
             outline: none;
             color: #fff;
             width: 100%;
-            padding: 5px;
+            padding: 5px 10px;
+            font-size: 0.9rem;
             font-family: inherit;
         }
 
+        .nav-user-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2deg);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: #fff;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .btn-vip {
+            background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold-dark));
+            color: #000;
+            font-weight: 800;
+        }
+
+        .user-badge-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #181b24;
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .sub-status-tag {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 800;
+        }
+
+        .sub-status-tag.active {
+            background: rgba(46, 196, 182, 0.15);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .sub-status-tag.expired {
+            background: rgba(229, 9, 20, 0.15);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+        }
+
+        /* Container & Tabs */
         .container {
             max-width: 1400px;
             margin: 25px auto;
             padding: 0 20px;
         }
 
-        .section-header {
+        .category-tabs {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-right: 4px solid var(--accent-color);
-            padding-right: 12px;
+            gap: 12px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            overflow-x: auto;
         }
 
-        .section-title {
-            font-size: 1.3rem;
+        .tab-btn {
+            background: #181b24;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 10px 22px;
+            border-radius: 25px;
+            font-size: 0.95rem;
             font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Items Grid */
+        .tab-btn.active, .tab-btn:hover {
+            background: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+        }
+
+        .tab-btn.vip-tab.active {
+            background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold-dark));
+            color: #000;
+            border-color: var(--vip-gold);
+        }
+
+        /* Grid & Cards */
         .items-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 22px;
         }
 
         .item-card {
             background-color: var(--card-bg);
-            border-radius: 12px;
+            border-radius: 14px;
             overflow: hidden;
             cursor: pointer;
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             border: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
@@ -125,62 +246,81 @@
         }
 
         .item-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 10px 25px rgba(229, 9, 20, 0.25);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
             border-color: var(--accent-color);
+        }
+
+        .item-card.is-vip {
+            border-color: rgba(255, 183, 3, 0.4);
+        }
+
+        .item-card.is-vip:hover {
+            border-color: var(--vip-gold);
+            box-shadow: 0 12px 30px rgba(255, 183, 3, 0.25);
         }
 
         .thumb-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            padding-top: 56.25%;
             background-color: #000;
         }
 
         .thumb-container img {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             object-fit: cover;
         }
 
         .play-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.45);
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transition: opacity 0.25s ease;
+            transition: opacity 0.3s ease;
         }
 
-        .item-card:hover .play-overlay {
-            opacity: 1;
-        }
+        .item-card:hover .play-overlay { opacity: 1; }
 
         .play-overlay i {
-            font-size: 3.2rem;
+            font-size: 3.5rem;
             color: var(--accent-color);
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
+        }
+
+        .vip-card-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold-dark));
+            color: #000;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            z-index: 2;
         }
 
         .category-badge {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             color: #fff;
-            padding: 3px 8px;
-            border-radius: 4px;
+            padding: 3px 9px;
+            border-radius: 6px;
             font-size: 0.75rem;
             font-weight: 700;
         }
 
         .card-details {
-            padding: 14px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -188,14 +328,13 @@
         }
 
         .card-title {
-            font-size: 0.98rem;
+            font-size: 1rem;
             font-weight: 700;
             line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            word-break: break-word;
         }
 
         .card-meta {
@@ -205,71 +344,94 @@
             justify-content: space-between;
             align-items: center;
             margin-top: auto;
-            padding-top: 8px;
+            padding-top: 10px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Modal Overlay Window */
+        /* Modals (Auth, Player, Sub) */
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.92);
-            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.88);
+            z-index: 2000;
             justify-content: center;
             align-items: center;
             padding: 15px;
-            overflow-y: auto;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(6px);
         }
 
-        .modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
 
-        .modal-content {
+        .modal-card {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 1000px;
-            border-radius: 14px;
-            overflow: hidden;
+            max-width: 440px;
+            border-radius: 16px;
+            padding: 30px;
             position: relative;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
             border: 1px solid var(--border-color);
-            animation: fadeInScale 0.25s ease-out;
-            margin: auto;
+            animation: modalIn 0.3s ease-out;
         }
 
-        @keyframes fadeInScale {
-            from { transform: scale(0.92); opacity: 0; }
+        .modal-card.large {
+            max-width: 1000px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
 
-        .close-btn {
+        .close-modal {
             position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0, 0, 0, 0.75);
+            top: 15px; left: 15px;
+            background: rgba(0,0,0,0.6);
             color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            width: 38px;
-            height: 38px;
+            border: 1px solid var(--border-color);
+            width: 36px; height: 36px;
             border-radius: 50%;
-            font-size: 1.2rem;
             cursor: pointer;
-            z-index: 20;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
+            z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
         }
 
-        .close-btn:hover {
-            background: var(--accent-color);
-            transform: rotate(90deg);
+        .close-modal:hover { background: var(--accent-color); }
+
+        .form-group {
+            margin-bottom: 18px;
         }
 
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #ddd;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            background: #0f1015;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+            outline: none;
+            transition: border 0.25s;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+        }
+
+        /* Player Wrapper */
         .player-wrapper {
             position: relative;
             width: 100%;
@@ -282,84 +444,37 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            border: none;
-            outline: none;
+            border: none; outline: none;
         }
 
-        .modal-info {
+        .player-info-body {
             padding: 20px;
-        }
-
-        .modal-title-text {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .modal-stats {
-            display: flex;
-            gap: 15px;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            margin-bottom: 12px;
-        }
-
-        /* Server Select Section */
-        .servers-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .servers-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #ddd;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .servers-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            margin-top: 12px;
         }
 
         .server-btn {
-            background: #2a2a2a;
+            background: #1e212d;
             color: #fff;
             border: 1px solid var(--border-color);
             padding: 8px 16px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 0.85rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            font-weight: 700;
+            transition: all 0.2s;
         }
 
-        .server-btn:hover, .server-btn.active {
+        .server-btn.active, .server-btn:hover {
             background: var(--accent-color);
             border-color: var(--accent-color);
         }
 
-        .description-box {
-            background: #141414;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            color: #ccc;
-            white-space: pre-line;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-
-        /* Loading & Error Indicators */
         .status-box {
             text-align: center;
             padding: 60px 20px;
@@ -368,48 +483,53 @@
         }
 
         .spinner {
-            width: 42px; height: 42px;
+            width: 45px; height: 45px;
             border: 4px solid rgba(255,255,255,0.1);
             border-top: 4px solid var(--accent-color);
             border-radius: 50%;
-            animation: spin 0.9s linear infinite;
+            animation: spin 0.8s linear infinite;
             margin: 0 auto 15px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        @media (max-width: 600px) {
-            .navbar { padding: 12px 15px; }
-            .search-box { max-width: 180px; }
+        @media (max-width: 768px) {
+            .navbar { padding: 12px 15px; flex-wrap: wrap; gap: 10px; }
+            .search-box { order: 3; max-width: 100%; margin-top: 5px; }
             .container { padding: 0 12px; }
-            .modal { padding: 0; }
-            .modal-content { border-radius: 0; min-height: 100vh; }
-            .modal-info { padding: 15px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Header Navbar -->
+    <!-- Navbar -->
     <nav class="navbar">
         <a href="#" class="navbar-brand">
-            <i class="fa-solid fa-circle-play"></i> منصة العرض
+            <i class="fa-solid fa-circle-play"></i>
+            <span>FARES<span>FLIX</span></span>
         </a>
+
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass" style="color: #777;"></i>
-            <input type="text" id="searchInput" placeholder="بحث عن فيديو أو قناة..." onkeyup="filterItems()">
+            <input type="text" id="searchInput" placeholder="بحث عن فيديو أو قناة..." onkeyup="filterContent()">
+        </div>
+
+        <div class="nav-user-area" id="navUserArea">
+            <button class="btn btn-outline" onclick="openAuthModal('login')"><i class="fa-solid fa-right-to-bracket"></i> دخول</button>
+            <button class="btn btn-primary" onclick="openAuthModal('register')"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</button>
         </div>
     </nav>
 
-    <!-- Main Container -->
+    <!-- Main Content -->
     <div class="container">
-        <div class="section-header">
-            <h2 class="section-title"><i class="fa-solid fa-tv"></i> القنوات والفيديوهات المتاحة</h2>
+        <!-- Tabs Section -->
+        <div class="category-tabs">
+            <button class="tab-btn active" onclick="switchTab('all', this)"><i class="fa-solid fa-border-all"></i> الكل</button>
+            <button class="tab-btn" onclick="switchTab('free', this)"><i class="fa-solid fa-film"></i> المحتوى المجاني</button>
+            <button class="tab-btn vip-tab" onclick="switchTab('vip', this)"><i class="fa-solid fa-crown" style="color:var(--vip-gold)"></i> القنوات والفيديوهات المميزة VIP</button>
         </div>
 
+        <!-- Grid Container -->
         <div id="itemsGrid" class="items-grid">
             <div class="status-box">
                 <div class="spinner"></div>
@@ -418,31 +538,95 @@
         </div>
     </div>
 
-    <!-- Modal Player Window -->
-    <div id="playerModal" class="modal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closePlayer()" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+    <!-- Auth Modal (Login / Register) -->
+    <div id="authModal" class="modal">
+        <div class="modal-card">
+            <button class="close-modal" onclick="closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
             
-            <div id="playerContainer" class="player-wrapper">
-                <!-- المشغل يعالج ويحقن هنا -->
-            </div>
-
-            <div class="modal-info">
-                <h2 id="modalTitle" class="modal-title-text">عنوان العنصر</h2>
-                
-                <div class="modal-stats">
-                    <span><i class="fa-regular fa-eye"></i> <span id="modalViews">0</span> مشاهدة</span>
-                    <span><i class="fa-solid fa-tag"></i> <span id="modalCategory">عام</span></span>
+            <h2 id="authTitle" style="text-align: center; margin-bottom: 20px; font-weight: 800;">تسجيل الدخول</h2>
+            
+            <form id="authForm" onsubmit="handleAuthSubmit(event)">
+                <div class="form-group" id="nameGroup" style="display: none;">
+                    <label>الاسم الكامل</label>
+                    <input type="text" id="authName" class="form-control" placeholder="أدخل اسمك الكامل">
                 </div>
 
-                <!-- قسم السيرفرات المتعددة -->
-                <div id="serversSection" class="servers-section" style="display: none;">
-                    <div class="servers-title"><i class="fa-solid fa-server"></i> اختر سيرفر المشاهدة:</div>
+                <div class="form-group">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" id="authEmail" class="form-control" required placeholder="example@mail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="authPassword" class="form-control" required placeholder="••••••••">
+                </div>
+
+                <button type="submit" id="authSubmitBtn" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; margin-top: 10px;">
+                    دخول
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 18px; font-size: 0.85rem; color: var(--text-secondary);">
+                <span id="authToggleText">ليس لديك حساب؟</span>
+                <a href="#" id="authToggleBtn" onclick="toggleAuthMode(event)" style="color: var(--accent-color); font-weight: 700; text-decoration: none;">إنشاء حساب جديد</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Modal -->
+    <div id="subModal" class="modal">
+        <div class="modal-card" style="text-align: center;">
+            <button class="close-modal" onclick="closeModal('subModal')"><i class="fa-solid fa-xmark"></i></button>
+            <div style="font-size: 4rem; color: var(--vip-gold); margin-bottom: 10px;"><i class="fa-solid fa-crown"></i></div>
+            <h2 style="font-weight: 800; margin-bottom: 10px;">محتوى خاص بالمشتركين VIP</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px;">
+                هذا القسم أو الفيديو مخصص للباقة المميزة VIP. يرجى تجديد أو تفعيل اشتراكك الشهري المباشر لتتمكن من المشاهدة.
+            </p>
+            <div style="background: #0f1015; padding: 15px; border-radius: 10px; border: 1px dashed var(--vip-gold); margin-bottom: 20px;">
+                <p style="font-size: 0.85rem; color: #fff;">للتفعيل الفوري أو الاشتراك، يرجى التواصل مع الإدارة عبر الواتساب أو رقم الدعم.</p>
+            </div>
+            <button class="btn btn-vip" style="width: 100%; justify-content: center; padding: 12px;" onclick="closeModal('subModal')">
+                حسناً، فهمت
+            </button>
+        </div>
+    </div>
+
+    <!-- Banned Modal -->
+    <div id="bannedModal" class="modal">
+        <div class="modal-card" style="text-align: center;">
+            <div style="font-size: 4rem; color: var(--accent-color); margin-bottom: 10px;"><i class="fa-solid fa-user-slash"></i></div>
+            <h2 style="font-weight: 800; margin-bottom: 10px; color: var(--accent-color);">حسابك معطل / محظور</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px;">
+                لقد تم حظر حسابك من قبل إدارة المنصة. إذا كنت تعتقد أن هناك خطأ، يرجى التواصل مع الدعم الفني.
+            </p>
+            <button class="btn btn-outline" style="width: 100%; justify-content: center;" onclick="logout()">تسجيل الخروج</button>
+        </div>
+    </div>
+
+    <!-- Universal Video Player Modal -->
+    <div id="playerModal" class="modal">
+        <div class="modal-card large">
+            <button class="close-modal" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
+
+            <div id="playerContainer" class="player-wrapper">
+                <!-- المشغل يعالج كل أنواع الميديا ويُحقن هنا -->
+            </div>
+
+            <div class="player-info-body">
+                <h2 id="modalTitle" style="font-size: 1.2rem; font-weight: 800;">عنوان المحتوى</h2>
+                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px;">
+                    <span><i class="fa-regular fa-eye"></i> <span id="modalViews">0</span> مشاهدة</span>
+                    <span><i class="fa-solid fa-folder"></i> <span id="modalCategory">عام</span></span>
+                </div>
+
+                <!-- Servers List -->
+                <div id="serversSection" style="margin-top: 15px; display: none;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: #ddd;"><i class="fa-solid fa-server"></i> اختر سيرفر المشاهدة:</span>
                     <div id="serversGrid" class="servers-grid"></div>
                 </div>
 
-                <div class="description-box" id="modalDesc">
-                    لا يوجد وصف متوفر لهذا المحتوى.
+                <div id="modalDesc" style="margin-top: 15px; background: #0f1015; padding: 12px; border-radius: 8px; font-size: 0.88rem; color: #bbb; max-height: 100px; overflow-y: auto;">
+                    لا يوجد وصف متوفر.
                 </div>
             </div>
         </div>
@@ -450,80 +634,166 @@
 
     <script>
         // =========================================================
-        // 1. إعدادات وتكوين Firebase
+        // 1. Firebase Configuration
         // =========================================================
         const firebaseConfig = {
-  apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
-  authDomain: "voip17.firebaseapp.com",
-  databaseURL: "https://voip17-default-rtdb.firebaseio.com",
-  projectId: "voip17",
-  storageBucket: "voip17.firebasestorage.app",
-  messagingSenderId: "608379006778",
-  appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
-  measurementId: "G-GZNJZLM701"
-};
+            apiKey: "AIzaSyC9cmh_bzA4ZeV8bYlbqaGrmIri2PUGx2A",
+            authDomain: "voip17.firebaseapp.com",
+            databaseURL: "https://voip17-default-rtdb.firebaseio.com",
+            projectId: "voip17",
+            storageBucket: "voip17.firebasestorage.app",
+            messagingSenderId: "608379006778",
+            appId: "1:608379006778:web:51fe8032d09fbd5b556a03",
+            measurementId: "G-GZNJZLM701"
+        };
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.database();
+        const auth = firebase.auth();
 
+        let currentUser = null;
+        let userData = null;
         let allFetchedItems = [];
+        let activeTab = 'all';
+        let isAuthLoginMode = true;
 
         // =========================================================
-        // 2. قراءة واستجابة البيانات عند فتح الصفحة
+        // 2. Auth State & User Listener
+        // =========================================================
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                // Listen to User Profile & Subscription Data
+                db.ref('users/' + user.uid).on('value', (snapshot) => {
+                    userData = snapshot.val();
+
+                    if (!userData) {
+                        // Create default user record if missing
+                        db.ref('users/' + user.uid).set({
+                            email: user.email,
+                            name: user.displayName || 'مستخدم جديد',
+                            isBanned: false,
+                            vipExpireDate: 0,
+                            createdAt: Date.now()
+                        });
+                        return;
+                    }
+
+                    // Check if User is Banned
+                    if (userData.isBanned) {
+                        document.getElementById('bannedModal').classList.add('active');
+                        closeModal('playerModal');
+                        return;
+                    } else {
+                        document.getElementById('bannedModal').classList.remove('active');
+                    }
+
+                    renderNavUserArea();
+                    renderGridItems();
+                });
+            } else {
+                currentUser = null;
+                userData = null;
+                renderNavUserArea();
+                renderGridItems();
+            }
+        });
+
+        function renderNavUserArea() {
+            const navArea = document.getElementById('navUserArea');
+            if (currentUser && userData) {
+                const isVip = isSubscribed(userData);
+                const subTag = isVip 
+                    ? `<span class="sub-status-tag active"><i class="fa-solid fa-crown"></i> VIP نشط</span>`
+                    : `<span class="sub-status-tag expired">عادي</span>`;
+
+                navArea.innerHTML = `
+                    <div class="user-badge-info">
+                        <i class="fa-solid fa-circle-user" style="font-size: 1.2rem; color: var(--accent-color);"></i>
+                        <span style="font-size: 0.85rem; font-weight: 700;">${userData.name || 'مستخدم'}</span>
+                        ${subTag}
+                    </div>
+                    <button class="btn btn-outline" style="padding: 6px 12px;" onclick="logout()" title="خروج"><i class="fa-solid fa-power-off"></i></button>
+                `;
+            } else {
+                navArea.innerHTML = `
+                    <button class="btn btn-outline" onclick="openAuthModal('login')"><i class="fa-solid fa-right-to-bracket"></i> دخول</button>
+                    <button class="btn btn-primary" onclick="openAuthModal('register')"><i class="fa-solid fa-user-plus"></i> إنشاء حساب</button>
+                `;
+            }
+        }
+
+        function isSubscribed(uData) {
+            if (!uData || !uData.vipExpireDate) return false;
+            return uData.vipExpireDate > Date.now();
+        }
+
+        // =========================================================
+        // 3. Fetch & Render Content
         // =========================================================
         window.addEventListener('DOMContentLoaded', () => {
             fetchMediaData();
         });
 
         function fetchMediaData() {
-            const grid = document.getElementById('itemsGrid');
-
             db.ref('videos').on('value', (snapshot) => {
-                grid.innerHTML = '';
                 allFetchedItems = [];
-
-                if (!snapshot.exists()) {
-                    grid.innerHTML = '<div class="status-box"><p>لا يوجد محتوى مضاف حالياً في قاعدة البيانات.</p></div>';
-                    return;
+                if (snapshot.exists()) {
+                    snapshot.forEach((child) => {
+                        allFetchedItems.push({ id: child.key, ...child.val() });
+                    });
                 }
-
-                snapshot.forEach((childSnapshot) => {
-                    const id = childSnapshot.key;
-                    const data = childSnapshot.val();
-                    allFetchedItems.push({ id, ...data });
-                });
-
-                renderGridItems(allFetchedItems);
-            }, (error) => {
-                console.error(error);
-                grid.innerHTML = '<div class="status-box"><p>حدث خطأ أثناء الاتصال بقاعدة البيانات.</p></div>';
+                renderGridItems();
             });
         }
 
-        // =========================================================
-        // 3. عرض العريشة (Grid Render)
-        // =========================================================
-        function renderGridItems(items) {
-            const grid = document.getElementById('itemsGrid');
-            grid.innerHTML = '';
+        function switchTab(tab, btn) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderGridItems();
+        }
 
-            if (items.length === 0) {
-                grid.innerHTML = '<div class="status-box"><p>لا تتوفر نتائج تطابق بحثك.</p></div>';
+        function filterContent() {
+            renderGridItems();
+        }
+
+        function renderGridItems() {
+            const grid = document.getElementById('itemsGrid');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+
+            let filtered = allFetchedItems.filter(item => {
+                const title = (item.title || '').toLowerCase();
+                const desc = (item.description || '').toLowerCase();
+                const matchesSearch = title.includes(searchVal) || desc.includes(searchVal);
+
+                if (!matchesSearch) return false;
+
+                if (activeTab === 'vip') return item.isVip === true;
+                if (activeTab === 'free') return !item.isVip;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="status-box"><p>لا يتوفر أي محتوى مطابق حالياً.</p></div>';
                 return;
             }
 
-            items.forEach((item) => {
-                const thumb = item.thumbnailUrl || 'https://via.placeholder.com/320x180/1f1f1f/ffffff?text=FARESPCB';
+            grid.innerHTML = '';
+            filtered.forEach(item => {
+                const thumb = item.thumbnailUrl || 'https://via.placeholder.com/320x180/15171e/ffffff?text=FARESFLIX';
                 const title = item.title || 'بدون عنوان';
-                const category = item.category || item.type || 'فيديو';
+                const category = item.category || 'فيديو';
                 const views = item.views || 0;
+                const isVip = item.isVip === true;
 
                 const cardHTML = `
-                    <div class="item-card" onclick="openPlayerModal('${item.id}')">
+                    <div class="item-card ${isVip ? 'is-vip' : ''}" onclick="handleCardClick('${item.id}')">
                         <div class="thumb-container">
                             <img src="${thumb}" alt="${title}" loading="lazy">
+                            ${isVip ? '<span class="vip-card-badge"><i class="fa-solid fa-crown"></i> VIP</span>' : ''}
                             <span class="category-badge">${category}</span>
                             <div class="play-overlay">
                                 <i class="fa-solid fa-circle-play"></i>
@@ -543,90 +813,103 @@
         }
 
         // =========================================================
-        // 4. فتح المشغل وقراءة السيرفرات والروابط
+        // 4. Click Handler & Subscription Gate
         // =========================================================
-        function openPlayerModal(id) {
+        function handleCardClick(id) {
             const item = allFetchedItems.find(i => i.id === id);
             if (!item) return;
 
+            // Check VIP Access
+            if (item.isVip) {
+                if (!currentUser) {
+                    openAuthModal('login');
+                    return;
+                }
+                if (!isSubscribed(userData)) {
+                    document.getElementById('subModal').classList.add('active');
+                    return;
+                }
+            }
+
+            openPlayerModal(item);
+        }
+
+        // =========================================================
+        // 5. Universal Video Player (Supports ALL Formats & Links)
+        // =========================================================
+        function openPlayerModal(item) {
             document.getElementById('modalTitle').innerText = item.title || 'بدون عنوان';
             document.getElementById('modalDesc').innerText = item.description || 'لا يوجد وصف متوفر.';
             document.getElementById('modalViews').innerText = (item.views || 0) + 1;
-            document.getElementById('modalCategory').innerText = item.category || item.type || 'عام';
+            document.getElementById('modalCategory').innerText = item.category || 'عام';
 
             const serversSection = document.getElementById('serversSection');
             const serversGrid = document.getElementById('serversGrid');
             serversGrid.innerHTML = '';
 
-            // فحص السيرفرات والروابط
             if (item.servers && Array.isArray(item.servers) && item.servers.length > 0) {
                 serversSection.style.display = 'block';
-
                 item.servers.forEach((srv, index) => {
                     const btn = document.createElement('button');
                     btn.className = `server-btn ${index === 0 ? 'active' : ''}`;
                     btn.innerHTML = `<i class="fa-solid fa-play"></i> ${srv.name || 'سيرفر ' + (index + 1)}`;
-                    
                     btn.onclick = () => {
                         document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
-                        playSource(srv.url);
+                        playUniversalSource(srv.url);
                     };
                     serversGrid.appendChild(btn);
                 });
-
-                // تشغيل السيرفر الأول فوراً
-                playSource(item.servers[0].url);
-
+                playUniversalSource(item.servers[0].url);
             } else if (item.videoUrl || item.url) {
                 serversSection.style.display = 'none';
-                playSource(item.videoUrl || item.url);
+                playUniversalSource(item.videoUrl || item.url);
             } else {
-                alert('عذراً، لا يوجد رابط تشغيل متاح لهذا العنصر.');
+                alert('عذراً، لا يوجد رابط بث متاح لهذا العنصر.');
                 return;
             }
 
-            // إظهار النافذة
             document.getElementById('playerModal').classList.add('active');
-
-            // زيادة المشاهدات بـ Firebase
-            db.ref('videos/' + id + '/views').set((item.views || 0) + 1);
+            // Increment Views
+            db.ref('videos/' + item.id + '/views').set((item.views || 0) + 1);
         }
 
-        // =========================================================
-        // 5. محرك تشغيل جميع صيغ الفيديوهات والبث
-        // =========================================================
-        function playSource(url) {
+        function playUniversalSource(url) {
             const container = document.getElementById('playerContainer');
             container.innerHTML = '';
 
             if (!url) return;
+            url = url.trim();
 
-            // أ) روابط يوتيوب (YouTube)
+            // 1. Youtube Links
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 const embedUrl = convertYouTubeUrl(url);
                 container.innerHTML = `<iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                 return;
             }
 
-            // ب) روابط Google Drive
+            // 2. Google Drive Links
             if (url.includes('drive.google.com')) {
                 const embedUrl = url.replace('/view', '/preview');
                 container.innerHTML = `<iframe src="${embedUrl}" allow="autoplay" allowfullscreen></iframe>`;
                 return;
             }
 
-            // ج) روابط بث IPTV و HLS (.m3u8)
+            // 3. HLS (.m3u8) / IPTV Streams
             if (url.includes('.m3u8')) {
                 const video = document.createElement('video');
                 video.controls = true;
                 video.autoplay = true;
+                video.playsInline = true;
                 video.style.width = '100%';
                 video.style.height = '100%';
                 container.appendChild(video);
 
                 if (Hls.isSupported()) {
-                    const hls = new Hls();
+                    const hls = new Hls({
+                        enableWorker: true,
+                        lowLatencyMode: true
+                    });
                     hls.loadSource(url);
                     hls.attachMedia(video);
                 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -635,56 +918,96 @@
                 return;
             }
 
-            // د) روابط الميديا المباشرة (MP4, MKV, WebM, OGG...)
-            const video = document.createElement('video');
-            video.controls = true;
-            video.autoplay = true;
-            video.playsInline = true;
-            video.style.width = '100%';
-            video.style.height = '100%';
-
-            const source = document.createElement('source');
-            source.src = url;
-            video.appendChild(source);
-            container.appendChild(video);
-        }
-
-        // =========================================================
-        // 6. إغلاق المشغل وإنهاء الفيديو نهائياً
-        // =========================================================
-        function closePlayer() {
-            const modal = document.getElementById('playerModal');
-            const container = document.getElementById('playerContainer');
-            
-            modal.classList.remove('active');
-            container.innerHTML = ''; // تفريغ المشغل لإيقاف الصوت والميديا تماماً
-        }
-
-        // إغلاق الشاشة بضغط الخروج أو الضغط الخارجي
-        window.onclick = function(e) {
-            const modal = document.getElementById('playerModal');
-            if (e.target === modal) {
-                closePlayer();
+            // 4. Direct Media Extensions (MP4, MKV, WebM, MOV, TS, FLV, OGG)
+            const isDirectVideo = /\.(mp4|mkv|webm|mov|ts|flv|m4v|3gp)($|\?)/i.test(url);
+            if (isDirectVideo) {
+                const video = document.createElement('video');
+                video.controls = true;
+                video.autoplay = true;
+                video.playsInline = true;
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.src = url;
+                container.appendChild(video);
+                return;
             }
-        };
 
-        // =========================================================
-        // 7. أدوات مساعدة (Helpers)
-        // =========================================================
+            // 5. Fallback Iframe Player (For embed pages, Vimeo, Ok.ru, or custom stream links)
+            container.innerHTML = `<iframe src="${url}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
+        }
+
         function convertYouTubeUrl(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}?autoplay=1` : url;
         }
 
-        function filterItems() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allFetchedItems.filter(item => {
-                const title = (item.title || '').toLowerCase();
-                const desc = (item.description || '').toLowerCase();
-                return title.includes(query) || desc.includes(query);
+        function closePlayer() {
+            document.getElementById('playerModal').classList.remove('active');
+            document.getElementById('playerContainer').innerHTML = '';
+        }
+
+        // =========================================================
+        // 6. Authentication Handlers
+        // =========================================================
+        function openAuthModal(mode) {
+            isAuthLoginMode = (mode === 'login');
+            updateAuthModalUI();
+            document.getElementById('authModal').classList.add('active');
+        }
+
+        function toggleAuthMode(e) {
+            e.preventDefault();
+            isAuthLoginMode = !isAuthLoginMode;
+            updateAuthModalUI();
+        }
+
+        function updateAuthModalUI() {
+            document.getElementById('authTitle').innerText = isAuthLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
+            document.getElementById('nameGroup').style.display = isAuthLoginMode ? 'none' : 'block';
+            document.getElementById('authSubmitBtn').innerText = isAuthLoginMode ? 'دخول' : 'تسجيل الحساب';
+            document.getElementById('authToggleText').innerText = isAuthLoginMode ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟';
+            document.getElementById('authToggleBtn').innerText = isAuthLoginMode ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const name = document.getElementById('authName').value;
+
+            if (isAuthLoginMode) {
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(() => {
+                        closeModal('authModal');
+                    })
+                    .catch(err => alert('خطأ في الدخول: ' + err.message));
+            } else {
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then((res) => {
+                        return db.ref('users/' + res.user.uid).set({
+                            email: email,
+                            name: name || 'مستخدم جديد',
+                            isBanned: false,
+                            vipExpireDate: 0,
+                            createdAt: Date.now()
+                        });
+                    })
+                    .then(() => {
+                        closeModal('authModal');
+                    })
+                    .catch(err => alert('خطأ في التسجيل: ' + err.message));
+            }
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                closeModal('bannedModal');
             });
-            renderGridItems(filtered);
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
         }
     </script>
 </body>
