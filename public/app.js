@@ -1129,4 +1129,413 @@ function startFreeDownload(url) {
             <div class="countdown-circle" id="cdCircle"><span class="countdown-num" id="cdNum">15</span></div>
             <p class="countdown-txt">جاري تحضير الرابط...</p>
         </div>
-        <button class="dl-ready-btn" id="dlReady"><
+        <button class="dl-ready-btn" id="dlReady"><i class="fa-solid fa-cloud-arrow-down"></i> اضغط للتحميل</button>`;
+    $('#dlReady').onclick = () => window.open(url, '_blank');
+    const timer = setInterval(() => {
+        sec--;
+        const num = $('#cdNum'), circ = $('#cdCircle');
+        if (num) num.textContent = sec;
+        if (circ) circ.style.setProperty('--progress', `${((15 - sec) / 15) * 100}%`);
+        if (sec <= 0) {
+            clearInterval(timer);
+            const b = $('#dlReady');
+            if (b) b.classList.add('show');
+            toast('الرابط جاهز', 'ok');
+        }
+    }, 1000);
+}
+
+/* ---------- 23. SHARE (Feature #7) ---------- */
+async function shareItem(item, type) {
+    const url = location.origin + location.pathname + `#${type === 'live' ? 'live' : 'watch'}=${item.id}`;
+    const shareData = {
+        title: item.title || item.name,
+        text: `شاهد "${item.title || item.name}" على سيرفر الوحش 🐺`,
+        url
+    };
+    try {
+        if (navigator.share) await navigator.share(shareData);
+        else { await navigator.clipboard.writeText(url); toast('تم نسخ الرابط', 'ok'); }
+    } catch (e) { }
+}
+
+/* ---------- 24. PROFILE ---------- */
+function openProfileModal() {
+    if (!state.userData) return;
+    const u = state.userData;
+    const lvl = getUserLevel(u);
+    const isVip = getUserVip(u);
+    const exp = getUserExp(u);
+
+    $('#profileAvatar').textContent = (u.name || '?').trim().charAt(0).toUpperCase();
+    $('#profileName').textContent = u.name || 'مستخدم';
+    $('#profileEmail').textContent = u.email || '---';
+    $('#profileLevelWrap').innerHTML = `<span class="tag ${isVip ? 'vip' : 'free'}">${lvl.label}</span>`;
+
+    $('#profileSubStatus').textContent = isVip ? 'VIP' : 'عادي';
+    $('#profileExpireDate').textContent = exp ? fmtDate(exp) : '—';
+    if (isVip && exp > 0) {
+        const days = Math.ceil((exp - Date.now()) / 86400000);
+        $('#profileDaysLeft').textContent = days + ' يوم';
+    } else {
+        $('#profileDaysLeft').textContent = isVip ? 'دائم' : '0';
+    }
+    $('#profileFavCount').textContent = state.favorites.length;
+
+    const box = $('#profileVipStatus');
+    if (state.vipStatus && state.vipStatus.status === 'pending') {
+        box.innerHTML = `<div class="vip-status-card pending">
+            <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div><div class="vsc-title">طلب VIP قيد المراجعة</div>
+            <div class="vsc-sub">سيتم التفعيل قريباً</div></div>
+        </div>`;
+    } else box.innerHTML = '';
+
+    openModal('profileModal');
+}
+
+/* ---------- 25. VIP MODAL ---------- */
+function openSubModal() {
+    const box = $('#subModalStatusBox');
+    if (state.vipStatus && state.vipStatus.status === 'pending') {
+        box.innerHTML = `<div class="vip-status-card pending">
+            <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div><div class="vsc-title">طلبك قيد المراجعة</div>
+            <div class="vsc-sub">تم الإرسال للإدارة</div></div>
+        </div>`;
+    } else box.innerHTML = '';
+    openModal('subModal');
+}
+
+async function requestVip() {
+    const num = state.settings.whatsappNumber || '201000000000';
+    const msg = encodeURIComponent(`مرحباً، أريد الاشتراك في VIP.\nالبريد: ${state.currentUser?.email || '—'}`);
+    if (state.currentUser) {
+        try {
+            await db.ref('vipRequests').push({
+                uid: state.currentUser.uid,
+                email: state.currentUser.email,
+                name: state.userData?.name || '',
+                status: 'pending',
+                createdAt: Date.now()
+            });
+            toast('تم تسجيل طلبك', 'ok');
+        } catch (e) { console.error(e); }
+    }
+    window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
+}
+
+/* ---------- 26. NOTIFICATIONS ---------- */
+function renderNotifList() {
+    const list = $('#notifList');
+    if (!list) return;
+    if (state.notifications.length === 0) {
+        list.innerHTML = '<div class="status-box"><i class="fa-solid fa-bell-slash empty-icon"></i><p>لا توجد إشعارات</p></div>';
+        return;
+    }
+    list.innerHTML = state.notifications.map(n => `
+        <div class="notif-item">
+            <div class="ni-icon"><i class="fa-solid ${n.type === 'vip' ? 'fa-crown' : n.type === 'banned' ? 'fa-ban' : 'fa-bell'}"></i></div>
+            <div class="ni-body">
+                <div class="ni-title">${esc(n.title || 'إشعار')}</div>
+                <div class="ni-text">${esc(n.text || '')}</div>
+                <div class="ni-time">${fmtRel(n.createdAt)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openNotifModal() {
+    openModal('notifModal');
+    if (state.currentUser) {
+        db.ref('notifications/' + state.currentUser.uid).once('value').then(snap => {
+            if (snap.exists()) {
+                const updates = {};
+                snap.forEach(c => { if (!c.val().read) updates[c.key + '/read'] = true; });
+                if (Object.keys(updates).length) db.ref('notifications/' + state.currentUser.uid).update(updates);
+            }
+        });
+    }
+}
+
+/* ---------- 27. HISTORY MODAL ---------- */
+function openHistoryModal() {
+    const list = $('#historyList');
+    if (state.history.length === 0) {
+        list.innerHTML = '<div class="status-box"><i class="fa-solid fa-clock empty-icon"></i><p>السجل فارغ</p></div>';
+    } else {
+        list.innerHTML = state.history.map(it => `
+            <div class="history-item">
+                <div class="hi-thumb"><img src="${esc(it.image || 'https://via.placeholder.com/80x50')}" alt=""></div>
+                <div class="hi-body">
+                    <div class="hi-title">${esc(it.title)}</div>
+                    <div class="hi-time">${fmtRel(it.time)} • ${Math.round(it.progress || 0)}%</div>
+                </div>
+                <div class="hi-actions">
+                    <button class="hi-btn" onclick="closeModal('historyModal');openPlayer('${esc(it.id)}','vod')"><i class="fa-solid fa-play"></i></button>
+                    <button class="hi-btn danger" onclick="removeHistoryItem('${esc(it.id)}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+    openModal('historyModal');
+}
+
+function removeHistoryItem(id) {
+    state.history = state.history.filter(h => h.id !== id);
+    localStorage.setItem('sw_history', JSON.stringify(state.history));
+    openHistoryModal();
+    renderContinueWatching();
+}
+
+async function clearAllHistory() {
+    const ok = await askConfirm({ title: 'مسح السجل', msg: 'مسح كل السجل؟' });
+    if (ok) {
+        state.history = [];
+        localStorage.removeItem('sw_history');
+        openHistoryModal();
+        renderContinueWatching();
+        toast('تم مسح السجل', 'ok');
+    }
+}
+
+/* ---------- 28. SECTION DETAIL ---------- */
+function openSectionDetail(secId) {
+    const sec = state.sections.find(s => s.id === secId);
+    if (!sec) return;
+    const items = getItemsForSection(sec);
+    $('#sectionDetailTitle').textContent = sec.title || 'قسم';
+    $('#sectionDetailCount').textContent = `${items.length} عنصر`;
+    $('#sectionDetailGrid').innerHTML = items.map(it => renderCard(it)).join('');
+    openModal('sectionModal');
+}
+
+function showAllInRow(type) {
+    let items = state.videos.slice();
+    let title = 'الكل';
+    if (type === 'trending') { items.sort((a, b) => (b.views || 0) - (a.views || 0)); title = 'الأكثر مشاهدة'; }
+    else if (type === 'newest') { items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); title = 'أحدث الإضافات'; }
+    else if (type === 'vip') { items = items.filter(i => i.isVip); title = 'محتوى VIP'; }
+    $('#sectionDetailTitle').textContent = title;
+    $('#sectionDetailCount').textContent = `${items.length} عنصر`;
+    $('#sectionDetailGrid').innerHTML = items.map(it => renderCard(it)).join('');
+    openModal('sectionModal');
+}
+
+function showItemDetails(id) {
+    const item = state.videos.find(v => v.id === id);
+    if (!item) return;
+    $('#sectionDetailTitle').textContent = item.title;
+    $('#sectionDetailCount').textContent = item.category || '';
+    $('#sectionDetailGrid').innerHTML = `<div style="grid-column:1/-1">${renderCard(item)}</div>`;
+    openModal('sectionModal');
+}
+
+/* ---------- 29. ACHIEVEMENTS (Feature #4) ---------- */
+const ACHIEVEMENTS = {
+    first_fav: { title: 'المفضلة الأولى', icon: 'fa-heart', desc: 'أضفت أول عنصر للمفضلة' },
+    first_rating: { title: 'أول تقييم', icon: 'fa-star', desc: 'قيّمت محتوى لأول مرة' },
+    ten_watches: { title: 'مشاهد نشيط', icon: 'fa-eye', desc: 'شاهدت 10 محتويات' },
+    vip_member: { title: 'عضو VIP', icon: 'fa-crown', desc: 'أصبحت عضو VIP' },
+    first_comment: { title: 'صوتك مسموع', icon: 'fa-comment', desc: 'علّقت لأول مرة' }
+};
+
+function checkAchievement(key) {
+    if (!state.currentUser || !ACHIEVEMENTS[key]) return;
+    db.ref(`achievements/${state.currentUser.uid}/${key}`).once('value').then(snap => {
+        if (!snap.exists()) {
+            db.ref(`achievements/${state.currentUser.uid}/${key}`).set({ unlockedAt: Date.now() });
+            toast(`🏆 إنجاز جديد: ${ACHIEVEMENTS[key].title}`, 'ok');
+        }
+    });
+}
+
+function checkAchievements() {
+    if (!state.achievements || !state.userData) return;
+    if (getUserVip(state.userData)) checkAchievement('vip_member');
+    if (state.history.length >= 10) checkAchievement('ten_watches');
+}
+
+/* ---------- 30. LIVE CHAT (Feature #5) ---------- */
+function setupLiveChat() {
+    const chat = $('#liveChatMessages');
+    if (!chat) return;
+    const roomRef = db.ref('chat/' + state.chatRoom).limitToLast(50);
+    roomRef.on('child_added', snap => appendChatMessage(snap.val()));
+}
+
+function appendChatMessage(msg) {
+    const chat = $('#liveChatMessages');
+    if (!chat) return;
+    const isMine = state.currentUser && msg.uid === state.currentUser.uid;
+    const el = document.createElement('div');
+    el.className = 'chat-msg' + (isMine ? ' mine' : '');
+    el.innerHTML = `<strong>${esc(msg.name)}:</strong> <span>${esc(msg.text)}</span>`;
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendChatMessage() {
+    if (!state.currentUser) { toast('سجل دخول للدردشة', 'warn'); return; }
+    const input = $('#chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    await db.ref('chat/' + state.chatRoom).push({
+        uid: state.currentUser.uid,
+        name: state.userData?.name || 'مستخدم',
+        text, ts: Date.now()
+    });
+}
+
+/* ---------- 31. WATCHLISTS (Feature #6) ---------- */
+async function createWatchlist(name) {
+    if (!state.currentUser || !name) return;
+    const ref = db.ref('watchlists/' + state.currentUser.uid).push();
+    await ref.set({ name, items: [], createdAt: Date.now() });
+    toast('تم إنشاء القائمة', 'ok');
+}
+
+async function addToWatchlist(listId, itemId) {
+    if (!state.currentUser) return;
+    const ref = db.ref(`watchlists/${state.currentUser.uid}/${listId}/items`);
+    const snap = await ref.once('value');
+    const items = snap.val() || [];
+    if (!items.includes(itemId)) {
+        items.push(itemId);
+        await ref.set(items);
+        toast('تمت الإضافة للقائمة', 'ok');
+    }
+}
+
+/* ---------- 32. EVENT HANDLERS ---------- */
+function initEventHandlers() {
+    $$('.nav-link').forEach(b => b.onclick = () => setActiveView(b.dataset.nav));
+    $$('.bn-item').forEach(b => b.onclick = () => {
+        const bn = b.dataset.bn;
+        if (bn === 'search') { $('#mobileSearch').classList.toggle('open'); setTimeout(() => $('#mobileSearchInput')?.focus(), 100); }
+        else if (bn === 'profile') { state.currentUser ? openProfileModal() : openAuthModal('login'); }
+        else setActiveView(bn);
+    });
+
+    const si = $('#searchInput');
+    const msi = $('#mobileSearchInput');
+    if (si) si.oninput = (e) => { state.searchQuery = e.target.value; $('#searchClear').classList.toggle('show', !!e.target.value); performSearch(); };
+    if (msi) msi.oninput = (e) => { state.searchQuery = e.target.value; performSearch(); };
+    $('#searchClear')?.addEventListener('click', () => { si.value = ''; state.searchQuery = ''; $('#searchClear').classList.remove('show'); renderAll(); renderHero(); closeModal('sectionModal'); });
+    $('#mobileSearchClear')?.addEventListener('click', () => { msi.value = ''; state.searchQuery = ''; renderAll(); renderHero(); closeModal('sectionModal'); });
+
+    $('#authForm')?.addEventListener('submit', handleAuthSubmit);
+    $('#authToggleBtn')?.addEventListener('click', e => { e.preventDefault(); openAuthModal(state.authMode === 'login' ? 'register' : 'login'); });
+    $('#forgotPassLink')?.addEventListener('click', handleForgotPass);
+    $('#btnRequestVip')?.addEventListener('click', requestVip);
+    $('#openHistoryBtn')?.addEventListener('click', openHistoryModal);
+    $('#commentSendBtn')?.addEventListener('click', sendComment);
+    $('#commentInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendComment(); });
+
+    $('#cfYes')?.addEventListener('click', () => { closeModal('confirmModal'); if (confirmResolver) { confirmResolver(true); confirmResolver = null; } });
+    $('#cfNo')?.addEventListener('click', () => { closeModal('confirmModal'); if (confirmResolver) { confirmResolver(false); confirmResolver = null; } });
+
+    $$('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
+    $$('.modal').forEach(m => {
+        m.addEventListener('click', e => {
+            if (e.target === m) { if (m.id === 'playerModal') closePlayer(); else m.classList.remove('active'); }
+        });
+    });
+
+    document.addEventListener('keydown', handleKeyboard);
+    window.addEventListener('scroll', () => { $('#mainNavbar')?.classList.toggle('scrolled', window.scrollY > 30); });
+
+    handleUrlHash();
+    window.addEventListener('hashchange', handleUrlHash);
+
+    const y = $('#yearSpan');
+    if (y) y.textContent = new Date().getFullYear();
+
+    setupLiveChat();
+    $('#chatSendBtn')?.addEventListener('click', sendChatMessage);
+    $('#chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
+}
+
+async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = $('#authEmail').value.trim();
+    const pass = $('#authPassword').value;
+    const name = $('#authName').value.trim();
+    const btn = $('#authSubmitBtn');
+    btn.disabled = true;
+
+    try {
+        if (state.authMode === 'login') {
+            await auth.signInWithEmailAndPassword(email, pass);
+            toast('تم تسجيل الدخول ✅', 'ok');
+        } else {
+            if (!name) { toast('أدخل اسمك', 'warn'); btn.disabled = false; return; }
+            const res = await auth.createUserWithEmailAndPassword(email, pass);
+            await res.user.updateProfile({ displayName: name });
+            await db.ref('users/' + res.user.uid).set({
+                email, name,
+                isBanned: false, isBlocked: false, isVip: false,
+                vipExpireDate: 0, expireAt: 0, createdAt: Date.now()
+            });
+            await db.ref('notifications/' + res.user.uid).push({
+                title: 'أهلاً بك في سيرفر الوحش 🐺',
+                text: 'استمتع بمشاهدة المحتوى. ترقّ إلى VIP لفتح كل المميز!',
+                type: 'welcome', read: false, createdAt: Date.now()
+            });
+            toast('تم إنشاء الحساب ✅', 'ok');
+        }
+        closeModal('authModal');
+        $('#authForm').reset();
+    } catch (err) {
+        toast(err.message, 'err', 'خطأ');
+    } finally { btn.disabled = false; }
+}
+
+async function handleForgotPass(e) {
+    e.preventDefault();
+    const email = $('#authEmail').value.trim();
+    if (!email) { toast('اكتب بريدك أولاً', 'warn'); return; }
+    try { await auth.sendPasswordResetEmail(email); toast('تم إرسال رابط إعادة الضبط', 'ok'); }
+    catch (err) { toast(err.message, 'err'); }
+}
+
+function handleKeyboard(e) {
+    if (!$('#playerModal')?.classList.contains('active') || !state.currentVideoEl) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const v = state.currentVideoEl;
+    switch (e.key) {
+        case ' ': e.preventDefault(); v.paused ? v.play() : v.pause(); break;
+        case 'ArrowRight': v.currentTime += 5; break;
+        case 'ArrowLeft': v.currentTime -= 5; break;
+        case 'ArrowUp': e.preventDefault(); v.volume = Math.min(1, v.volume + .1); break;
+        case 'ArrowDown': e.preventDefault(); v.volume = Math.max(0, v.volume - .1); break;
+        case 'm': case 'M': v.muted = !v.muted; break;
+        case 'f': case 'F': document.fullscreenElement ? document.exitFullscreen?.() : v.requestFullscreen?.(); break;
+    }
+}
+
+function handleUrlHash() {
+    const hash = location.hash;
+    if (hash.startsWith('#watch=')) {
+        const id = hash.replace('#watch=', '');
+        setTimeout(() => openPlayer(id, 'vod'), 900);
+    } else if (hash.startsWith('#live=')) {
+        const id = hash.replace('#live=', '');
+        setTimeout(() => openPlayer(id, 'live'), 900);
+    }
+}
+
+function openPage(page) { toast('سيتم إضافة صفحة "' + page + '" قريباً', 'info'); }
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); setActiveView('home'); }
+
+/* ---------- 33. BOOT ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+    applyTheme();
+    renderNavActions();
+    updateGuestWarn();
+    initEventHandlers();
+    fetchAll();
+    renderContinueWatching();
+    setTimeout(hideLoader, 1200);
+});
