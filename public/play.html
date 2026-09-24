@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b0c10">
-<title id="dynamicPageTitle">FARESFLIX | منصة البث المتكاملة VIP</title>
-<meta name="description" id="metaDescription" content="منصة FARESFLIX لمشاهدة أحدث الأفلام والمسلسلات والقنوات.">
-<meta property="og:title" id="ogTitle" content="FARESFLIX">
+<title id="dynamicPageTitle">سيرفر الوحش | منصة البث المتكاملة VIP</title>
+<meta name="description" id="metaDescription" content="سيرفر الوحش - منصة بث الأفلام والمسلسلات والقنوات المباشرة.">
+<meta property="og:title" id="ogTitle" content="سيرفر الوحش">
 <meta property="og:description" id="ogDescription" content="شاهد أحدث المحتويات مجاناً وللمشتركين VIP.">
-<meta property="og:image" id="ogImage" content="https://via.placeholder.com/1200x630/15171e/ffffff?text=FARESFLIX">
+<meta property="og:image" id="ogImage" content="https://via.placeholder.com/1200x630/15171e/ffffff?text=سيرفر+الوحش">
 
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -47,6 +47,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
     border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:1000;gap:10px;
 }
 .navbar-brand{font-size:1.25rem;font-weight:900;color:var(--accent-color);text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.navbar-brand .wolf-logo{width:32px;height:32px;flex-shrink:0}
 .navbar-brand span{color:#fff}
 .search-box{display:flex;align-items:center;background:#1a1d26;border:1px solid var(--border-color);border-radius:30px;padding:5px 14px;width:100%;max-width:360px;transition:.3s;position:relative}
 .search-box:focus-within{border-color:var(--accent-color);box-shadow:0 0 10px rgba(229,9,20,.3)}
@@ -72,6 +73,18 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .sub-status-tag.expired{background:rgba(229,9,20,.15);color:var(--accent-color);border:1px solid var(--accent-color)}
 .sub-status-tag.pending{background:rgba(245,158,11,.15);color:var(--warning-color);border:1px solid var(--warning-color);animation:pulseSoft 2s infinite}
 @keyframes pulseSoft{0%,100%{opacity:1}50%{opacity:.7}}
+
+/* ===== Notification bell ===== */
+.notif-btn{position:relative;background:#181b24;border:1px solid var(--border-color);color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;font-size:1rem}
+.notif-btn:hover{border-color:var(--accent-color);color:var(--accent-color)}
+.notif-count{position:absolute;top:-2px;right:-2px;background:var(--accent-color);color:#fff;font-size:.62rem;font-weight:800;min-width:16px;height:16px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg-color)}
+.notif-list{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;margin-top:10px}
+.notif-item{background:#0f1015;border:1px solid var(--border-color);border-radius:10px;padding:12px;display:flex;gap:10px}
+.notif-item .ni-icon{width:36px;height:36px;border-radius:10px;background:rgba(229,9,20,.15);color:var(--accent-color);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notif-item .ni-body{flex:1;min-width:0}
+.notif-item .ni-title{font-size:.85rem;font-weight:800;margin-bottom:2px;color:#fff}
+.notif-item .ni-text{font-size:.75rem;color:var(--text-secondary);line-height:1.4}
+.notif-item .ni-time{font-size:.68rem;color:var(--text-muted);margin-top:4px}
 
 /* ===== Ticker ===== */
 .ticker-bar{background:linear-gradient(90deg,var(--accent-color),var(--vip-gold));color:#fff;font-weight:700;font-size:.85rem;padding:8px 0;overflow:hidden;white-space:nowrap;display:none}
@@ -107,6 +120,8 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .continue-card:hover{transform:translateY(-3px);border-color:var(--accent-color)}
 .continue-thumb{position:relative;width:100%;padding-top:56.25%;background:#000}
 .continue-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.continue-progress{position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(0,0,0,.6)}
+.continue-progress .cp-fill{height:100%;background:var(--accent-color);transition:width .3s}
 .continue-title{font-size:.75rem;font-weight:700;padding:8px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 /* ===== Category Tabs ===== */
@@ -117,6 +132,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .tab-btn.vip-tab.active{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;border-color:var(--vip-gold)}
 .tab-btn.live-cat-tab.active{background:linear-gradient(135deg,var(--live-red),#b91c1c);border-color:var(--live-red)}
 .tab-btn.fav-tab.active{background:linear-gradient(135deg,#ef4444,#b91c1c);border-color:#ef4444}
+.tab-btn.trending-tab.active{background:linear-gradient(135deg,#f97316,#c2410c);border-color:#f97316}
 
 /* ===== VOD Grid ===== */
 .items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
@@ -145,11 +161,12 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .fav-btn.active{color:#ef4444;background:rgba(239,68,68,.15)}
 .fav-btn.active i{font-weight:900}
 .item-card.is-vip .fav-btn{left:auto;right:8px;top:auto;bottom:8px}
+.item-card.is-vip .category-badge{right:44px}
+
+/* Card Actions */
 .card-details{padding:10px;display:flex;flex-direction:column;gap:6px;flex-grow:1}
 .card-title{font-size:.88rem;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#fff;cursor:pointer}
 .card-meta{font-size:.72rem;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
-
-/* Card Actions */
 .card-actions{display:flex;gap:6px;margin-top:8px}
 .card-action-btn{flex:1;padding:8px 6px;border-radius:8px;font-size:.72rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;border:none;outline:none;transition:.2s;font-family:inherit}
 .card-action-btn.play{background:var(--accent-color);color:#fff}
@@ -158,6 +175,10 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .card-action-btn.dl:hover{background:rgba(255,183,3,.12);border-color:var(--vip-gold);color:var(--vip-gold);transform:translateY(-1px)}
 .card-action-btn.dl.vip-dl{border-color:rgba(255,183,3,.5)}
 .card-action-btn.dl i{font-size:.85rem}
+
+/* Rating stars inline in cards */
+.card-rating{display:flex;align-items:center;gap:3px;font-size:.7rem;color:var(--vip-gold)}
+.card-rating i{font-size:.7rem}
 
 /* ===== Live Grid ===== */
 .live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
@@ -182,7 +203,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .skeleton-line.short{width:60%}
 @keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-/* ===== Bottom Nav (Mobile) ===== */
+/* ===== Bottom Nav ===== */
 .bottom-nav{
     position:fixed;left:0;right:0;bottom:0;
     height:calc(var(--nav-h) + var(--safe-b));
@@ -238,6 +259,14 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 /* ===== Player ===== */
 .player-wrapper{position:relative;width:100%;padding-top:56.25%;background:#000}
 .player-wrapper video,.player-wrapper iframe,.player-wrapper div#customScriptContainer{position:absolute;inset:0;width:100%!important;height:100%!important;border:none;outline:none}
+.player-toolbar{position:absolute;bottom:10px;left:10px;right:10px;display:flex;gap:6px;justify-content:flex-end;z-index:5;opacity:.9}
+.player-tool{background:rgba(0,0,0,.7);color:#fff;border:1px solid rgba(255,255,255,.2);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-size:.85rem}
+.player-tool:hover{background:var(--accent-color);border-color:var(--accent-color);transform:scale(1.1)}
+.speed-menu{position:absolute;bottom:50px;right:10px;background:rgba(0,0,0,.9);border:1px solid var(--border-color);border-radius:10px;padding:6px;display:none;flex-direction:column;gap:2px;z-index:10}
+.speed-menu.show{display:flex}
+.speed-menu button{background:transparent;border:none;color:#fff;padding:6px 12px;font-size:.8rem;border-radius:6px;cursor:pointer;font-family:inherit;text-align:center;min-width:70px}
+.speed-menu button:hover,.speed-menu button.active{background:var(--accent-color)}
+
 .player-info-body{padding:15px}
 .servers-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .server-btn{background:#1e212d;color:#fff;border:1px solid var(--border-color);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:700;font-family:inherit;transition:.2s}
@@ -249,6 +278,36 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .dl-btn-player:hover{filter:brightness(1.07);transform:translateY(-1px)}
 .fav-btn-player{background:#1e212d;color:#fff;border:1px solid var(--border-color)}
 .fav-btn-player.active{background:rgba(239,68,68,.15);color:#ef4444;border-color:#ef4444}
+
+/* ===== Rating UI ===== */
+.rating-block{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:#0f1015;border-radius:10px;border:1px solid var(--border-color);flex-wrap:wrap}
+.rating-block .rb-label{font-size:.8rem;font-weight:800;color:#ddd}
+.rating-block .rb-stars{display:flex;gap:4px}
+.rating-block .rb-stars i{font-size:1.3rem;color:#555;cursor:pointer;transition:.15s}
+.rating-block .rb-stars i:hover,.rating-block .rb-stars i.active,.rating-block .rb-stars i.hover{color:var(--vip-gold);transform:scale(1.1)}
+.rating-block .rb-avg{font-size:.78rem;color:var(--text-secondary);margin-right:auto}
+.rating-block .rb-avg strong{color:var(--vip-gold);font-weight:800}
+
+/* ===== Comments ===== */
+.comments-block{margin-top:16px;padding-top:16px;border-top:1px solid var(--border-color)}
+.comments-block h4{font-size:.9rem;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.comments-block h4 i{color:var(--accent-color)}
+.comment-form{display:flex;gap:8px;margin-bottom:12px}
+.comment-form input{flex:1;background:#0f1015;border:1px solid var(--border-color);border-radius:10px;padding:10px 12px;color:#fff;font-family:inherit;font-size:.85rem;outline:none}
+.comment-form input:focus{border-color:var(--accent-color)}
+.comment-form button{background:var(--accent-color);color:#fff;border:none;border-radius:10px;width:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:.2s}
+.comment-form button:hover{background:var(--accent-hover)}
+.comments-list{display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;padding-right:4px}
+.comment-item{display:flex;gap:10px;background:#0f1015;border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,.04)}
+.comment-item .ci-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent-color),var(--vip-gold));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.85rem;color:#fff;flex-shrink:0}
+.comment-item .ci-body{flex:1;min-width:0}
+.comment-item .ci-head{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:.78rem}
+.comment-item .ci-name{font-weight:800;color:#fff}
+.comment-item .ci-vip{font-size:.6rem;padding:1px 5px;border-radius:6px;background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;font-weight:900}
+.comment-item .ci-time{font-size:.66rem;color:var(--text-muted);margin-right:auto}
+.comment-item .ci-text{font-size:.82rem;color:#cbd0d6;line-height:1.5;word-break:break-word}
+.comment-item .ci-del{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:.75rem;padding:2px 6px;border-radius:4px;transition:.2s}
+.comment-item .ci-del:hover{color:var(--accent-color);background:rgba(229,9,20,.1)}
 
 /* ===== Download Flow ===== */
 .dl-hero{text-align:center;padding:4px 0 14px}
@@ -268,17 +327,12 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .dl-opt-title{font-weight:800;font-size:.9rem;margin-bottom:2px}
 .dl-opt-sub{font-size:.72rem;opacity:.85;line-height:1.4}
 
-/* VIP benefits */
 .vip-benefits{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:8px}
 .vip-benefits li{display:flex;align-items:center;gap:10px;font-size:.85rem;padding:10px 12px;background:#0f1015;border-radius:10px;border:1px solid var(--border-color)}
 .vip-benefits li i{color:var(--vip-gold);font-size:1rem;width:18px;text-align:center}
 .vip-benefits li strong{color:#fff}
 
-/* VIP request status */
-.vip-status-card{
-    padding:14px;border-radius:12px;margin:12px 0;display:flex;align-items:center;gap:12px;
-    border:1px solid;font-size:.85rem;
-}
+.vip-status-card{padding:14px;border-radius:12px;margin:12px 0;display:flex;align-items:center;gap:12px;border:1px solid;font-size:.85rem}
 .vip-status-card.pending{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.4);color:#fcd34d}
 .vip-status-card.approved{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.4);color:#6ee7b7}
 .vip-status-card.rejected{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.4);color:#fca5a5}
@@ -287,22 +341,13 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .vip-status-card .vsc-title{font-weight:800;margin-bottom:2px;color:#fff}
 .vip-status-card .vsc-sub{font-size:.72rem;color:var(--text-secondary);line-height:1.4}
 
-/* WhatsApp contact block */
-.wa-contact-box{
-    background:linear-gradient(135deg,rgba(37,211,102,.12),rgba(37,211,102,.04));
-    border:1px solid rgba(37,211,102,.4);border-radius:14px;
-    padding:16px;margin:12px 0;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;
-}
+.wa-contact-box{background:linear-gradient(135deg,rgba(37,211,102,.12),rgba(37,211,102,.04));border:1px solid rgba(37,211,102,.4);border-radius:14px;padding:16px;margin:12px 0;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
 .wa-contact-box i.wa{font-size:2.4rem;color:#25D366}
 .wa-contact-box .wa-title{font-size:1rem;font-weight:900;color:#fff}
 .wa-contact-box .wa-sub{font-size:.78rem;color:var(--text-secondary);line-height:1.5;max-width:340px}
-.btn-whatsapp{
-    background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-weight:800;
-    box-shadow:0 6px 18px rgba(37,211,102,.35);width:100%;justify-content:center;padding:12px;
-}
+.btn-whatsapp{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-weight:800;box-shadow:0 6px 18px rgba(37,211,102,.35);width:100%;justify-content:center;padding:12px}
 .btn-whatsapp:hover{filter:brightness(1.08);transform:translateY(-2px)}
 
-/* Countdown */
 .countdown-wrap{text-align:center;padding:8px 0}
 .countdown-circle{width:100px;height:100px;margin:0 auto 14px;border-radius:50%;background:conic-gradient(var(--accent-color) var(--progress,0%),rgba(255,255,255,.08) 0);display:flex;align-items:center;justify-content:center;position:relative;transition:background .3s}
 .countdown-circle::before{content:'';position:absolute;inset:7px;border-radius:50%;background:var(--card-bg)}
@@ -317,7 +362,6 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .dl-ready-btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
 .dl-ready-btn.show{display:flex;align-items:center;justify-content:center;gap:8px;animation:zoomIn .3s}
 
-/* Status / Empty */
 .status-box{text-align:center;padding:50px 15px;grid-column:1/-1;color:var(--text-secondary)}
 .status-box i.empty-icon{font-size:2.5rem;opacity:.3;display:block;margin-bottom:14px}
 .spinner{width:35px;height:35px;border:3px solid rgba(255,255,255,.1);border-top:3px solid var(--accent-color);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
@@ -326,7 +370,33 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .player-error{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;color:#fff;gap:10px;text-align:center;padding:20px}
 .player-error i{font-size:3rem;color:var(--accent-color)}
 
-/* Toast */
+/* Guest warning banner */
+.guest-warn{background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(245,158,11,.03));border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:.82rem;color:#fcd34d}
+.guest-warn i{font-size:1.4rem;color:var(--warning-color)}
+.guest-warn .gw-body{flex:1}
+.guest-warn .gw-body strong{color:#fff;display:block;margin-bottom:2px}
+
+/* Badge/Level */
+.user-level{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:.66rem;font-weight:900;margin-top:4px}
+.user-level.new{background:rgba(156,163,175,.15);color:#d1d5db;border:1px solid rgba(156,163,175,.4)}
+.user-level.bronze{background:rgba(180,83,9,.2);color:#fdba74;border:1px solid rgba(180,83,9,.5)}
+.user-level.silver{background:rgba(156,163,175,.2);color:#e5e7eb;border:1px solid rgba(156,163,175,.6)}
+.user-level.gold{background:rgba(245,158,11,.2);color:#fcd34d;border:1px solid rgba(245,158,11,.6)}
+.user-level.vip{background:linear-gradient(135deg,var(--vip-gold),var(--vip-gold-dark));color:#000;border:1px solid var(--vip-gold)}
+
+/* History items */
+.history-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;margin-top:10px}
+.history-item{display:flex;gap:10px;background:#0f1015;border:1px solid var(--border-color);border-radius:10px;padding:8px;align-items:center}
+.history-item .hi-thumb{width:80px;height:45px;border-radius:6px;overflow:hidden;flex-shrink:0;background:#000}
+.history-item .hi-thumb img{width:100%;height:100%;object-fit:cover}
+.history-item .hi-body{flex:1;min-width:0}
+.history-item .hi-title{font-size:.82rem;font-weight:800;color:#fff;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item .hi-time{font-size:.7rem;color:var(--text-muted)}
+.history-item .hi-actions{display:flex;gap:4px;flex-shrink:0}
+.history-item .hi-btn{background:transparent;border:1px solid var(--border-color);color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;transition:.2s}
+.history-item .hi-btn:hover{background:var(--accent-color);border-color:var(--accent-color)}
+.history-item .hi-btn.danger:hover{background:#ef4444;border-color:#ef4444}
+
 .toast-wrap{position:fixed;top:calc(16px + var(--safe-t));left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:calc(100% - 32px);max-width:420px}
 .toast{background:linear-gradient(135deg,#14141c,#0e0e16);border:1px solid var(--border-color);border-radius:12px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 15px 40px rgba(0,0,0,.7);animation:toastIn .3s;pointer-events:auto;font-size:.85rem;font-weight:700;position:relative;overflow:hidden}
 @keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.96)}to{opacity:1;transform:none}}
@@ -341,7 +411,6 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 .toast-title{font-size:.82rem;font-weight:800;margin-bottom:1px;color:#fff}
 .toast-msg{font-size:.75rem;color:var(--text-secondary);line-height:1.4}
 
-/* ===== Mobile ===== */
 @media (max-width:768px){
     .navbar{flex-wrap:wrap;padding:8px 12px;gap:8px;padding-top:calc(8px + var(--safe-t))}
     .search-box{order:3;max-width:100%;margin-top:2px}
@@ -351,6 +420,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
     .card-actions .card-action-btn{padding:7px 4px;font-size:.68rem}
     .view-toggle .view-btn{min-width:auto;padding:9px 12px;font-size:.78rem}
     .continue-card{width:140px}
+    .notif-btn{width:34px;height:34px;font-size:.9rem}
 }
 @media (max-width:380px){
     .card-action-btn span{display:none}
@@ -363,12 +433,17 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 
 <nav class="navbar">
     <a href="#" class="navbar-brand" onclick="event.preventDefault();switchView('vod');">
-        <i class="fa-solid fa-circle-play"></i>
-        <span id="brandText">FARES<span>FLIX</span></span>
+        <svg class="wolf-logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#e50914"/><stop offset="1" stop-color="#ffb703"/>
+            </linearGradient></defs>
+            <path fill="url(#wg)" d="M32 4C20 4 12 10 12 18c0 3 .8 5.5 2 7.7C10 28 8 32 8 38c0 12 10 22 24 22s24-10 24-22c0-6-2-10-6-12.3 1.2-2.2 2-4.7 2-7.7 0-8-8-14-20-14zm-10 22a3 3 0 113 3 3 3 0 01-3-3zm20 0a3 3 0 113 3 3 3 0 01-3-3zm-10 6l3 4 3-4h-6zm-5 8c1.5 3 5 5 8 5s6.5-2 8-5h-16z"/>
+        </svg>
+        <span id="brandText">سيرفر <span style="color:var(--accent-color)">الوحش</span> 🐺</span>
     </a>
     <div class="search-box">
         <i class="fa-solid fa-magnifying-glass" style="color:#777"></i>
-        <input type="text" id="searchInput" placeholder="بحث...">
+        <input type="text" id="searchInput" placeholder="ابحث عن فيلم أو قناة...">
         <button class="search-clear" id="searchClear" title="مسح"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="nav-user-area" id="navUserArea"></div>
@@ -379,11 +454,21 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
 <div class="container">
     <div id="topAdBanner" class="ad-banner-container"></div>
 
+    <!-- Guest warning -->
+    <div class="guest-warn" id="guestWarn" style="display:none">
+        <i class="fa-solid fa-circle-info"></i>
+        <div class="gw-body">
+            <strong>أنت تتصفح كزائر 🐺</strong>
+            سجّل دخول لمشاهدة المحتوى المجاني، واشترك VIP لفتح كل المميز.
+        </div>
+        <button class="btn btn-primary sm" onclick="openAuthModal('login')">دخول</button>
+    </div>
+
     <!-- Continue Watching -->
     <div class="continue-section" id="continueSection">
         <div class="section-title-row">
             <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> أكمل المشاهدة</div>
-            <button class="btn btn-outline sm" id="clearContinueBtn"><i class="fa-solid fa-eraser"></i> مسح</button>
+            <button class="btn btn-outline sm" id="openHistoryBtn"><i class="fa-solid fa-list"></i> السجل الكامل</button>
         </div>
         <div class="continue-scroll" id="continueScroll"></div>
     </div>
@@ -415,7 +500,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
     <div id="bottomAdBanner" class="ad-banner-container" style="margin-top:25px"></div>
 </div>
 
-<!-- ============ Bottom Nav (Mobile) ============ -->
+<!-- ============ Bottom Nav ============ -->
 <nav class="bottom-nav">
     <button class="bn-item active" data-bn="vod"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button>
     <button class="bn-item live-bn" data-bn="live"><i class="fa-solid fa-tower-broadcast"></i><span>البث</span></button>
@@ -464,9 +549,9 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
             <i class="fa-solid fa-circle-user" style="font-size:3.5rem;color:var(--accent-color)"></i>
             <h3 id="profileName" style="margin-top:8px;font-weight:800">---</h3>
             <p id="profileEmail" style="font-size:.8rem;color:var(--text-secondary)">---</p>
+            <div id="profileLevelWrap" style="margin-top:6px"></div>
         </div>
 
-        <!-- VIP request status -->
         <div id="profileVipRequestStatus"></div>
 
         <div class="profile-row"><span>حالة الاشتراك:</span><span id="profileSubStatus" style="font-weight:800">---</span></div>
@@ -478,6 +563,7 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
             <button class="btn btn-vip" style="flex:1;min-width:130px;justify-content:center" onclick="closeModal('profileModal');openSubModal()">
                 <i class="fa-solid fa-crown"></i> <span id="profileVipBtnText">ترقية / تجديد</span>
             </button>
+            <button class="btn btn-outline" style="padding:8px 12px" onclick="closeModal('profileModal');openHistoryModal()"><i class="fa-solid fa-clock-rotate-left"></i> السجل</button>
             <button class="btn btn-outline" style="padding:8px 12px" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
         </div>
     </div>
@@ -499,15 +585,34 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
             <li><i class="fa-solid fa-bolt"></i> <span>سيرفرات بجودة عالية <strong>4K/1080p</strong></span></li>
             <li><i class="fa-solid fa-headset"></i> <span>دعم فني <strong>أولوية</strong></span></li>
             <li><i class="fa-solid fa-circle-check"></i> <span>بدون <strong>إعلانات منبثقة</strong></span></li>
+            <li><i class="fa-solid fa-star"></i> <span><strong>شارة VIP ذهبية</strong> بجانب اسمك في التعليقات</span></li>
         </ul>
-
-        <!-- VIP status inside modal -->
         <div id="subModalStatusBox"></div>
-
         <button class="btn btn-whatsapp" id="btnRequestVip">
             <i class="fa-brands fa-whatsapp"></i> اطلب الاشتراك عبر واتساب
         </button>
         <button class="btn btn-outline btn-block" style="margin-top:8px;padding:10px" onclick="closeModal('subModal')">لاحقاً</button>
+    </div>
+</div>
+
+<!-- =============== History Modal =============== -->
+<div id="historyModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-grab"></div>
+        <button class="close-modal" onclick="closeModal('historyModal')"><i class="fa-solid fa-xmark"></i></button>
+        <h3 style="font-weight:800;text-align:center;margin-bottom:10px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--accent-color)"></i> سجل المشاهدة</h3>
+        <div id="historyList" class="history-list"></div>
+        <button class="btn btn-outline btn-block" style="margin-top:12px" onclick="clearAllHistory()"><i class="fa-solid fa-trash"></i> مسح السجل كامل</button>
+    </div>
+</div>
+
+<!-- =============== Notifications Modal =============== -->
+<div id="notifModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-grab"></div>
+        <button class="close-modal" onclick="closeModal('notifModal')"><i class="fa-solid fa-xmark"></i></button>
+        <h3 style="font-weight:800;text-align:center;margin-bottom:10px"><i class="fa-solid fa-bell" style="color:var(--accent-color)"></i> الإشعارات</h3>
+        <div id="notifList" class="notif-list"></div>
     </div>
 </div>
 
@@ -544,6 +649,19 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
                 <span><i class="fa-solid fa-folder"></i> <span id="modalCategory">عام</span></span>
             </div>
 
+            <!-- Rating block -->
+            <div class="rating-block" id="ratingBlock">
+                <span class="rb-label">قيّم المحتوى:</span>
+                <div class="rb-stars" id="rbStars">
+                    <i class="fa-solid fa-star" data-v="1"></i>
+                    <i class="fa-solid fa-star" data-v="2"></i>
+                    <i class="fa-solid fa-star" data-v="3"></i>
+                    <i class="fa-solid fa-star" data-v="4"></i>
+                    <i class="fa-solid fa-star" data-v="5"></i>
+                </div>
+                <span class="rb-avg" id="rbAvg">لا توجد تقييمات</span>
+            </div>
+
             <div class="player-actions" id="playerDlWrap" style="display:none">
                 <button class="btn dl-btn-player" id="playerDlBtn">
                     <i class="fa-solid fa-download"></i> تحميل الفيديو
@@ -558,6 +676,16 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
                 <div id="serversGrid" class="servers-grid"></div>
             </div>
             <div id="modalDesc" style="margin-top:12px;background:#0f1015;padding:10px;border-radius:8px;font-size:.82rem;color:#bbb;max-height:100px;overflow-y:auto"></div>
+
+            <!-- Comments -->
+            <div class="comments-block">
+                <h4><i class="fa-solid fa-comments"></i> التعليقات (<span id="commentsCount">0</span>)</h4>
+                <div class="comment-form" id="commentForm">
+                    <input type="text" id="commentInput" placeholder="اكتب تعليقك..." maxlength="300">
+                    <button id="commentSendBtn" title="إرسال"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+                <div class="comments-list" id="commentsList"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -583,7 +711,6 @@ body{background:var(--bg-color);color:var(--text-color);padding-bottom:calc(var(
     </div>
 </div>
 
-<!-- =============== Toasts =============== -->
 <div class="toast-wrap" id="toasts"></div>
 
 <script>
@@ -619,16 +746,22 @@ let hlsPlayerInstance=null, dashPlayerInstance=null;
 let currentPlayingId=null;
 let hasHandledUrlHash=false;
 let userListenerRef=null, userListenerCallback=null;
+let notifListenerRef=null, notifListenerCb=null;
 let currentDlItem=null;
 let countdownTimer=null;
 let currentPlayerItem=null;
 let vipRequestListenerRef=null, vipRequestListenerCb=null;
+let commentsListenerRef=null;
+let ratingsListenerRef=null;
 let lastVipRequestStatus=null;
 let confirmResolver=null;
-let favorites = JSON.parse(localStorage.getItem('faresflix_favs') || '[]');
+let currentVideoEl=null;
+let progressSaveTimer=null;
+let unreadNotifs=0;
+let favorites = JSON.parse(localStorage.getItem('server_wahsh_favs') || '[]');
 
 /* =========================================================
-   Utilities & Helper Functions
+   Utilities
    ========================================================= */
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
@@ -636,7 +769,16 @@ const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 const debounce = (fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}};
 const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}) : '—';
 const fmtTime = ts => ts ? new Date(ts).toLocaleString('ar-EG',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
-
+const fmtRelative = ts => {
+    if(!ts) return '—';
+    const d = Date.now() - ts;
+    const m = Math.floor(d/60000), h = Math.floor(d/3600000), dd = Math.floor(d/86400000);
+    if(m < 1) return 'الآن';
+    if(m < 60) return `منذ ${m} دقيقة`;
+    if(h < 24) return `منذ ${h} ساعة`;
+    if(dd < 30) return `منذ ${dd} يوم`;
+    return fmtDate(ts);
+};
 const getUserVipExpire = u => u ? (u.vipExpireDate || u.expireAt || 0) : 0;
 const getUserIsVip = u => {
     if(!u) return false;
@@ -646,8 +788,19 @@ const getUserIsVip = u => {
 };
 const getUserIsBanned = u => !!(u && (u.isBanned === true || u.isBlocked === true));
 
+function getUserLevel(u){
+    if(!u) return { key:'new', label:'زائر' };
+    if(getUserIsVip(u)) return { key:'vip', label:'👑 VIP' };
+    const since = u.createdAt || Date.now();
+    const days = (Date.now() - since) / 86400000;
+    if(days >= 365) return { key:'gold', label:'🥇 ذهبي' };
+    if(days >= 90) return { key:'silver', label:'🥈 فضي' };
+    if(days >= 30) return { key:'bronze', label:'🥉 برونزي' };
+    return { key:'new', label:'عضو جديد' };
+}
+
 /* =========================================================
-   Toast Notification System
+   Toast System
    ========================================================= */
 function toast(msg, type='', title=''){
     const w = $('#toasts');
@@ -672,17 +825,11 @@ function toast(msg, type='', title=''){
 /* =========================================================
    Modal Management
    ========================================================= */
-function openModal(id){
-    const m = $('#' + id);
-    if(m) m.classList.add('active');
-}
-function closeModal(id){
-    const m = $('#' + id);
-    if(m) m.classList.remove('active');
-}
+function openModal(id){ const m=$('#'+id); if(m) m.classList.add('active'); }
+function closeModal(id){ const m=$('#'+id); if(m) m.classList.remove('active'); }
 
 /* =========================================================
-   Confirm Modal Logic
+   Confirm Modal
    ========================================================= */
 function askConfirm({title='تأكيد', msg='هل أنت متأكد؟', okText='تأكيد', type='danger'}={}){
     return new Promise(res => {
@@ -694,12 +841,11 @@ function askConfirm({title='تأكيد', msg='هل أنت متأكد؟', okText=
         if(type === 'warn'){
             iconBox.style.background = 'rgba(245,158,11,.15)';
             iconBox.style.color = 'var(--warning-color)';
-            iconEl.className = 'fa-solid fa-triangle-exclamation';
         }else{
             iconBox.style.background = 'rgba(229,9,20,.15)';
             iconBox.style.color = 'var(--accent-color)';
-            iconEl.className = 'fa-solid fa-triangle-exclamation';
         }
+        iconEl.className = 'fa-solid fa-triangle-exclamation';
         $('#confirmModal').classList.add('active');
         confirmResolver = res;
     });
@@ -713,18 +859,18 @@ $('#confirmModal').addEventListener('click', e => {
 });
 
 /* =========================================================
-   Firebase Authentication State Listener
+   Auth State Listener
    ========================================================= */
 auth.onAuthStateChanged(user => {
-    if(userListenerRef && userListenerCallback){
-        userListenerRef.off('value', userListenerCallback);
-    }
-    if(vipRequestListenerRef && vipRequestListenerCb){
-        vipRequestListenerRef.off('value', vipRequestListenerCb);
-    }
+    // Cleanup previous listeners
+    if(userListenerRef && userListenerCallback){ userListenerRef.off('value', userListenerCallback); }
+    if(vipRequestListenerRef && vipRequestListenerCb){ vipRequestListenerRef.off('value', vipRequestListenerCb); }
+    if(notifListenerRef && notifListenerCb){ notifListenerRef.off('value', notifListenerCb); }
     userListenerRef = null; userListenerCallback = null;
     vipRequestListenerRef = null; vipRequestListenerCb = null;
+    notifListenerRef = null; notifListenerCb = null;
     lastVipRequestStatus = null;
+    unreadNotifs = 0;
 
     if(user){
         currentUser = user;
@@ -733,7 +879,7 @@ auth.onAuthStateChanged(user => {
             userData = snap.val();
             if(!userData){
                 userListenerRef.set({
-                    email:user.email, name:user.displayName || 'مستخدم جديد',
+                    email:user.email, name:user.displayName || 'عضو جديد',
                     isBanned:false, isBlocked:false, isVip:false,
                     vipExpireDate:0, expireAt:0, createdAt:Date.now()
                 });
@@ -750,6 +896,7 @@ auth.onAuthStateChanged(user => {
             renderNavUserArea();
             renderGridItems();
             renderLiveChannels();
+            updateGuestWarn();
         });
 
         vipRequestListenerRef = db.ref('vipRequests').orderByChild('uid').equalTo(user.uid);
@@ -766,13 +913,34 @@ auth.onAuthStateChanged(user => {
             if($('#profileModal').classList.contains('active')) updateProfileVipStatus();
             if($('#subModal').classList.contains('active')) updateSubModalStatus();
         });
+
+        // Notifications
+        notifListenerRef = db.ref('notifications/' + user.uid);
+        notifListenerCb = notifListenerRef.on('value', snap => {
+            let notifs = [];
+            if(snap.exists()){
+                snap.forEach(c => notifs.push({ id: c.key, ...c.val() }));
+            }
+            notifs.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+            unreadNotifs = notifs.filter(n => !n.read).length;
+            renderNavUserArea();
+            renderNotifications(notifs);
+        });
+
     }else{
         currentUser = null; userData = null;
         renderNavUserArea();
         renderGridItems();
         renderLiveChannels();
+        updateGuestWarn();
     }
 });
+
+function updateGuestWarn(){
+    const w = $('#guestWarn');
+    if(!w) return;
+    w.style.display = currentUser ? 'none' : 'flex';
+}
 
 function renderNavUserArea(){
     const navArea = $('#navUserArea');
@@ -782,16 +950,23 @@ function renderNavUserArea(){
         const hasPending = lastVipRequestStatus && lastVipRequestStatus.status === 'pending';
         let tag;
         if(isVip) tag = `<span class="sub-status-tag active"><i class="fa-solid fa-crown"></i> VIP</span>`;
-        else if(hasPending) tag = `<span class="sub-status-tag pending"><i class="fa-solid fa-clock"></i> قيد المراجعة</span>`;
+        else if(hasPending) tag = `<span class="sub-status-tag pending"><i class="fa-solid fa-clock"></i> مراجعة</span>`;
         else tag = `<span class="sub-status-tag expired">عادي</span>`;
 
         navArea.innerHTML = `
+            <button class="notif-btn" id="notifBtn" title="الإشعارات">
+                <i class="fa-solid fa-bell"></i>
+                ${unreadNotifs > 0 ? `<span class="notif-count">${unreadNotifs}</span>` : ''}
+            </button>
             <div class="user-badge-info" id="openProfileBtn">
                 <i class="fa-solid fa-circle-user" style="font-size:1.1rem;color:var(--accent-color)"></i>
                 <span style="font-size:.78rem;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(userData.name||'حسابي')}</span>
                 ${tag}
             </div>`;
-        $('#openProfileBtn').addEventListener('click', openProfileModal);
+        const nb = $('#notifBtn');
+        if(nb) nb.addEventListener('click', openNotifModal);
+        const pb = $('#openProfileBtn');
+        if(pb) pb.addEventListener('click', openProfileModal);
     }else{
         navArea.innerHTML = `
             <button class="btn btn-outline" id="loginBtn"><i class="fa-solid fa-right-to-bracket"></i> دخول</button>
@@ -802,7 +977,43 @@ function renderNavUserArea(){
 }
 
 /* =========================================================
-   Auth Modal & Actions
+   Notifications
+   ========================================================= */
+function renderNotifications(notifs){
+    const list = $('#notifList');
+    if(!list) return;
+    if(!notifs || notifs.length === 0){
+        list.innerHTML = `<div class="status-box" style="padding:30px 10px"><i class="fa-solid fa-bell-slash empty-icon"></i><p>لا توجد إشعارات حالياً</p></div>`;
+        return;
+    }
+    list.innerHTML = notifs.map(n => `
+        <div class="notif-item">
+            <div class="ni-icon"><i class="fa-solid ${n.type==='vip'?'fa-crown':n.type==='banned'?'fa-ban':'fa-bell'}"></i></div>
+            <div class="ni-body">
+                <div class="ni-title">${esc(n.title || 'إشعار')}</div>
+                <div class="ni-text">${esc(n.text || '')}</div>
+                <div class="ni-time">${fmtRelative(n.createdAt)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openNotifModal(){
+    openModal('notifModal');
+    // Mark all as read
+    if(currentUser){
+        db.ref('notifications/' + currentUser.uid).once('value').then(snap => {
+            if(snap.exists()){
+                const updates = {};
+                snap.forEach(c => { updates[c.key + '/read'] = true; });
+                db.ref('notifications/' + currentUser.uid).update(updates);
+            }
+        });
+    }
+}
+
+/* =========================================================
+   Auth Actions
    ========================================================= */
 function openAuthModal(mode='login'){
     isAuthLoginMode = (mode === 'login');
@@ -835,12 +1046,20 @@ $('#authForm').addEventListener('submit', async (e)=>{
                 await res.user.updateProfile({ displayName: name });
                 await db.ref('users/' + res.user.uid).set({
                     email: email,
-                    name: name || 'مستخدم جديد',
+                    name: name || 'عضو جديد',
                     isBanned: false,
                     isBlocked: false,
                     isVip: false,
                     vipExpireDate: 0,
                     expireAt: 0,
+                    createdAt: Date.now()
+                });
+                // Welcome notification
+                await db.ref('notifications/' + res.user.uid).push({
+                    title: 'أهلاً بك في سيرفر الوحش 🐺',
+                    text: 'استمتع بمشاهدة المحتوى المجاني. ترقّ إلى VIP لفتح كل المميز!',
+                    type: 'welcome',
+                    read: false,
                     createdAt: Date.now()
                 });
             }
@@ -856,16 +1075,11 @@ $('#authForm').addEventListener('submit', async (e)=>{
 $('#forgotPassLink').addEventListener('click', async (e)=>{
     e.preventDefault();
     const email = $('#authEmail').value.trim();
-    if(!email){
-        toast('يرجى كتابة البريد الإلكتروني أولاً', 'warn');
-        return;
-    }
+    if(!email){ toast('يرجى كتابة البريد أولاً', 'warn'); return; }
     try{
         await auth.sendPasswordResetEmail(email);
-        toast('تم إرسال رابط إعادة ضبط كلمة المرور إلى بريدك', 'ok');
-    }catch(err){
-        toast(err.message, 'err');
-    }
+        toast('تم إرسال رابط إعادة الضبط', 'ok');
+    }catch(err){ toast(err.message, 'err'); }
 });
 
 function logout(){
@@ -877,27 +1091,29 @@ function logout(){
 }
 
 /* =========================================================
-   Profile Modal Logic
+   Profile Modal
    ========================================================= */
 function openProfileModal(){
     if(!userData) return;
     $('#profileName').textContent = userData.name || 'مستخدم';
     $('#profileEmail').textContent = userData.email || '---';
-    
+
+    const lvl = getUserLevel(userData);
+    $('#profileLevelWrap').innerHTML = `<span class="user-level ${lvl.key}">${lvl.label}</span>`;
+
     const isVip = getUserIsVip(userData);
     const exp = getUserVipExpire(userData);
     $('#profileSubStatus').textContent = isVip ? 'VIP مفعل' : 'اشتراك عادي';
     $('#profileSubStatus').style.color = isVip ? 'var(--success-color)' : 'var(--accent-color)';
-    
     $('#profileExpireDate').textContent = exp ? fmtDate(exp) : 'غير محدود / غير مفعل';
-    
+
     if(isVip && exp > 0){
         const days = Math.ceil((exp - Date.now()) / (1000*60*60*24));
         $('#profileDaysLeft').textContent = `${days} يوم`;
     }else{
         $('#profileDaysLeft').textContent = isVip ? 'دائم' : '0';
     }
-    
+
     $('#profileFavCount').textContent = favorites.length;
     updateProfileVipStatus();
     openModal('profileModal');
@@ -912,21 +1128,16 @@ function updateProfileVipStatus(){
                 <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
                 <div class="vsc-body">
                     <div class="vsc-title">طلب VIP قيد المراجعة</div>
-                    <div class="vsc-sub">سيتم تفعيل حسابك فور التحقق من عملية الدفع.</div>
+                    <div class="vsc-sub">سيتم التفعيل فور التحقق من الدفع.</div>
                 </div>
             </div>`;
-    }else{
-        box.innerHTML = '';
-    }
+    }else{ box.innerHTML = ''; }
 }
 
 /* =========================================================
-   VIP / Subscription Modal Logic
+   VIP Modal
    ========================================================= */
-function openSubModal(){
-    updateSubModalStatus();
-    openModal('subModal');
-}
+function openSubModal(){ updateSubModalStatus(); openModal('subModal'); }
 
 function updateSubModalStatus(){
     const box = $('#subModalStatusBox');
@@ -936,19 +1147,18 @@ function updateSubModalStatus(){
             <div class="vip-status-card pending">
                 <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
                 <div class="vsc-body">
-                    <div class="vsc-title">طلبك الحالي قيد المراجعة</div>
-                    <div class="vsc-sub">تم إرسال طلبك للإدارة، وسيتم تفعيله قريباً.</div>
+                    <div class="vsc-title">طلبك قيد المراجعة</div>
+                    <div class="vsc-sub">تم إرسال طلبك للإدارة.</div>
                 </div>
             </div>`;
-    }else{
-        box.innerHTML = '';
-    }
+    }else{ box.innerHTML = ''; }
 }
 
 $('#btnRequestVip').addEventListener('click', async ()=>{
     const waNum = siteSettings.whatsappNumber || '201000000000';
-    const waMsg = encodeURIComponent(`مرحباً، أود الاشتراك في VIP على منصة ${siteSettings.siteName || 'FARESFLIX'}.\nالبريد: ${currentUser ? currentUser.email : 'غير مسجل'}`);
-    
+    const siteName = siteSettings.siteName || 'سيرفر الوحش';
+    const waMsg = encodeURIComponent(`مرحباً، أود الاشتراك في VIP على منصة ${siteName}.\nالبريد: ${currentUser ? currentUser.email : 'غير مسجل'}`);
+
     if(currentUser){
         try{
             await db.ref('vipRequests').push({
@@ -959,21 +1169,19 @@ $('#btnRequestVip').addEventListener('click', async ()=>{
                 createdAt: Date.now()
             });
             toast('تم تسجيل طلبك، جاري تحويلك للواتساب', 'ok');
-        }catch(e){
-            console.error(e);
-        }
+        }catch(e){ console.error(e); }
     }
     window.open(`https://wa.me/${waNum}?text=${waMsg}`, '_blank');
 });
 
 /* =========================================================
-   Settings Management
+   Settings
    ========================================================= */
 function loadSiteSettings(){
     db.ref('settings').on('value', snap => {
         siteSettings = snap.val() || {};
         if(siteSettings.siteName){
-            $('#brandText').innerHTML = esc(siteSettings.siteName);
+            $('#brandText').innerHTML = esc(siteSettings.siteName) + ' 🐺';
             document.title = `${siteSettings.siteName} | منصة البث VIP`;
         }
         if(siteSettings.accentColor){
@@ -997,7 +1205,7 @@ function loadSiteSettings(){
 }
 
 /* =========================================================
-   Fetch VOD & Categories
+   Fetch Data
    ========================================================= */
 function fetchMediaData(){
     db.ref('videos').on('value', snap => {
@@ -1022,9 +1230,6 @@ function fetchCategories(){
     });
 }
 
-/* =========================================================
-   Fetch Live Channels & Categories
-   ========================================================= */
 function fetchLiveData(){
     db.ref('liveCategories').on('value', snap => {
         allLiveCategories = [];
@@ -1034,13 +1239,9 @@ function fetchLiveData(){
     db.ref('liveChannels').on('value', snap => {
         allLiveChannels = [];
         if(snap.exists()){
-            snap.forEach(c => {
-                allLiveChannels.push({ id: c.key, ...c.val() });
-            });
+            snap.forEach(c => allLiveChannels.push({ id: c.key, ...c.val() }));
         }
-        if(currentView === 'live'){
-            renderLiveChannels();
-        }
+        if(currentView === 'live') renderLiveChannels();
     });
 }
 
@@ -1062,7 +1263,7 @@ function fetchAds(){
 }
 
 /* =========================================================
-   Tabs Construction
+   Tabs
    ========================================================= */
 function buildVodTabs(){
     const tabs = $('#vodTabs');
@@ -1072,6 +1273,7 @@ function buildVodTabs(){
     allFetchedItems.forEach(i => { if(i.category) set.add(i.category); });
 
     let html = `<button class="tab-btn ${activeTab==='all'?'active':''}" data-tab="all"><i class="fa-solid fa-border-all"></i> الكل</button>`;
+    html += `<button class="tab-btn trending-tab ${activeTab==='trending'?'active':''}" data-tab="trending"><i class="fa-solid fa-fire"></i> الأكثر مشاهدة</button>`;
     html += `<button class="tab-btn vip-tab ${activeTab==='vip'?'active':''}" data-tab="vip"><i class="fa-solid fa-crown"></i> VIP</button>`;
     html += `<button class="tab-btn fav-tab ${activeTab==='fav'?'active':''}" data-tab="fav"><i class="fa-solid fa-heart"></i> المفضلة</button>`;
 
@@ -1080,8 +1282,9 @@ function buildVodTabs(){
     });
 
     tabs.innerHTML = html;
-    $$('#vodTabs .tab-btn').forEach(btn => {         btn.addEventListener('click', ()=>{             $$
-('#vodTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+    $$('#vodTabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', ()=>{
+            $$('#vodTabs .tab-btn').forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
             activeTab = btn.getAttribute('data-tab');
             renderGridItems();
@@ -1104,8 +1307,9 @@ function buildLiveTabs(){
     });
 
     tabs.innerHTML = html;
-    $$('#liveTabs .tab-btn').forEach(btn => {         btn.addEventListener('click', ()=>{             $$
-('#liveTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+    $$('#liveTabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', ()=>{
+            $$('#liveTabs .tab-btn').forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
             activeLiveTab = btn.getAttribute('data-livetab');
             renderLiveChannels();
@@ -1120,7 +1324,7 @@ function renderGridItems(){
     if(currentView !== 'vod') return;
     const grid = $('#itemsGrid');
     if(!grid) return;
-    const q = $('#searchInput').value.trim().toLowerCase();
+    const q = ($('#searchInput').value || '').trim().toLowerCase();
 
     let items = allFetchedItems.filter(item => {
         const titleMatch = (item.title || '').toLowerCase().includes(q);
@@ -1133,11 +1337,14 @@ function renderGridItems(){
         items = items.filter(i => i.isVip);
     }else if(activeTab === 'fav'){
         items = items.filter(i => favorites.includes(i.id));
+    }else if(activeTab === 'trending'){
+        items = items.slice().sort((a,b) => (b.views||0) - (a.views||0)).slice(0, 30);
     }else if(activeTab !== 'all'){
         items = items.filter(i => i.category === activeTab);
     }
 
     if(items.length === 0){
+        grid.className = 'items-grid';
         grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-film empty-icon"></i><p>لا توجد محتويات مطابقة.</p></div>`;
         return;
     }
@@ -1145,31 +1352,32 @@ function renderGridItems(){
     grid.className = 'items-grid';
     grid.innerHTML = items.map(item => {
         const isFav = favorites.includes(item.id);
-        const defaultThumb = 'https://via.placeholder.com/400x225/15171e/ffffff?text=' + encodeURIComponent(item.title||'FARESFLIX');
+        const defaultThumb = 'https://via.placeholder.com/400x225/15171e/ffffff?text=' + encodeURIComponent(item.title||'سيرفر الوحش');
         const thumb = item.image || item.poster || item.thumbnail || defaultThumb;
-        
+        const avg = item.ratingAvg ? Number(item.ratingAvg).toFixed(1) : null;
+
         return `
-            <div class="item-card ${item.isVip ? 'is-vip' : ''}" data-id="${item.id}">
-                <button class="fav-btn ${isFav?'active':''}" onclick="toggleFavorite(event, '${item.id}')" title="المفضلة">
+            <div class="item-card ${item.isVip ? 'is-vip' : ''}" data-id="${esc(item.id)}">
+                <button class="fav-btn ${isFav?'active':''}" onclick="toggleFavorite(event, '${esc(item.id)}')" title="المفضلة">
                     <i class="fa-${isFav?'solid':'regular'} fa-heart"></i>
                 </button>
-                <div class="thumb-container" onclick="openPlayer('${item.id}', 'vod')">
+                <div class="thumb-container" onclick="openPlayer('${esc(item.id)}', 'vod')">
                     <img src="${esc(thumb)}" alt="${esc(item.title)}" loading="lazy" onerror="this.src='${defaultThumb}'">
                     <div class="play-overlay"><i class="fa-solid fa-circle-play"></i></div>
                     ${item.isVip ? `<div class="vip-card-badge"><i class="fa-solid fa-crown"></i> VIP</div>` : ''}
                     ${item.category ? `<div class="category-badge">${esc(item.category)}</div>` : ''}
                 </div>
                 <div class="card-details">
-                    <div class="card-title" onclick="openPlayer('${item.id}', 'vod')">${esc(item.title)}</div>
+                    <div class="card-title" onclick="openPlayer('${esc(item.id)}', 'vod')">${esc(item.title)}</div>
                     <div class="card-meta">
                         <span><i class="fa-regular fa-eye"></i> ${item.views || 0}</span>
-                        <span>${item.year || ''}</span>
+                        ${avg ? `<span class="card-rating"><i class="fa-solid fa-star"></i> ${avg}</span>` : `<span>${item.year || ''}</span>`}
                     </div>
                     <div class="card-actions">
-                        <button class="card-action-btn play" onclick="openPlayer('${item.id}', 'vod')">
+                        <button class="card-action-btn play" onclick="openPlayer('${esc(item.id)}', 'vod')">
                             <i class="fa-solid fa-play"></i> <span>مشاهدة</span>
                         </button>
-                        <button class="card-action-btn dl ${item.isVip?'vip-dl':''}" onclick="openDownloadModal(event, '${item.id}')">
+                        <button class="card-action-btn dl ${item.isVip?'vip-dl':''}" onclick="openDownloadModal(event, '${esc(item.id)}')">
                             <i class="fa-solid fa-download"></i> <span>تحميل</span>
                         </button>
                     </div>
@@ -1179,13 +1387,13 @@ function renderGridItems(){
 }
 
 /* =========================================================
-   Render Live Channels Grid
+   Render Live
    ========================================================= */
 function renderLiveChannels(){
     if(currentView !== 'live') return;
     const grid = $('#itemsGrid');
     if(!grid) return;
-    const q = $('#searchInput').value.trim().toLowerCase();
+    const q = ($('#searchInput').value || '').trim().toLowerCase();
 
     let channels = allLiveChannels.filter(ch => {
         const nameMatch = (ch.name || ch.title || '').toLowerCase().includes(q);
@@ -1200,7 +1408,8 @@ function renderLiveChannels(){
     }
 
     if(channels.length === 0){
-        grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-tower-broadcast empty-icon"></i><p>لا توجد قنوات بث مباشر متاحة.</p></div>`;
+        grid.className = 'items-grid';
+        grid.innerHTML = `<div class="status-box"><i class="fa-solid fa-tower-broadcast empty-icon"></i><p>لا توجد قنوات بث متاحة.</p></div>`;
         return;
     }
 
@@ -1208,10 +1417,10 @@ function renderLiveChannels(){
     grid.innerHTML = channels.map(ch => {
         const defaultLogo = 'https://via.placeholder.com/300x168/15171e/ef4444?text=' + encodeURIComponent(ch.name || ch.title || 'LIVE');
         const logo = ch.logo || ch.image || ch.poster || defaultLogo;
-        const channelName = ch.name || ch.title || 'قناة بث مباشر';
+        const channelName = ch.name || ch.title || 'قناة بث';
 
         return `
-            <div class="live-card ${ch.isVip ? 'is-vip' : ''}" onclick="openPlayer('${ch.id}', 'live')">
+            <div class="live-card ${ch.isVip ? 'is-vip' : ''}" onclick="openPlayer('${esc(ch.id)}', 'live')">
                 <div class="live-thumb">
                     <div class="live-indicator">مباشر</div>
                     ${ch.isVip ? `<div class="vip-card-badge" style="top:8px;right:8px;left:auto"><i class="fa-solid fa-crown"></i> VIP</div>` : ''}
@@ -1220,7 +1429,7 @@ function renderLiveChannels(){
                 <div class="live-details">
                     <div class="live-name">${esc(channelName)}</div>
                     <div class="live-meta">
-                        <span><i class="fa-solid fa-tv"></i> ${esc(ch.category || 'بث مباشر')}</span>
+                        <span><i class="fa-solid fa-tv"></i> ${esc(ch.category || 'بث')}</span>
                         <span><i class="fa-solid fa-bolt" style="color:var(--success-color)"></i> مباشر</span>
                     </div>
                 </div>
@@ -1229,14 +1438,17 @@ function renderLiveChannels(){
 }
 
 /* =========================================================
-   View Switcher (VOD / Live)
+   View Switcher
    ========================================================= */
 function switchView(view){
     currentView = view;
-    $$('.view-btn').forEach(b => {         b.classList.toggle('active', b.getAttribute('data-view') === view);     });$$
-('.bn-item').forEach(b => {
-        if(b.getAttribute('data-bn') === 'vod' || b.getAttribute('data-bn') === 'live'){
-            b.classList.toggle('active', b.getAttribute('data-bn') === view);
+    $$('.view-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-view') === view);
+    });
+    $$('.bn-item').forEach(b => {
+        const bn = b.getAttribute('data-bn');
+        if(bn === 'vod' || bn === 'live'){
+            b.classList.toggle('active', bn === view);
         }
     });
 
@@ -1246,12 +1458,17 @@ function switchView(view){
         renderGridItems();
     }else{
         $('#vodTabs').style.display = 'none';
-        $('#liveTabs').style.display = 'flex';         renderLiveChannels();     } }  $$('.view-btn').forEach(btn => {
+        $('#liveTabs').style.display = 'flex';
+        renderLiveChannels();
+    }
+}
+
+$$('.view-btn').forEach(btn => {
     btn.addEventListener('click', ()=> switchView(btn.getAttribute('data-view')));
 });
 
 /* =========================================================
-   Search Logic
+   Search
    ========================================================= */
 const handleSearch = debounce(()=>{
     const val = $('#searchInput').value.trim();
@@ -1269,7 +1486,7 @@ $('#searchClear').addEventListener('click', ()=>{
 });
 
 /* =========================================================
-   Favorites System
+   Favorites
    ========================================================= */
 function toggleFavorite(e, id){
     if(e) e.stopPropagation();
@@ -1281,20 +1498,31 @@ function toggleFavorite(e, id){
         favorites.push(id);
         toast('تمت الإضافة للمفضلة', 'ok');
     }
-    localStorage.setItem('faresflix_favs', JSON.stringify(favorites));
+    localStorage.setItem('server_wahsh_favs', JSON.stringify(favorites));
     if(currentView === 'vod') renderGridItems();
     if(currentPlayerItem && currentPlayerItem.id === id) updatePlayerFavBtn();
 }
 
 /* =========================================================
-   Continue Watching Feature
+   Continue Watching & History
    ========================================================= */
-function saveContinueWatching(item){
-    let list = JSON.parse(localStorage.getItem('faresflix_continue') || '[]');
+function getHistory(){ return JSON.parse(localStorage.getItem('server_wahsh_history') || '[]'); }
+function saveHistory(list){ localStorage.setItem('server_wahsh_history', JSON.stringify(list)); }
+
+function saveContinueWatching(item, currentTime=0, duration=0){
+    let list = getHistory();
     list = list.filter(x => x.id !== item.id);
-    list.unshift({ id: item.id, title: item.title, image: item.image || item.poster, time: Date.now() });
-    if(list.length > 10) list.pop();
-    localStorage.setItem('faresflix_continue', JSON.stringify(list));
+    const progress = duration > 0 ? Math.min(100, (currentTime/duration)*100) : 0;
+    list.unshift({
+        id: item.id, title: item.title,
+        image: item.image || item.poster || item.thumbnail,
+        currentTime: currentTime || 0,
+        duration: duration || 0,
+        progress: progress,
+        time: Date.now()
+    });
+    if(list.length > 30) list.pop();
+    saveHistory(list);
     renderContinueWatching();
 }
 
@@ -1303,35 +1531,75 @@ function renderContinueWatching(){
     const scroll = $('#continueScroll');
     if(!sec || !scroll) return;
 
-    let list = JSON.parse(localStorage.getItem('faresflix_continue') || '[]');
+    let list = getHistory().filter(x => x.progress < 95);
+    list = list.slice(0, 10);
     if(list.length === 0){
         sec.classList.remove('show');
         return;
     }
     sec.classList.add('show');
     scroll.innerHTML = list.map(item => `
-        <div class="continue-card" onclick="openPlayer('${item.id}', 'vod')">
+        <div class="continue-card" onclick="openPlayer('${esc(item.id)}', 'vod')">
             <div class="continue-thumb">
                 <img src="${esc(item.image || 'https://via.placeholder.com/160x90')}" alt="${esc(item.title)}">
+                <div class="continue-progress"><div class="cp-fill" style="width:${item.progress||0}%"></div></div>
             </div>
             <div class="continue-title">${esc(item.title)}</div>
         </div>
     `).join('');
 }
 
-$('#clearContinueBtn').addEventListener('click', async ()=>{
-    const ok = await askConfirm({ title: 'مسح السجل', msg: 'هل ترغب في مسح سجل متابعة المشاهدة؟' });
+$('#openHistoryBtn').addEventListener('click', openHistoryModal);
+
+function openHistoryModal(){
+    renderHistoryList();
+    openModal('historyModal');
+}
+
+function renderHistoryList(){
+    const list = $('#historyList');
+    if(!list) return;
+    const items = getHistory();
+    if(items.length === 0){
+        list.innerHTML = `<div class="status-box" style="padding:30px 10px"><i class="fa-solid fa-clock empty-icon"></i><p>السجل فارغ</p></div>`;
+        return;
+    }
+    list.innerHTML = items.map(it => `
+        <div class="history-item">
+            <div class="hi-thumb"><img src="${esc(it.image||'https://via.placeholder.com/80x45')}" alt=""></div>
+            <div class="hi-body">
+                <div class="hi-title">${esc(it.title)}</div>
+                <div class="hi-time">${fmtRelative(it.time)} • ${Math.round(it.progress||0)}%</div>
+            </div>
+            <div class="hi-actions">
+                <button class="hi-btn" onclick="closeModal('historyModal');openPlayer('${esc(it.id)}','vod')" title="مشاهدة"><i class="fa-solid fa-play"></i></button>
+                <button class="hi-btn danger" onclick="removeHistoryItem('${esc(it.id)}')" title="حذف"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function removeHistoryItem(id){
+    let list = getHistory().filter(x => x.id !== id);
+    saveHistory(list);
+    renderHistoryList();
+    renderContinueWatching();
+}
+
+async function clearAllHistory(){
+    const ok = await askConfirm({ title:'مسح السجل', msg:'مسح سجل المشاهدة كامل؟' });
     if(ok){
-        localStorage.removeItem('faresflix_continue');
+        localStorage.removeItem('server_wahsh_history');
+        renderHistoryList();
         renderContinueWatching();
         toast('تم مسح السجل', 'ok');
     }
-});
+}
 
 /* =========================================================
-   Player Logic & Video Engine (HLS, DASH, Embeds)
+   Player
    ========================================================= */
-function openPlayer(id, type='vod'){
+async function openPlayer(id, type='vod'){
     let item = null;
     if(type === 'live'){
         item = allLiveChannels.find(c => c.id === id);
@@ -1339,26 +1607,29 @@ function openPlayer(id, type='vod'){
         item = allFetchedItems.find(i => i.id === id);
     }
 
-    if(!item){
-        toast('لم يتم العثور على المحتوى المطلوب', 'err');
+    if(!item){ toast('لم يتم العثور على المحتوى', 'err'); return; }
+
+    // Guest gate: must login to watch anything
+    if(!currentUser){
+        toast('يجب تسجيل الدخول للمشاهدة', 'warn', 'مطلوب تسجيل دخول');
+        openAuthModal('login');
         return;
     }
 
-    // VIP Protection Check
+    // VIP protection
     if(item.isVip && !getUserIsVip(userData)){
         openSubModal();
-        toast('هذا المحتوى مخصص للمشتركين VIP فقط', 'warn');
+        toast('هذا المحتوى مخصص لمشتركي VIP', 'warn');
         return;
     }
 
     currentPlayerItem = item;
     currentPlayingId = id;
 
-    // UI Updates
-    $('#modalTitle').textContent = item.title || item.name || 'عرض الفيديو';
+    $('#modalTitle').textContent = item.title || item.name || 'عرض';
     $('#modalViews').textContent = (item.views || 0) + 1;
     $('#modalCategory').textContent = item.category || (type === 'live' ? 'بث مباشر' : 'عام');
-    $('#modalDesc').textContent = item.description || 'لا يوجد وصف إضافي.';
+    $('#modalDesc').textContent = item.description || 'لا يوجد وصف.';
 
     const dlWrap = $('#playerDlWrap');
     if(type === 'vod'){
@@ -1369,16 +1640,41 @@ function openPlayer(id, type='vod'){
         dlWrap.style.display = 'none';
     }
 
-    // Setup Servers Selection
+    // Setup rating & comments for VOD only
+    if(type === 'vod'){
+        setupRating(item.id);
+        setupComments(item.id);
+    }else{
+        $('#ratingBlock').style.display = 'none';
+        $('#commentForm').style.display = 'none';
+        $('#commentsList').innerHTML = '';
+        $('#commentsCount').textContent = '0';
+    }
+
     setupServersList(item, type);
 
-    // Update Views in DB
+    // Restore playback position
+    let startTime = 0;
+    if(type === 'vod'){
+        const hist = getHistory().find(x => x.id === id);
+        if(hist && hist.currentTime && hist.progress < 95) startTime = hist.currentTime;
+    }
+
     if(type === 'vod'){
         db.ref('videos/' + id + '/views').transaction(v => (v || 0) + 1);
-        saveContinueWatching(item);
+        saveContinueWatching(item, startTime, 0);
     }
 
     openModal('playerModal');
+
+    // After render, apply startTime
+    if(startTime > 0){
+        setTimeout(()=>{
+            if(currentVideoEl && currentVideoEl.duration){
+                try{ currentVideoEl.currentTime = startTime; }catch(e){}
+            }
+        }, 1500);
+    }
 }
 
 function updatePlayerFavBtn(){
@@ -1386,7 +1682,7 @@ function updatePlayerFavBtn(){
     if(!btn || !currentPlayerItem) return;
     const isFav = favorites.includes(currentPlayerItem.id);
     btn.className = `btn fav-btn-player ${isFav?'active':''}`;
-    btn.innerHTML = `<i class="fa-${isFav?'solid':'regular'} fa-heart"></i> <span>${isFav?'المفضلة':'إضافة للمفضلة'}</span>`;
+    btn.innerHTML = `<i class="fa-${isFav?'solid':'regular'} fa-heart"></i> <span>${isFav?'في المفضلة':'أضف للمفضلة'}</span>`;
     btn.onclick = (e) => toggleFavorite(e, currentPlayerItem.id);
 }
 
@@ -1396,15 +1692,15 @@ function setupServersList(item, type){
     grid.innerHTML = '';
 
     let servers = [];
-    if(item.servers && Array.isArray(item.servers) && item.servers.length > 0){
-        servers = item.servers;
+    if(Array.isArray(item.servers) && item.servers.length > 0){
+        servers = item.servers.filter(s => s && (s.url || s.link));
     }else if(item.url || item.streamUrl || item.link){
         servers = [{ name: 'السيرفر الرئيسي', url: item.url || item.streamUrl || item.link, type: item.streamType || item.type || 'auto' }];
     }
 
     if(servers.length === 0){
         section.style.display = 'none';
-        renderPlayerEngine(item.url || item.streamUrl || item.link || '', item.type || 'auto');
+        renderPlayerEngine('', 'auto');
         return;
     }
 
@@ -1426,26 +1722,33 @@ function setupServersList(item, type){
 
 function renderPlayerEngine(url, type='auto'){
     destroyPlayerInstances();
+    currentVideoEl = null;
     const container = $('#playerContainer');
     container.innerHTML = '';
 
     if(!url){
-        container.innerHTML = `<div class="player-error"><i class="fa-solid fa-triangle-exclamation"></i><p>رابط البث غير متوفر حالياً.</p></div>`;
+        container.innerHTML = `<div class="player-error"><i class="fa-solid fa-triangle-exclamation"></i><p>رابط البث غير متوفر.</p></div>`;
         return;
     }
 
-    const cleanUrl = url.trim();
+    const cleanUrl = String(url).trim();
+    if(!/^https?:\/\//i.test(cleanUrl)){
+        container.innerHTML = `<div class="player-error"><i class="fa-solid fa-link-slash"></i><p>رابط غير صالح.</p></div>`;
+        return;
+    }
+
     const isHls = cleanUrl.includes('.m3u8') || type === 'hls';
     const isDash = cleanUrl.includes('.mpd') || type === 'dash';
-    const isDirectVideo = cleanUrl.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i) || type === 'video';
+    const isDirectVideo = cleanUrl.match(/\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i) || type === 'video';
 
     if(isHls){
         const video = document.createElement('video');
-        video.controls = true;
-        video.autoplay = true;
-        video.playsInline = true;
+        video.controls = true; video.autoplay = true; video.playsInline = true;
         video.style.width = '100%'; video.style.height = '100%';
         container.appendChild(video);
+        currentVideoEl = video;
+        attachToolbar(container, video);
+        attachProgressSaver(video);
 
         if(Hls.isSupported()){
             hlsPlayerInstance = new Hls({ enableWorker: true });
@@ -1454,7 +1757,7 @@ function renderPlayerEngine(url, type='auto'){
             hlsPlayerInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
             hlsPlayerInstance.on(Hls.Events.ERROR, (e, data) => {
                 if(data.fatal){
-                    container.innerHTML = `<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i><p>تعذر تحميل البث المباشر (HLS Error).</p></div>`;
+                    container.innerHTML = `<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i><p>تعذر تحميل البث (HLS Error).</p></div>`;
                 }
             });
         }else if(video.canPlayType('application/vnd.apple.mpegurl')){
@@ -1463,104 +1766,315 @@ function renderPlayerEngine(url, type='auto'){
         }
     }else if(isDash){
         const video = document.createElement('video');
-        video.controls = true;
-        video.autoplay = true;
-        video.playsInline = true;
+        video.controls = true; video.autoplay = true; video.playsInline = true;
         video.style.width = '100%'; video.style.height = '100%';
         container.appendChild(video);
+        currentVideoEl = video;
+        attachToolbar(container, video);
+        attachProgressSaver(video);
 
-        dashPlayerInstance = dashjs.MediaPlayer().create();
-        dashPlayerInstance.initialize(video, cleanUrl, true);
+        if(window.dashjs){
+            dashPlayerInstance = dashjs.MediaPlayer().create();
+            dashPlayerInstance.initialize(video, cleanUrl, true);
+        }
     }else if(isDirectVideo){
         const video = document.createElement('video');
-        video.controls = true;
-        video.autoplay = true;
-        video.playsInline = true;
+        video.controls = true; video.autoplay = true; video.playsInline = true;
         video.src = cleanUrl;
         video.style.width = '100%'; video.style.height = '100%';
         container.appendChild(video);
+        currentVideoEl = video;
+        attachToolbar(container, video);
+        attachProgressSaver(video);
         video.play().catch(()=>{});
     }else{
-        // Embed Iframe Player
         const iframe = document.createElement('iframe');
         iframe.src = cleanUrl;
-        iframe.allow = 'autoplay; encrypted-media; fullscreen';
+        iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
         iframe.allowFullscreen = true;
         container.appendChild(iframe);
     }
 }
 
+function attachToolbar(container, video){
+    const toolbar = document.createElement('div');
+    toolbar.className = 'player-toolbar';
+    toolbar.innerHTML = `
+        <div class="player-tool" id="pipBtn" title="صورة داخل صورة"><i class="fa-solid fa-clone"></i></div>
+        <div class="player-tool" id="speedBtn" title="السرعة"><i class="fa-solid fa-gauge-high"></i></div>
+    `;
+    container.appendChild(toolbar);
+
+    const speedMenu = document.createElement('div');
+    speedMenu.className = 'speed-menu';
+    [0.5, 0.75, 1, 1.25, 1.5, 2].forEach(s => {
+        const b = document.createElement('button');
+        b.textContent = s + 'x';
+        if(s === 1) b.classList.add('active');
+        b.onclick = () => {
+            video.playbackRate = s;
+            speedMenu.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+            b.classList.add('active');
+            speedMenu.classList.remove('show');
+        };
+        speedMenu.appendChild(b);
+    });
+    container.appendChild(speedMenu);
+
+    toolbar.querySelector('#speedBtn').onclick = (e) => {
+        e.stopPropagation();
+        speedMenu.classList.toggle('show');
+    };
+
+    toolbar.querySelector('#pipBtn').onclick = async () => {
+        try{
+            if(document.pictureInPictureElement) await document.exitPictureInPicture();
+            else if(video.requestPictureInPicture) await video.requestPictureInPicture();
+        }catch(e){ toast('PiP غير مدعوم هنا', 'warn'); }
+    };
+
+    document.addEventListener('click', () => speedMenu.classList.remove('show'), { once:true });
+}
+
+function attachProgressSaver(video){
+    if(progressSaveTimer) clearInterval(progressSaveTimer);
+    progressSaveTimer = setInterval(()=>{
+        if(!currentPlayerItem || !video) return;
+        if(video.currentTime > 5 && video.duration > 0 && !video.paused){
+            saveContinueWatching(currentPlayerItem, video.currentTime, video.duration);
+        }
+    }, 10000);
+
+    video.addEventListener('pause', ()=>{
+        if(currentPlayerItem && video.duration > 0){
+            saveContinueWatching(currentPlayerItem, video.currentTime, video.duration);
+        }
+    });
+}
+
 function destroyPlayerInstances(){
-    if(hlsPlayerInstance){
-        hlsPlayerInstance.destroy();
-        hlsPlayerInstance = null;
-    }
-    if(dashPlayerInstance){
-        dashPlayerInstance.reset();
-        dashPlayerInstance = null;
-    }
+    if(hlsPlayerInstance){ try{hlsPlayerInstance.destroy();}catch(e){} hlsPlayerInstance = null; }
+    if(dashPlayerInstance){ try{dashPlayerInstance.reset();}catch(e){} dashPlayerInstance = null; }
+    if(progressSaveTimer){ clearInterval(progressSaveTimer); progressSaveTimer = null; }
     const container = $('#playerContainer');
     if(container) container.innerHTML = '';
+    currentVideoEl = null;
 }
 
 function closePlayer(){
+    // Save before close
+    if(currentVideoEl && currentPlayerItem && currentVideoEl.duration > 0){
+        saveContinueWatching(currentPlayerItem, currentVideoEl.currentTime, currentVideoEl.duration);
+    }
+    // Stop video audio immediately
+    if(currentVideoEl){
+        try{ currentVideoEl.pause(); currentVideoEl.src = ''; }catch(e){}
+    }
     destroyPlayerInstances();
     closeModal('playerModal');
+    // Detach comments/ratings
+    if(commentsListenerRef){ commentsListenerRef.off(); commentsListenerRef = null; }
+    if(ratingsListenerRef){ ratingsListenerRef.off(); ratingsListenerRef = null; }
     currentPlayerItem = null;
     currentPlayingId = null;
 }
 
+/* =========================================================
+   Rating System
+   ========================================================= */
+function setupRating(itemId){
+    $('#ratingBlock').style.display = 'flex';
+    const starsEl = $('#rbStars');
+    const avgEl = $('#rbAvg');
+    starsEl.querySelectorAll('i').forEach(i => i.className = 'fa-solid fa-star');
+
+    // Load average
+    if(ratingsListenerRef){ ratingsListenerRef.off(); }
+    ratingsListenerRef = db.ref('ratings/' + itemId);
+    ratingsListenerRef.on('value', snap => {
+        let count = 0, sum = 0, myVal = 0;
+        if(snap.exists()){
+            snap.forEach(c => {
+                const v = Number(c.val().value) || 0;
+                if(v > 0){ count++; sum += v; }
+                if(currentUser && c.key === currentUser.uid) myVal = v;
+            });
+        }
+        if(count > 0){
+            const avg = sum / count;
+            avgEl.innerHTML = `<strong>${avg.toFixed(1)}</strong> / 5 • ${count} تقييم`;
+            starsEl.querySelectorAll('i').forEach(i => {
+                const v = Number(i.getAttribute('data-v'));
+                i.classList.toggle('active', v <= Math.round(avg));
+            });
+        }else{
+            avgEl.textContent = 'لا توجد تقييمات';
+            starsEl.querySelectorAll('i').forEach(i => i.classList.remove('active'));
+        }
+        // Mark user's own
+        if(myVal > 0){
+            starsEl.querySelectorAll('i').forEach(i => {
+                if(Number(i.getAttribute('data-v')) === myVal) i.classList.add('active');
+            });
+        }
+    });
+
+    // Click handler
+    starsEl.querySelectorAll('i').forEach(star => {
+        star.onclick = async () => {
+            if(!currentUser){ toast('يجب تسجيل الدخول للتقييم', 'warn'); openAuthModal('login'); return; }
+            const val = Number(star.getAttribute('data-v'));
+            try{
+                await db.ref(`ratings/${itemId}/${currentUser.uid}`).set({ value: val, ts: Date.now() });
+                // Update avg on item
+                const snap = await db.ref('ratings/' + itemId).once('value');
+                let c=0, s=0;
+                snap.forEach(x => { const v = Number(x.val().value)||0; if(v>0){c++; s+=v;} });
+                if(c > 0){
+                    db.ref('videos/' + itemId + '/ratingAvg').set((s/c).toFixed(2));
+                    db.ref('videos/' + itemId + '/ratingCount').set(c);
+                }
+                toast(`تم تقييمك بـ ${val} نجوم`, 'ok');
+            }catch(e){ toast('فشل التقييم', 'err'); }
+        };
+        star.onmouseenter = () => {
+            const val = Number(star.getAttribute('data-v'));
+            starsEl.querySelectorAll('i').forEach(i => {
+                if(Number(i.getAttribute('data-v')) <= val) i.classList.add('hover');
+            });
+        };
+        star.onmouseleave = () => {
+            starsEl.querySelectorAll('i').forEach(i => i.classList.remove('hover'));
+        };
+    });
+}
+
+/* =========================================================
+   Comments System
+   ========================================================= */
+function setupComments(itemId){
+    $('#commentForm').style.display = 'flex';
+    const listEl = $('#commentsList');
+    const countEl = $('#commentsCount');
+    listEl.innerHTML = `<div class="status-box" style="padding:20px 10px"><div class="spinner"></div></div>`;
+
+    if(commentsListenerRef){ commentsListenerRef.off(); }
+    commentsListenerRef = db.ref('comments/' + itemId).limitToLast(50);
+    commentsListenerRef.on('value', snap => {
+        const comments = [];
+        if(snap.exists()){
+            snap.forEach(c => comments.push({ id:c.key, ...c.val() }));
+        }
+        comments.sort((a,b) => (b.ts||0) - (a.ts||0));
+        countEl.textContent = comments.length;
+        if(comments.length === 0){
+            listEl.innerHTML = `<div class="status-box" style="padding:20px 10px"><i class="fa-regular fa-comment empty-icon"></i><p>كن أول من يعلّق</p></div>`;
+            return;
+        }
+        listEl.innerHTML = comments.map(c => {
+            const isOwner = currentUser && c.uid === currentUser.uid;
+            const isVipCommenter = c.isVip;
+            const letter = (c.name || '?').trim().charAt(0).toUpperCase();
+            return `
+                <div class="comment-item">
+                    <div class="ci-avatar">${esc(letter)}</div>
+                    <div class="ci-body">
+                        <div class="ci-head">
+                            <span class="ci-name">${esc(c.name||'مستخدم')}</span>
+                            ${isVipCommenter ? '<span class="ci-vip">👑 VIP</span>' : ''}
+                            <span class="ci-time">${fmtRelative(c.ts)}</span>
+                            ${isOwner ? `<button class="ci-del" onclick="deleteComment('${esc(itemId)}','${esc(c.id)}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                        <div class="ci-text">${esc(c.text)}</div>
+                    </div>
+                </div>`;
+        }).join('');
+    });
+}
+
+$('#commentSendBtn').addEventListener('click', sendComment);
+$('#commentInput').addEventListener('keypress', e => { if(e.key === 'Enter') sendComment(); });
+
+async function sendComment(){
+    if(!currentUser){ toast('سجل دخول للتعليق', 'warn'); openAuthModal('login'); return; }
+    if(!currentPlayerItem){ return; }
+    const input = $('#commentInput');
+    const text = input.value.trim();
+    if(!text) return;
+    if(text.length > 300){ toast('التعليق طويل جداً', 'warn'); return; }
+    input.value = '';
+    try{
+        await db.ref('comments/' + currentPlayerItem.id).push({
+            uid: currentUser.uid,
+            name: userData ? userData.name : 'مستخدم',
+            isVip: getUserIsVip(userData),
+            text: text,
+            ts: Date.now()
+        });
+    }catch(e){ toast('فشل إرسال التعليق', 'err'); }
+}
+
+async function deleteComment(itemId, commentId){
+    const ok = await askConfirm({ title:'حذف التعليق', msg:'حذف تعليقك؟' });
+    if(ok){
+        await db.ref(`comments/${itemId}/${commentId}`).remove();
+        toast('تم الحذف', 'ok');
+    }
+}
+
+/* =========================================================
+   URL Direct Play
+   ========================================================= */
 function checkUrlForDirectPlay(){
     if(hasHandledUrlHash) return;
     const hash = window.location.hash;
     if(hash.startsWith('#watch=')){
         const id = hash.replace('#watch=', '');
-        if(id){
-            hasHandledUrlHash = true;
-            setTimeout(()=> openPlayer(id, 'vod'), 600);
-        }
+        if(id){ hasHandledUrlHash = true; setTimeout(()=> openPlayer(id, 'vod'), 700); }
     }else if(hash.startsWith('#live=')){
         const id = hash.replace('#live=', '');
         if(id){
             hasHandledUrlHash = true;
             switchView('live');
-            setTimeout(()=> openPlayer(id, 'live'), 600);
+            setTimeout(()=> openPlayer(id, 'live'), 700);
         }
     }
 }
 
 /* =========================================================
-   Download Flow & Timer
+   Download Flow
    ========================================================= */
 function openDownloadModal(e, id){
     if(e) e.stopPropagation();
     const item = allFetchedItems.find(i => i.id === id);
-    if(!item){
-        toast('العنصر غير موجود', 'err');
+    if(!item){ toast('العنصر غير موجود', 'err'); return; }
+
+    if(!currentUser){
+        toast('سجل دخول للتحميل', 'warn');
+        openAuthModal('login');
         return;
     }
 
     currentDlItem = item;
     const card = $('#dlModalCard');
-    const isVipUser = getUserIsVip(userData);
-    const downloadUrl = item.downloadUrl || item.url || '#';
+    const downloadUrl = item.downloadUrl || item.url || '';
 
     card.innerHTML = `
         <button class="close-modal" onclick="closeModal('dlModal');clearDlTimer();"><i class="fa-solid fa-xmark"></i></button>
         <div class="dl-hero">
             <div class="dl-hero-icon"><i class="fa-solid fa-download"></i></div>
             <h3>تحميل: ${esc(item.title)}</h3>
-            <p>اختر وسيلة التحميل المناسبة لك</p>
+            <p>اختر وسيلة التحميل</p>
         </div>
         <div class="dl-options">
-            <button class="dl-option-btn vip-option" onclick="startVipDownload('${esc(downloadUrl)}')">
+            <button class="dl-option-btn vip-option" id="dlVipBtn">
                 <div class="dl-opt-icon"><i class="fa-solid fa-bolt"></i></div>
                 <div class="dl-opt-text">
                     <div class="dl-opt-title">تحميل فوري VIP</div>
-                    <div class="dl-opt-sub">بدون فترات انتظار - روابط مباشرة فائقة السرعة</div>
+                    <div class="dl-opt-sub">بدون انتظار - روابط فائقة السرعة</div>
                 </div>
             </button>
-            <button class="dl-option-btn free-option" onclick="startFreeDownloadTimer('${esc(downloadUrl)}')">
+            <button class="dl-option-btn free-option" id="dlFreeBtn">
                 <div class="dl-opt-icon"><i class="fa-solid fa-hourglass-start"></i></div>
                 <div class="dl-opt-text">
                     <div class="dl-opt-title">تحميل مجاني (انتظار 15 ثانية)</div>
@@ -1571,27 +2085,25 @@ function openDownloadModal(e, id){
         <div id="dlTimerArea" style="margin-top:15px"></div>
     `;
 
+    $('#dlVipBtn').onclick = () => startVipDownload(downloadUrl);
+    $('#dlFreeBtn').onclick = () => startFreeDownloadTimer(downloadUrl);
+
     openModal('dlModal');
 }
 
 function clearDlTimer(){
-    if(countdownTimer){
-        clearInterval(countdownTimer);
-        countdownTimer = null;
-    }
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
 }
 
 function startVipDownload(url){
-    if(!getUserIsVip(userData)){
-        openSubModal();
-        toast('التحميل الفوري متاح لأعضاء VIP فقط', 'warn');
-        return;
-    }
+    if(!getUserIsVip(userData)){ openSubModal(); toast('التحميل الفوري لـ VIP فقط', 'warn'); return; }
+    if(!url){ toast('رابط التحميل غير متوفر', 'err'); return; }
     toast('جاري بدء التحميل...', 'ok');
     window.open(url, '_blank');
 }
 
 function startFreeDownloadTimer(url){
+    if(!url){ toast('رابط التحميل غير متوفر', 'err'); return; }
     clearDlTimer();
     const area = $('#dlTimerArea');
     let sec = 15;
@@ -1601,12 +2113,14 @@ function startFreeDownloadTimer(url){
             <div class="countdown-circle" id="cdCircle">
                 <span class="countdown-num" id="cdNum">15</span>
             </div>
-            <div class="countdown-txt">جاري تحضير رابط التحميل، يرجى الانتظار...</div>
+            <div class="countdown-txt">جاري تحضير الرابط...</div>
         </div>
-        <button class="dl-ready-btn" id="dlReadyBtn" onclick="window.open('${url}', '_blank')">
-            <i class="fa-solid fa-cloud-arrow-down"></i> اضغط هنا للتحميل الآن
+        <button class="dl-ready-btn" id="dlReadyBtn">
+            <i class="fa-solid fa-cloud-arrow-down"></i> اضغط للتحميل الآن
         </button>
     `;
+
+    $('#dlReadyBtn').onclick = () => window.open(url, '_blank');
 
     countdownTimer = setInterval(()=>{
         sec--;
@@ -1617,25 +2131,31 @@ function startFreeDownloadTimer(url){
             const pct = ((15 - sec) / 15) * 100;
             circle.style.setProperty('--progress', `${pct}%`);
         }
-
         if(sec <= 0){
             clearDlTimer();
-            const btn = $('#dlReadyBtn');             if(btn) btn.classList.add('show');             toast('رابط التحميل جاهز الآن', 'ok');         }     }, 1000); }  /* =========================================================    Bottom Navigation Handler (Mobile)    ========================================================= */ $$('.bottom-nav .bn-item').forEach(btn => {
+            const btn = $('#dlReadyBtn');
+            if(btn) btn.classList.add('show');
+            toast('رابط التحميل جاهز', 'ok');
+        }
+    }, 1000);
+}
+
+/* =========================================================
+   Bottom Nav
+   ========================================================= */
+$$('.bottom-nav .bn-item').forEach(btn => {
     btn.addEventListener('click', ()=>{
         const bn = btn.getAttribute('data-bn');
-        if(bn === 'vod'){
-            switchView('vod');
-        }else if(bn === 'live'){
-            switchView('live');
-        }else if(bn === 'search'){
-            $('#searchInput').focus();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }else if(bn === 'favorites'){
+        if(bn === 'vod'){ switchView('vod'); }
+        else if(bn === 'live'){ switchView('live'); }
+        else if(bn === 'search'){ $('#searchInput').focus(); window.scrollTo({top:0,behavior:'smooth'}); }
+        else if(bn === 'favorites'){
             switchView('vod');
             activeTab = 'fav';
             buildVodTabs();
             renderGridItems();
-        }else if(bn === 'profile'){
+        }
+        else if(bn === 'profile'){
             if(currentUser) openProfileModal();
             else openAuthModal('login');
         }
@@ -1643,7 +2163,40 @@ function startFreeDownloadTimer(url){
 });
 
 /* =========================================================
-   Initialization
+   Keyboard Shortcuts
+   ========================================================= */
+document.addEventListener('keydown', e => {
+    if(!$('#playerModal').classList.contains('active') || !currentVideoEl) return;
+    const v = currentVideoEl;
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    switch(e.key){
+        case ' ': e.preventDefault(); v.paused ? v.play() : v.pause(); break;
+        case 'ArrowRight': v.currentTime += 5; break;
+        case 'ArrowLeft': v.currentTime -= 5; break;
+        case 'ArrowUp': e.preventDefault(); v.volume = Math.min(1, v.volume + 0.1); break;
+        case 'ArrowDown': e.preventDefault(); v.volume = Math.max(0, v.volume - 0.1); break;
+        case 'm': case 'M': v.muted = !v.muted; break;
+        case 'f': case 'F':
+            if(!document.fullscreenElement) v.requestFullscreen?.();
+            else document.exitFullscreen?.();
+            break;
+    }
+});
+
+/* =========================================================
+   Close modals on background click
+   ========================================================= */
+$$('.modal').forEach(m => {
+    m.addEventListener('click', e => {
+        if(e.target === m){
+            if(m.id === 'playerModal') closePlayer();
+            else m.classList.remove('active');
+        }
+    });
+});
+
+/* =========================================================
+   Initialize
    ========================================================= */
 document.addEventListener('DOMContentLoaded', ()=>{
     loadSiteSettings();
@@ -1651,6 +2204,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     fetchCategories();
     fetchLiveData();
     fetchAds();
+    updateGuestWarn();
+    renderContinueWatching();
 });
 </script>
 </body>
