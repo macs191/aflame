@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0f">
+<title id="dynamicPageTitle">سيرفر الوحش | منصة البث المتكاملة</title>
+<meta name="description" content="سيرفر الوحش - أفلام، مسلسلات، قنوات مباشرة بجودة عالية.">
+<meta property="og:title" content="سيرفر الوحش">
+<meta property="og:description" content="شاهد أحدث المحتويات مجاناً وللمشتركين VIP.">
+<meta property="og:image" content="https://via.placeholder.com/1200x630/0a0b0f/e50914?text=سيرفر+الوحش">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<!-- ============ LOADER ============ -->
+<div id="appLoader" class="app-loader">
+    <div class="loader-wolf">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="wgLoad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#e50914"/><stop offset="1" stop-color="#ffb703"/>
+            </linearGradient></defs>
+            <path fill="url(#wgLoad)" d="M32 4C20 4 12 10 12 18c0 3 .8 5.5 2 7.7C10 28 8 32 8 38c0 12 10 22 24 22s24-10 24-22c0-6-2-10-6-12.3 1.2-2.2 2-4.7 2-7.7 0-8-8-14-20-14zm-10 22a3 3 0 113 3 3 3 0 01-3-3zm20 0a3 3 0 113 3 3 3 0 01-3-3zm-10 6l3 4 3-4h-6zm-5 8c1.5 3 5 5 8 5s6.5-2 8-5h-16z"/>
+        </svg>
+    </div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p>جاري تحميل سيرفر الوحش...</p>
+</div>
+
+<!-- ============ NAVBAR ============ -->
+<nav class="navbar" id="mainNavbar">
+    <a href="#" class="nav-brand" onclick="event.preventDefault();scrollToTop();">
+        <svg class="wolf-logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#e50914"/><stop offset="1" stop-color="#ffb703"/>
+            </linearGradient></defs>
+            <path fill="url(#wg)" d="M32 4C20 4 12 10 12 18c0 3 .8 5.5 2 7.7C10 28 8 32 8 38c0 12 10 22 24 22s24-10 24-22c0-6-2-10-6-12.3 1.2-2.2 2-4.7 2-7.7 0-8-8-14-20-14zm-10 22a3 3 0 113 3 3 3 0 01-3-3zm20 0a3 3 0 113 3 3 3 0 01-3-3zm-10 6l3 4 3-4h-6zm-5 8c1.5 3 5 5 8 5s6.5-2 8-5h-16z"/>
+        </svg>
+        <span class="brand-text" id="brandText">سيرفر <b>الوحش</b> 🐺</span>
+    </a>
+
+    <div class="nav-links">
+        <button class="nav-link active" data-nav="home"><i class="fa-solid fa-house"></i> الرئيسية</button>
+        <button class="nav-link" data-nav="movies"><i class="fa-solid fa-film"></i> أفلام</button>
+        <button class="nav-link" data-nav="series"><i class="fa-solid fa-tv"></i> مسلسلات</button>
+        <button class="nav-link" data-nav="live"><i class="fa-solid fa-tower-broadcast"></i> بث مباشر</button>
+        <button class="nav-link" data-nav="vip"><i class="fa-solid fa-crown"></i> VIP</button>
+    </div>
+
+    <div class="search-box" id="searchBox">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="ابحث عن فيلم، مسلسل، قناة...">
+        <button class="search-clear" id="searchClear" title="مسح"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="nav-actions" id="navActions"></div>
+</nav>
+
+<!-- ============ MOBILE SEARCH ============ -->
+<div class="mobile-search" id="mobileSearch">
+    <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="mobileSearchInput" placeholder="ابحث...">
+        <button class="search-clear" id="mobileSearchClear"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+</div>
+
+<!-- ============ TICKER ============ -->
+<div class="ticker-bar" id="tickerBar"><div class="ticker-content" id="tickerContent"></div></div>
+
+<!-- ============ HERO CAROUSEL ============ -->
+<section class="hero-section" id="heroSection">
+    <div class="hero-slider" id="heroSlider"></div>
+    <div class="hero-dots" id="heroDots"></div>
+</section>
+
+<!-- ============ MAIN CONTENT ============ -->
+<main class="main-content">
+
+    <!-- TOP AD SLOT -->
+    <div class="ad-slot ad-top" id="adTop"></div>
+
+    <!-- GUEST WARNING -->
+    <div class="guest-warn" id="guestWarn" style="display:none">
+        <div class="gw-icon"><i class="fa-solid fa-circle-info"></i></div>
+        <div class="gw-body">
+            <strong>مرحباً بك في سيرفر الوحش 🐺</strong>
+            <span>سجّل دخول لمشاهدة المحتوى المجاني، اشترك VIP لفتح كل المميز.</span>
+        </div>
+        <div class="gw-actions">
+            <button class="btn btn-primary sm" onclick="openAuthModal('login')">دخول</button>
+            <button class="btn btn-outline sm" onclick="openAuthModal('register')">حساب جديد</button>
+        </div>
+    </div>
+
+    <!-- CONTINUE WATCHING -->
+    <section class="content-row continue-row" id="continueSection" style="display:none">
+        <div class="row-header">
+            <div class="row-title">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <h2>أكمل المشاهدة</h2>
+            </div>
+            <button class="row-action" id="openHistoryBtn">
+                <span>السجل الكامل</span>
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+        </div>
+        <div class="row-scroll" id="continueScroll"></div>
+    </section>
+
+    <!-- DYNAMIC SECTIONS (يتم بناؤها من Firebase) -->
+    <div id="dynamicSections"></div>
+
+    <!-- AD BETWEEN SECTIONS -->
+    <div class="ad-slot ad-mid" id="adMid"></div>
+
+    <!-- LIVE CHANNELS (يظهر عند اختيار التاب) -->
+    <section class="content-row live-row" id="liveSection" style="display:none">
+        <div class="row-header">
+            <div class="row-title">
+                <span class="live-dot"></span>
+                <h2>البث المباشر</h2>
+            </div>
+            <div class="live-tabs-scroll" id="liveTabs"></div>
+        </div>
+        <div class="grid-content" id="liveGrid"></div>
+    </section>
+
+    <!-- BOTTOM AD SLOT -->
+    <div class="ad-slot ad-bottom" id="adBottom"></div>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <svg class="wolf-logo-lg" viewBox="0 0 64 64">
+                <path fill="#e50914" d="M32 4C20 4 12 10 12 18c0 3 .8 5.5 2 7.7C10 28 8 32 8 38c0 12 10 22 24 22s24-10 24-22c0-6-2-10-6-12.3 1.2-2.2 2-4.7 2-7.7 0-8-8-14-20-14zm-10 22a3 3 0 113 3 3 3 0 01-3-3zm20 0a3 3 0 113 3 3 3 0 01-3-3zm-10 6l3 4 3-4h-6zm-5 8c1.5 3 5 5 8 5s6.5-2 8-5h-16z"/>
+            </svg>
+            <div>
+                <h3>سيرفر الوحش 🐺</h3>
+                <p>منصة البث المتكاملة</p>
+            </div>
+        </div>
+        <div class="footer-links">
+            <a onclick="openPage('about')">عن المنصة</a>
+            <a onclick="openPage('contact')">اتصل بنا</a>
+            <a onclick="openPage('dmca')">DMCA</a>
+            <a onclick="openPage('terms')">الشروط</a>
+            <a onclick="openPage('privacy')">الخصوصية</a>
+        </div>
+        <div class="footer-social">
+            <a href="#" title="فيسبوك"><i class="fa-brands fa-facebook"></i></a>
+            <a href="#" title="واتساب"><i class="fa-brands fa-whatsapp"></i></a>
+            <a href="#" title="تليجرام"><i class="fa-brands fa-telegram"></i></a>
+            <a href="#" title="انستجرام"><i class="fa-brands fa-instagram"></i></a>
+        </div>
+        <div class="footer-copy">© <span id="yearSpan"></span> سيرفر الوحش - جميع الحقوق محفوظة</div>
+    </div>
+</footer>
+
+<!-- ============ BOTTOM NAV (MOBILE) ============ -->
+<nav class="bottom-nav" id="bottomNav">
+    <button class="bn-item active" data-bn="home">
+        <i class="fa-solid fa-house"></i><span>الرئيسية</span>
+    </button>
+    <button class="bn-item" data-bn="movies">
+        <i class="fa-solid fa-film"></i><span>أفلام</span>
+    </button>
+    <button class="bn-item" data-bn="live">
+        <i class="fa-solid fa-tower-broadcast"></i><span>بث</span>
+    </button>
+    <button class="bn-item" data-bn="search">
+        <i class="fa-solid fa-magnifying-glass"></i><span>بحث</span>
+    </button>
+    <button class="bn-item" data-bn="profile">
+        <i class="fa-solid fa-user"></i><span>حسابي</span>
+    </button>
+</nav>
+
+<!-- ============ MODAL: AUTH ============ -->
+<div id="authModal" class="modal">
+    <div class="modal-card">
+        <button class="modal-close" data-close="authModal"><i class="fa-solid fa-xmark"></i></button>
+        <div class="auth-logo">
+            <svg viewBox="0 0 64 64"><path fill="#e50914" d="M32 4C20 4 12 10 12 18c0 3 .8 5.5 2 7.7C10 28 8 32 8 38c0 12 10 22 24 22s24-10 24-22c0-6-2-10-6-12.3 1.2-2.2 2-4.7 2-7.7 0-8-8-14-20-14zm-10 22a3 3 0 113 3 3 3 0 01-3-3zm20 0a3 3 0 113 3 3 3 0 01-3-3zm-10 6l3 4 3-4h-6zm-5 8c1.5 3 5 5 8 5s6.5-2 8-5h-16z"/></svg>
+        </div>
+        <h3 class="modal-title" id="authTitle">تسجيل الدخول</h3>
+        <form id="authForm">
+            <div class="form-group" id="nameGroup" style="display:none">
+                <label>الاسم الكامل</label>
+                <input type="text" id="authName" class="form-control" placeholder="أدخل اسمك">
+            </div>
+            <div class="form-group">
+                <label>البريد الإلكتروني</label>
+                <input type="email" id="authEmail" class="form-control" required placeholder="example@mail.com">
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="authPassword" class="form-control" required placeholder="••••••••" minlength="6">
+            </div>
+            <button type="submit" id="authSubmitBtn" class="btn btn-primary btn-block">دخول</button>
+        </form>
+        <div class="auth-extras">
+            <a href="#" id="forgotPassLink">نسيت كلمة المرور؟</a>
+            <div class="auth-toggle">
+                <span id="authToggleText">ليس لديك حساب؟</span>
+                <a href="#" id="authToggleBtn">إنشاء حساب جديد</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MODAL: PROFILE ============ -->
+<div id="profileModal" class="modal">
+    <div class="modal-card">
+        <button class="modal-close" data-close="profileModal"><i class="fa-solid fa-xmark"></i></button>
+        <div class="profile-head">
+            <div class="profile-avatar" id="profileAvatar">?</div>
+            <h3 id="profileName">---</h3>
+            <p id="profileEmail">---</p>
+            <div id="profileLevelWrap"></div>
+        </div>
+        <div id="profileVipStatus"></div>
+        <div class="profile-stats">
+            <div class="ps-item">
+                <i class="fa-solid fa-crown"></i>
+                <span id="profileSubStatus">---</span>
+                <small>الاشتراك</small>
+            </div>
+            <div class="ps-item">
+                <i class="fa-solid fa-calendar"></i>
+                <span id="profileExpireDate">---</span>
+                <small>ينتهي في</small>
+            </div>
+            <div class="ps-item">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <span id="profileDaysLeft">---</span>
+                <small>المتبقي</small>
+            </div>
+            <div class="ps-item">
+                <i class="fa-solid fa-heart"></i>
+                <span id="profileFavCount">0</span>
+                <small>المفضلة</small>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <button class="btn btn-vip" onclick="closeModal('profileModal');openSubModal()">
+                <i class="fa-solid fa-crown"></i> ترقية VIP
+            </button>
+            <button class="btn btn-outline" onclick="closeModal('profileModal');openHistoryModal()">
+                <i class="fa-solid fa-clock-rotate-left"></i> السجل
+            </button>
+            <button class="btn btn-outline" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i> خروج
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MODAL: VIP ============ -->
+<div id="subModal" class="modal">
+    <div class="modal-card">
+        <button class="modal-close" data-close="subModal"><i class="fa-solid fa-xmark"></i></button>
+        <div class="vip-hero">
+            <div class="vip-icon"><i class="fa-solid fa-crown"></i></div>
+            <h3>ترقية إلى VIP</h3>
+            <p>افتح عالم من المميزات الحصرية</p>
+        </div>
+        <ul class="vip-benefits">
+            <li><i class="fa-solid fa-bolt"></i> مشاهدة وتحميل بدون قيود</li>
+            <li><i class="fa-solid fa-unlock"></i> فتح المحتوى الحصري VIP</li>
+            <li><i class="fa-solid fa-video"></i> سيرفرات 4K / 1080p</li>
+            <li><i class="fa-solid fa-ban"></i> بدون إعلانات</li>
+            <li><i class="fa-solid fa-headset"></i> دعم أولوية</li>
+            <li><i class="fa-solid fa-star"></i> شارة VIP ذهبية</li>
+        </ul>
+        <div id="subModalStatusBox"></div>
+        <button class="btn btn-whatsapp btn-block" id="btnRequestVip">
+            <i class="fa-brands fa-whatsapp"></i> اطلب عبر واتساب
+        </button>
+    </div>
+</div>
+
+<!-- ============ MODAL: HISTORY ============ -->
+<div id="historyModal" class="modal">
+    <div class="modal-card">
+        <button class="modal-close" data-close="historyModal"><i class="fa-solid fa-xmark"></i></button>
+        <h3 class="modal-title"><i class="fa-solid fa-clock-rotate-left"></i> سجل المشاهدة</h3>
+        <div id="historyList" class="history-list"></div>
+        <button class="btn btn-outline btn-block" style="margin-top:12px" onclick="clearAllHistory()">
+            <i class="fa-solid fa-trash"></i> مسح السجل
+        </button>
+    </div>
+</div>
+
+<!-- ============ MODAL: NOTIFICATIONS ============ -->
+<div id="notifModal" class="modal">
+    <div class="modal-card">
+        <button class="modal-close" data-close="notifModal"><i class="fa-solid fa-xmark"></i></button>
+        <h3 class="modal-title"><i class="fa-solid fa-bell"></i> الإشعارات</h3>
+        <div id="notifList" class="notif-list"></div>
+    </div>
+</div>
+
+<!-- ============ MODAL: SECTION DETAIL ============ -->
+<div id="sectionModal" class="modal">
+    <div class="modal-card large">
+        <button class="modal-close" data-close="sectionModal"><i class="fa-solid fa-xmark"></i></button>
+        <div class="section-detail-head">
+            <h2 id="sectionDetailTitle">القسم</h2>
+            <p id="sectionDetailCount"></p>
+        </div>
+        <div class="grid-content" id="sectionDetailGrid"></div>
+    </div>
+</div>
+
+<!-- ============ MODAL: BANNED ============ -->
+<div id="bannedModal" class="modal">
+    <div class="modal-card text-center">
+        <div class="banned-icon"><i class="fa-solid fa-user-slash"></i></div>
+        <h3>حسابك محظور</h3>
+        <p>تم حظر حسابك من قبل الإدارة. للاستفسار تواصل مع الدعم.</p>
+        <button class="btn btn-outline btn-block" onclick="logout()">تسجيل الخروج</button>
+    </div>
+</div>
+
+<!-- ============ MODAL: POPUP BANNER ============ -->
+<div id="popupBannerModal" class="modal">
+    <div class="modal-card text-center">
+        <button class="modal-close" data-close="popupBannerModal"><i class="fa-solid fa-xmark"></i></button>
+        <div class="popup-icon"><i class="fa-solid fa-bullhorn"></i></div>
+        <p id="popupBannerText"></p>
+        <div id="popupBannerActions"></div>
+    </div>
+</div>
+
+<!-- ============ MODAL: PLAYER ============ -->
+<div id="playerModal" class="modal player-modal">
+    <div class="player-card">
+        <button class="player-close" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
+        <div id="playerContainer" class="player-container"></div>
+        <div class="player-body">
+            <div class="player-header">
+                <h2 id="playerTitle">عنوان</h2>
+                <div class="player-meta">
+                    <span><i class="fa-regular fa-eye"></i> <span id="playerViews">0</span></span>
+                    <span><i class="fa-solid fa-folder"></i> <span id="playerCategory">عام</span></span>
+                    <span id="playerBadges"></span>
+                </div>
+            </div>
+
+            <!-- Rating -->
+            <div class="rating-block" id="ratingBlock">
+                <span class="rb-label">قيّم:</span>
+                <div class="rb-stars" id="rbStars">
+                    <i data-v="1" class="fa-solid fa-star"></i>
+                    <i data-v="2" class="fa-solid fa-star"></i>
+                    <i data-v="3" class="fa-solid fa-star"></i>
+                    <i data-v="4" class="fa-solid fa-star"></i>
+                    <i data-v="5" class="fa-solid fa-star"></i>
+                </div>
+                <span class="rb-avg" id="rbAvg">لا توجد تقييمات</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="player-actions">
+                <button class="btn btn-vip" id="playerDlBtn">
+                    <i class="fa-solid fa-download"></i> تحميل
+                </button>
+                <button class="btn btn-outline" id="playerFavBtn">
+                    <i class="fa-regular fa-heart"></i> المفضلة
+                </button>
+                <button class="btn btn-outline" id="playerShareBtn">
+                    <i class="fa-solid fa-share"></i> مشاركة
+                </button>
+            </div>
+
+            <!-- Servers -->
+            <div class="servers-block" id="serversBlock" style="display:none">
+                <span class="sb-label"><i class="fa-solid fa-server"></i> اختر السيرفر:</span>
+                <div class="servers-grid" id="serversGrid"></div>
+            </div>
+
+            <!-- Description -->
+            <div class="player-desc" id="playerDesc"></div>
+
+            <!-- Comments -->
+            <div class="comments-block">
+                <h4><i class="fa-solid fa-comments"></i> التعليقات (<span id="commentsCount">0</span>)</h4>
+                <div class="comment-form">
+                    <input type="text" id="commentInput" placeholder="اكتب تعليقك..." maxlength="300">
+                    <button id="commentSendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+                <div class="comments-list" id="commentsList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MODAL: DOWNLOAD ============ -->
+<div id="dlModal" class="modal">
+    <div class="modal-card" id="dlModalCard"></div>
+</div>
+
+<!-- ============ MODAL: CONFIRM ============ -->
+<div id="confirmModal" class="modal">
+    <div class="modal-card confirm-card">
+        <div class="confirm-icon" id="cfIcon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h3 id="cfTitle">تأكيد</h3>
+        <p id="cfMsg">هل أنت متأكد؟</p>
+        <div class="confirm-actions">
+            <button class="btn btn-primary" id="cfYes">تأكيد</button>
+            <button class="btn btn-outline" id="cfNo">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ TOASTS ============ -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
