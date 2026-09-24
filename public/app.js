@@ -1,6 +1,6 @@
 /* ============================================================
-   سيرفر الوحش 🐺 — Main Application Logic
-   Version: 2.0 — Full Featured
+   سيرفر الوحش 🐺 — Main Application v4.0
+   Features: AI Voice • Sports Matches • Full Player • VIP
    ============================================================ */
 
 /* ---------- 1. FIREBASE ---------- */
@@ -11,1531 +11,1477 @@ const firebaseConfig = {
     projectId:"voip17",
     storageBucket:"voip17.firebasestorage.app",
     messagingSenderId:"608379006778",
-    appId:"1:608379006778:web:51fe8032d09fbd5b556a03",
-    measurementId:"G-GZNJZLM701"
+    appId:"1:608379006778:web:51fe8032d09fbd5b556a03"
 };
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
-/* ---------- 2. GLOBAL STATE ---------- */
+/* ---------- 2. STATE ---------- */
 const state = {
-    currentUser: null,
-    userData: null,
-    authMode: 'login',
-    videos: [],
-    liveChannels: [],
-    liveCategories: [],
-    categories: [],
-    sections: [],
-    settings: {},
-    ads: {},
-    favorites: JSON.parse(localStorage.getItem('sw_favs') || '[]'),
-    history: JSON.parse(localStorage.getItem('sw_history') || '[]'),
-    watchlists: [],
-    achievements: {},
-    notifications: [],
-    unreadNotifs: 0,
-    vipStatus: null,
-    currentPlayerItem: null,
-    currentVideoEl: null,
-    playerType: 'vod',
-    hlsInstance: null,
-    dashInstance: null,
-    progressTimer: null,
-    sleepTimer: null,
-    searchQuery: '',
-    theme: localStorage.getItem('sw_theme') || 'dark',
-    autoPlayNext: localStorage.getItem('sw_autoplay') !== 'false',
-    heroIndex: 0,
-    heroTimer: null,
-    activeTab: 'home',
-    chatRoom: 'general',
-    userListenerRef: null,
-    vipListenerRef: null,
-    notifListenerRef: null,
-    ratingsListenerRef: null,
-    commentsListenerRef: null
+    currentUser:null, userData:null, authMode:'login',
+    videos:[], categories:[], sections:[], liveChannels:[], liveCategories:[],
+    matches:[], matchCategories:[],
+    settings:{}, ads:{},
+    favorites: JSON.parse(localStorage.getItem('sw_favs')||'[]'),
+    history: JSON.parse(localStorage.getItem('sw_history')||'[]'),
+    achievements:{}, notifications:[], unreadNotifs:0,
+    vipStatus:null, watchlists:[],
+    currentItem:null, currentVideoEl:null, playerType:'vod',
+    hls:null, dash:null, progressTimer:null, sleepTimer:null,
+    searchQuery:'', theme: localStorage.getItem('sw_theme')||'dark',
+    autoPlay: localStorage.getItem('sw_autoplay')!=='false',
+    heroIndex:0, heroTimer:null, activeView:'home',
+    activeLiveTab:'all', activeMatchTab:'all',
+    userRef:null, vipRef:null, notifRef:null, ratingRef:null, commentRef:null,
+    voiceRecognition:null, voiceActive:false,
+    parentalPin: localStorage.getItem('sw_pin')||null,
+    downloadQueue: JSON.parse(localStorage.getItem('sw_dlq')||'[]')
 };
 
-/* ---------- 3. UTILITIES ---------- */
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const debounce = (fn, ms = 300) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
-const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+/* ---------- 3. UTILS ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const debounce = (fn,ms=300)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}};
+const fmtDate = ts => ts?new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}):'—';
+const fmtTime = ts => ts?new Date(ts).toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}):'—';
 const fmtRel = ts => {
-    if (!ts) return '—';
-    const d = Date.now() - ts, m = Math.floor(d / 60000), h = Math.floor(d / 3600000), dd = Math.floor(d / 86400000);
-    if (m < 1) return 'الآن';
-    if (m < 60) return `منذ ${m} دقيقة`;
-    if (h < 24) return `منذ ${h} ساعة`;
-    if (dd < 30) return `منذ ${dd} يوم`;
+    if(!ts) return '—';
+    const d=Date.now()-ts, m=Math.floor(d/60000), h=Math.floor(d/3600000), dd=Math.floor(d/86400000);
+    if(m<1) return 'الآن';
+    if(m<60) return `منذ ${m} دقيقة`;
+    if(h<24) return `منذ ${h} ساعة`;
+    if(dd<30) return `منذ ${dd} يوم`;
     return fmtDate(ts);
 };
-const getUserExp = u => u ? (u.vipExpireDate || u.expireAt || 0) : 0;
-const getUserVip = u => {
-    if (!u) return false;
-    const exp = getUserExp(u);
-    if (u.isVip === true && exp === 0) return true;
-    return exp > Date.now();
+const isVip = u => { if(!u) return false; const e=u.vipExpireDate||u.expireAt||0; return u.isVip===true && e===0 || e>Date.now(); };
+const isBanned = u => !!(u && (u.isBanned||u.isBlocked));
+const getUserLevel = u => {
+    if(!u) return {key:'new',label:'زائر'};
+    if(isVip(u)) return {key:'vip',label:'👑 VIP'};
+    const d=(Date.now()-(u.createdAt||Date.now()))/86400000;
+    if(d>=365) return {key:'gold',label:'🥇 ذهبي'};
+    if(d>=90) return {key:'silver',label:'🥈 فضي'};
+    if(d>=30) return {key:'bronze',label:'🥉 برونزي'};
+    return {key:'new',label:'عضو جديد'};
 };
-const getUserBanned = u => !!(u && (u.isBanned || u.isBlocked));
-
-function getUserLevel(u) {
-    if (!u) return { key: 'new', label: 'زائر' };
-    if (getUserVip(u)) return { key: 'vip', label: '👑 VIP' };
-    const days = (Date.now() - (u.createdAt || Date.now())) / 86400000;
-    if (days >= 365) return { key: 'gold', label: '🥇 ذهبي' };
-    if (days >= 90) return { key: 'silver', label: '🥈 فضي' };
-    if (days >= 30) return { key: 'bronze', label: '🥉 برونزي' };
-    return { key: 'new', label: 'عضو جديد' };
-}
+const normalize = s => String(s||'').toLowerCase().replace(/[أإآا]/g,'ا').replace(/[ىي]/g,'ي').replace(/[ةه]/g,'ه').replace(/[\u064B-\u065F]/g,'').trim();
 
 /* ---------- 4. UI HELPERS ---------- */
-function toast(msg, type = '', title = '') {
-    const w = $('#toasts');
-    if (!w) return;
-    const t = document.createElement('div');
-    t.className = 'toast ' + type;
-    const icon = type === 'ok' ? 'fa-circle-check' : type === 'err' ? 'fa-circle-exclamation' : type === 'warn' ? 'fa-triangle-exclamation' : 'fa-circle-info';
-    t.innerHTML = `<div class="toast-i"><i class="fa-solid ${icon}"></i></div>
-        <div class="toast-body">${title ? `<div class="toast-title">${esc(title)}</div>` : ''}<div class="toast-msg">${esc(msg)}</div></div>`;
+function toast(msg,type='',title=''){
+    const w=$('#toasts'); if(!w) return;
+    const t=document.createElement('div');
+    t.className='toast '+type;
+    const icons={ok:'fa-circle-check',err:'fa-circle-exclamation',warn:'fa-triangle-exclamation'};
+    const ic=icons[type]||'fa-circle-info';
+    t.innerHTML=`<div class="toast-i"><i class="fa-solid ${ic}"></i></div>
+        <div class="toast-body">${title?`<div class="toast-title">${esc(title)}</div>`:''}<div class="toast-msg">${esc(msg)}</div></div>`;
     w.appendChild(t);
-    setTimeout(() => {
-        t.style.transition = 'opacity .3s, transform .3s';
-        t.style.opacity = '0';
-        t.style.transform = 'translateY(-12px)';
-        setTimeout(() => t.remove(), 320);
-    }, 3400);
+    setTimeout(()=>{t.style.transition='opacity .3s,transform .3s';t.style.opacity='0';t.style.transform='translateY(-12px)';setTimeout(()=>t.remove(),320);},3400);
 }
-
-function openModal(id) { const m = $('#' + id); if (m) m.classList.add('active'); }
-function closeModal(id) { const m = $('#' + id); if (m) m.classList.remove('active'); }
-
-let confirmResolver = null;
-function askConfirm({ title = 'تأكيد', msg = 'هل أنت متأكد؟', okText = 'تأكيد', type = 'danger' } = {}) {
-    return new Promise(res => {
-        $('#cfTitle').textContent = title;
-        $('#cfMsg').textContent = msg;
-        $('#cfYes').textContent = okText;
-        const icon = $('#cfIcon');
-        icon.style.background = type === 'warn' ? 'rgba(245,158,11,.15)' : 'rgba(229,9,20,.15)';
-        icon.style.color = type === 'warn' ? 'var(--warning)' : 'var(--accent)';
+function openModal(id){const m=$('#'+id);if(m)m.classList.add('active');}
+function closeModal(id){const m=$('#'+id);if(m)m.classList.remove('active');}
+let confirmResolver=null;
+function askConfirm({title='تأكيد',msg='هل أنت متأكد؟',ok='تأكيد',type='danger'}={}){
+    return new Promise(res=>{
+        $('#cfTitle').textContent=title;
+        $('#cfMsg').textContent=msg;
+        $('#cfYes').textContent=ok;
+        const ic=$('#cfIcon');
+        ic.style.background=type==='warn'?'rgba(245,158,11,.15)':'rgba(229,9,20,.15)';
+        ic.style.color=type==='warn'?'var(--warning)':'var(--accent)';
         openModal('confirmModal');
-        confirmResolver = res;
+        confirmResolver=res;
     });
 }
+function hideLoader(){const l=$('#appLoader');if(l){l.classList.add('hide');setTimeout(()=>l.remove(),600);}}
 
-function hideLoader() {
-    const l = $('#appLoader');
-    if (l) { l.classList.add('hide'); setTimeout(() => l.remove(), 600); }
+/* ---------- 5. THEME ---------- */
+function applyTheme(){
+    document.documentElement.setAttribute('data-theme',state.theme);
+    const b=$('#themeBtn');
+    if(b) b.innerHTML=`<i class="fa-solid fa-${state.theme==='dark'?'sun':'moon'}"></i>`;
 }
-
-/* ---------- 5. THEME (Feature #1) ---------- */
-function applyTheme() {
-    document.documentElement.setAttribute('data-theme', state.theme);
-    const btn = $('#themeBtn');
-    if (btn) btn.innerHTML = state.theme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
-}
-function toggleTheme() {
-    state.theme = state.theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('sw_theme', state.theme);
+function toggleTheme(){
+    state.theme=state.theme==='dark'?'light':'dark';
+    localStorage.setItem('sw_theme',state.theme);
     applyTheme();
-    toast(state.theme === 'dark' ? '🌙 الوضع الليلي' : '☀️ الوضع النهاري', 'ok');
+    toast(state.theme==='dark'?'🌙 الوضع الليلي':'☀️ الوضع النهاري','ok');
 }
 
 /* ---------- 6. NAV ACTIONS ---------- */
-function renderNavActions() {
-    const area = $('#navActions');
-    if (!area) return;
-    const themeBtn = `<button class="nav-icon-btn" id="themeBtn" title="الوضع"><i class="fa-solid fa-${state.theme === 'dark' ? 'sun' : 'moon'}"></i></button>`;
+function renderNavActions(){
+    const a=$('#navActions'); if(!a) return;
+    const themeBtn=`<button class="nav-icon-btn" id="themeBtn" title="الوضع"><i class="fa-solid fa-${state.theme==='dark'?'sun':'moon'}"></i></button>`;
 
-    if (state.currentUser && state.userData) {
-        const isVip = getUserVip(state.userData);
-        const isPending = state.vipStatus && state.vipStatus.status === 'pending';
-        const tag = isVip ? '<span class="tag vip">👑 VIP</span>' : isPending ? '<span class="tag pending">مراجعة</span>' : '<span class="tag free">عادي</span>';
-        const letter = (state.userData.name || '?').trim().charAt(0).toUpperCase();
-        area.innerHTML = `${themeBtn}
-            <button class="nav-icon-btn" id="notifBtn" title="الإشعارات">
-                <i class="fa-solid fa-bell"></i>
-                ${state.unreadNotifs > 0 ? `<span class="badge">${state.unreadNotifs}</span>` : ''}
-            </button>
+    if(state.currentUser && state.userData){
+        const vip=isVip(state.userData);
+        const pending=state.vipStatus && state.vipStatus.status==='pending';
+        const tag=vip?'<span class="tag vip">👑 VIP</span>':pending?'<span class="tag pending">مراجعة</span>':'<span class="tag free">عادي</span>';
+        const letter=(state.userData.name||'?').trim().charAt(0).toUpperCase();
+        a.innerHTML=`${themeBtn}
+            <button class="nav-icon-btn" id="notifBtn" title="الإشعارات"><i class="fa-solid fa-bell"></i>${state.unreadNotifs>0?`<span class="badge">${state.unreadNotifs}</span>`:''}</button>
             <div class="user-chip" id="userChip">
                 <div class="avatar">${esc(letter)}</div>
-                <span class="name">${esc(state.userData.name || 'حسابي')}</span>
+                <span class="name">${esc(state.userData.name||'حسابي')}</span>
                 ${tag}
             </div>`;
-        $('#themeBtn').onclick = toggleTheme;
-        $('#notifBtn').onclick = openNotifModal;
-        $('#userChip').onclick = openProfileModal;
-    } else {
-        area.innerHTML = `${themeBtn}
+        $('#themeBtn').onclick=toggleTheme;
+        $('#notifBtn').onclick=openNotifModal;
+        $('#userChip').onclick=openProfileModal;
+    }else{
+        a.innerHTML=`${themeBtn}
             <button class="btn btn-outline sm" id="loginBtn"><i class="fa-solid fa-right-to-bracket"></i> دخول</button>
             <button class="btn btn-primary sm" id="registerBtn"><i class="fa-solid fa-user-plus"></i> جديد</button>`;
-        $('#themeBtn').onclick = toggleTheme;
-        $('#loginBtn').onclick = () => openAuthModal('login');
-        $('#registerBtn').onclick = () => openAuthModal('register');
+        $('#themeBtn').onclick=toggleTheme;
+        $('#loginBtn').onclick=()=>openAuthModal('login');
+        $('#registerBtn').onclick=()=>openAuthModal('register');
     }
 }
 
-/* ---------- 7. AUTH STATE ---------- */
-auth.onAuthStateChanged(user => {
-    if (state.userListenerRef) { state.userListenerRef.off(); state.userListenerRef = null; }
-    if (state.vipListenerRef) { state.vipListenerRef.off(); state.vipListenerRef = null; }
-    if (state.notifListenerRef) { state.notifListenerRef.off(); state.notifListenerRef = null; }
-    state.vipStatus = null;
-    state.notifications = [];
-    state.unreadNotifs = 0;
+/* ---------- 7. AUTH ---------- */
+auth.onAuthStateChanged(user=>{
+    if(state.userRef){state.userRef.off();state.userRef=null;}
+    if(state.vipRef){state.vipRef.off();state.vipRef=null;}
+    if(state.notifRef){state.notifRef.off();state.notifRef=null;}
+    state.vipStatus=null; state.notifications=[]; state.unreadNotifs=0;
 
-    if (user) {
-        state.currentUser = user;
-        state.userListenerRef = db.ref('users/' + user.uid);
-        state.userListenerRef.on('value', snap => {
-            state.userData = snap.val();
-            if (!state.userData) {
-                state.userListenerRef.set({
-                    email: user.email, name: user.displayName || 'عضو جديد',
-                    isBanned: false, isBlocked: false, isVip: false,
-                    vipExpireDate: 0, expireAt: 0, createdAt: Date.now()
+    if(user){
+        state.currentUser=user;
+        state.userRef=db.ref('users/'+user.uid);
+        state.userRef.on('value',snap=>{
+            state.userData=snap.val();
+            if(!state.userData){
+                state.userRef.set({
+                    email:user.email,name:user.displayName||'عضو جديد',
+                    isBanned:false,isBlocked:false,isVip:false,
+                    vipExpireDate:0,expireAt:0,createdAt:Date.now()
                 });
                 return;
             }
-            if (getUserBanned(state.userData)) {
-                openModal('bannedModal');
-                closePlayer();
-                renderNavActions();
-                return;
-            }
+            if(isBanned(state.userData)){openModal('bannedModal');closePlayer();renderNavActions();return;}
             closeModal('bannedModal');
-            renderNavActions();
-            updateGuestWarn();
-            renderAll();
-            renderHero();
+            renderNavActions(); updateGuestWarn(); renderAll(); renderHero();
         });
 
-        state.vipListenerRef = db.ref('vipRequests').orderByChild('uid').equalTo(user.uid);
-        state.vipListenerRef.on('value', snap => {
-            let latest = null;
-            if (snap.exists()) {
-                snap.forEach(c => {
-                    const r = { id: c.key, ...c.val() };
-                    if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) latest = r;
+        state.vipRef=db.ref('vipRequests').orderByChild('uid').equalTo(user.uid);
+        state.vipRef.on('value',snap=>{
+            let latest=null;
+            if(snap.exists()){
+                snap.forEach(c=>{
+                    const r={id:c.key,...c.val()};
+                    if(!latest || (r.createdAt||0)>(latest.createdAt||0)) latest=r;
                 });
             }
-            state.vipStatus = latest;
+            state.vipStatus=latest;
             renderNavActions();
         });
 
-        state.notifListenerRef = db.ref('notifications/' + user.uid);
-        state.notifListenerRef.on('value', snap => {
-            const arr = [];
-            if (snap.exists()) snap.forEach(c => arr.push({ id: c.key, ...c.val() }));
-            arr.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            state.notifications = arr;
-            state.unreadNotifs = arr.filter(n => !n.read).length;
-            renderNavActions();
-            renderNotifList();
+        state.notifRef=db.ref('notifications/'+user.uid);
+        state.notifRef.on('value',snap=>{
+            const arr=[];
+            if(snap.exists()) snap.forEach(c=>arr.push({id:c.key,...c.val()}));
+            arr.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+            state.notifications=arr;
+            state.unreadNotifs=arr.filter(n=>!n.read).length;
+            renderNavActions(); renderNotifList();
         });
 
-        db.ref('watchlists/' + user.uid).on('value', snap => {
-            state.watchlists = [];
-            if (snap.exists()) snap.forEach(c => state.watchlists.push({ id: c.key, ...c.val() }));
+        db.ref('achievements/'+user.uid).on('value',snap=>{
+            state.achievements=snap.val()||{};
+            checkAchievement('vip_member');
         });
 
-        db.ref('achievements/' + user.uid).on('value', snap => {
-            state.achievements = snap.val() || {};
-            checkAchievements();
+        db.ref('watchlists/'+user.uid).on('value',snap=>{
+            state.watchlists=[];
+            if(snap.exists()) snap.forEach(c=>state.watchlists.push({id:c.key,...c.val()}));
         });
-    } else {
-        state.currentUser = null;
-        state.userData = null;
-        state.watchlists = [];
-        state.achievements = {};
-        renderNavActions();
-        updateGuestWarn();
-        renderAll();
-        renderHero();
+    }else{
+        state.currentUser=null; state.userData=null; state.achievements={};
+        renderNavActions(); updateGuestWarn(); renderAll(); renderHero();
     }
 });
 
-function updateGuestWarn() {
-    const w = $('#guestWarn');
-    if (!w) return;
-    w.style.display = state.currentUser ? 'none' : 'flex';
+function updateGuestWarn(){
+    const w=$('#guestWarn');
+    if(w) w.style.display=state.currentUser?'none':'flex';
 }
 
-function openAuthModal(mode = 'login') {
-    state.authMode = mode;
-    const isLogin = mode === 'login';
-    $('#authTitle').textContent = isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
-    $('#nameGroup').style.display = isLogin ? 'none' : 'block';
-    $('#authSubmitBtn').textContent = isLogin ? 'دخول' : 'إنشاء حساب';
-    $('#authToggleText').textContent = isLogin ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟';
-    $('#authToggleBtn').textContent = isLogin ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
+function openAuthModal(mode='login'){
+    state.authMode=mode;
+    const l=mode==='login';
+    $('#authTitle').textContent=l?'تسجيل الدخول':'إنشاء حساب جديد';
+    $('#nameGroup').style.display=l?'none':'block';
+    $('#authSubmitBtn').textContent=l?'دخول':'إنشاء حساب';
+    $('#authToggleText').textContent=l?'ليس لديك حساب؟':'لديك حساب بالفعل؟';
+    $('#authToggleBtn').textContent=l?'إنشاء حساب':'تسجيل الدخول';
     openModal('authModal');
 }
 
-function logout() {
-    auth.signOut().then(() => { toast('تم تسجيل الخروج', 'ok'); closeModal('profileModal'); });
+async function handleAuthSubmit(e){
+    e.preventDefault();
+    const email=$('#authEmail').value.trim();
+    const pass=$('#authPassword').value;
+    const name=$('#authName').value.trim();
+    const btn=$('#authSubmitBtn');
+    btn.disabled=true;
+    try{
+        if(state.authMode==='login'){
+            await auth.signInWithEmailAndPassword(email,pass);
+            toast('تم تسجيل الدخول ✅','ok');
+        }else{
+            if(!name){toast('أدخل اسمك','warn');btn.disabled=false;return;}
+            const res=await auth.createUserWithEmailAndPassword(email,pass);
+            await res.user.updateProfile({displayName:name});
+            await db.ref('users/'+res.user.uid).set({
+                email,name,isBanned:false,isBlocked:false,isVip:false,
+                vipExpireDate:0,expireAt:0,createdAt:Date.now()
+            });
+            await db.ref('notifications/'+res.user.uid).push({
+                title:'أهلاً بك في سيرفر الوحش 🐺',
+                text:'استمتع بالمشاهدة. ترقّ VIP لفتح كل المميز!',
+                type:'welcome',read:false,createdAt:Date.now()
+            });
+            toast('تم إنشاء الحساب ✅','ok');
+        }
+        closeModal('authModal');
+        $('#authForm').reset();
+    }catch(err){
+        toast(err.message,'err','خطأ');
+    }finally{btn.disabled=false;}
 }
 
-/* ---------- 8. DATA FETCHING ---------- */
-function fetchAll() {
-    db.ref('videos').on('value', snap => {
-        state.videos = [];
-        if (snap.exists()) snap.forEach(c => state.videos.push({ id: c.key, ...c.val() }));
-        renderAll();
-        renderHero();
-    });
+async function handleForgotPass(e){
+    e.preventDefault();
+    const email=$('#authEmail').value.trim();
+    if(!email){toast('اكتب بريدك أولاً','warn');return;}
+    try{await auth.sendPasswordResetEmail(email);toast('تم إرسال الرابط','ok');}
+    catch(err){toast(err.message,'err');}
+}
 
-    db.ref('categories').on('value', snap => {
-        state.categories = [];
-        if (snap.exists()) snap.forEach(c => state.categories.push({ id: c.key, ...c.val() }));
-    });
+function logout(){
+    auth.signOut().then(()=>{toast('تم تسجيل الخروج','ok');closeModal('profileModal');});
+}
 
-    db.ref('sections').on('value', snap => {
-        state.sections = [];
-        if (snap.exists()) {
-            snap.forEach(c => {
-                const s = { id: c.key, ...c.val() };
-                if (s.active !== false) state.sections.push(s);
+/* ---------- 8. DATA FETCH ---------- */
+function fetchAll(){
+    db.ref('videos').on('value',snap=>{
+        state.videos=[];
+        if(snap.exists()) snap.forEach(c=>state.videos.push({id:c.key,...c.val()}));
+        renderAll(); renderHero();
+    });
+    db.ref('categories').on('value',snap=>{
+        state.categories=[];
+        if(snap.exists()) snap.forEach(c=>state.categories.push({id:c.key,...c.val()}));
+    });
+    db.ref('sections').on('value',snap=>{
+        state.sections=[];
+        if(snap.exists()){
+            snap.forEach(c=>{
+                const s={id:c.key,...c.val()};
+                if(s.active!==false) state.sections.push(s);
             });
-            state.sections.sort((a, b) => (a.order || 0) - (b.order || 0));
+            state.sections.sort((a,b)=>(a.order||0)-(b.order||0));
         }
         renderDynamicSections();
     });
-
-    db.ref('liveChannels').on('value', snap => {
-        state.liveChannels = [];
-        if (snap.exists()) snap.forEach(c => state.liveChannels.push({ id: c.key, ...c.val() }));
+    db.ref('liveChannels').on('value',snap=>{
+        state.liveChannels=[];
+        if(snap.exists()) snap.forEach(c=>state.liveChannels.push({id:c.key,...c.val()}));
         renderLive();
     });
-
-    db.ref('liveCategories').on('value', snap => {
-        state.liveCategories = [];
-        if (snap.exists()) snap.forEach(c => state.liveCategories.push({ id: c.key, ...c.val() }));
+    db.ref('liveCategories').on('value',snap=>{
+        state.liveCategories=[];
+        if(snap.exists()) snap.forEach(c=>state.liveCategories.push({id:c.key,...c.val()}));
         renderLiveTabs();
     });
-
-    db.ref('settings').on('value', snap => {
-        state.settings = snap.val() || {};
+    db.ref('matches').on('value',snap=>{
+        state.matches=[];
+        if(snap.exists()) snap.forEach(c=>state.matches.push({id:c.key,...c.val()}));
+        renderMatches();
+    });
+    db.ref('matchCategories').on('value',snap=>{
+        state.matchCategories=[];
+        if(snap.exists()) snap.forEach(c=>state.matchCategories.push({id:c.key,...c.val()}));
+        renderMatchTabs();
+    });
+    db.ref('settings').on('value',snap=>{
+        state.settings=snap.val()||{};
         applySettings();
     });
-
-    db.ref('ads').on('value', snap => {
-        state.ads = snap.val() || {};
+    db.ref('ads').on('value',snap=>{
+        state.ads=snap.val()||{};
         renderAds();
     });
 }
 
-function applySettings() {
-    const s = state.settings;
-    if (s.siteName) {
-        $('#brandText').innerHTML = esc(s.siteName).replace('الوحش', '<b>الوحش</b>') + ' 🐺';
-        document.title = s.siteName + ' | منصة البث';
+function applySettings(){
+    const s=state.settings;
+    if(s.siteName){
+        const bt=$('#brandText');
+        if(bt) bt.innerHTML=esc(s.siteName).replace('الوحش','<b>الوحش</b>')+' 🐺';
+        document.title=s.siteName+' | منصة البث';
     }
-    if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
-    if (s.vipColor) document.documentElement.style.setProperty('--vip', s.vipColor);
-    if (s.tickerText) {
+    if(s.accentColor) document.documentElement.style.setProperty('--accent',s.accentColor);
+    if(s.vipColor) document.documentElement.style.setProperty('--vip',s.vipColor);
+    if(s.tickerText){
         $('#tickerBar').classList.add('show');
-        $('#tickerContent').textContent = s.tickerText;
+        $('#tickerContent').textContent=s.tickerText;
     }
-    if (s.popupBanner && !sessionStorage.getItem('popupDismissed')) {
-        $('#popupBannerText').textContent = s.popupBanner;
-        setTimeout(() => {
-            openModal('popupBannerModal');
-            sessionStorage.setItem('popupDismissed', '1');
-        }, 2000);
+    if(s.popupBanner && !sessionStorage.getItem('popupDismissed')){
+        $('#popupBannerText').textContent=s.popupBanner;
+        setTimeout(()=>{openModal('popupBannerModal');sessionStorage.setItem('popupDismissed','1');},2000);
     }
 }
 
-function renderAds() {
-    const ads = state.ads;
-    [['#adTop', ads.topBanner], ['#adMid', ads.midBanner], ['#adBottom', ads.bottomBanner]].forEach(([sel, html]) => {
-        const el = $(sel);
-        if (el && html) { el.innerHTML = html; el.classList.add('show'); }
+function renderAds(){
+    const ads=state.ads;
+    [['#adTop',ads.topBanner],['#adMid',ads.midBanner],['#adBottom',ads.bottomBanner]].forEach(([sel,html])=>{
+        const el=$(sel);
+        if(el&&html){el.innerHTML=html;el.classList.add('show');}
     });
 }
 
-/* ---------- 9. HERO CAROUSEL (Feature #10) ---------- */
-function renderHero() {
-    const slider = $('#heroSlider');
-    const dots = $('#heroDots');
-    const section = $('#heroSection');
-    if (!slider || !dots || !section) return;
+/* ---------- 9. HERO ---------- */
+function renderHero(){
+    const sl=$('#heroSlider'), dots=$('#heroDots'), sec=$('#heroSection');
+    if(!sl||!dots||!sec) return;
 
-    let featured = state.videos.filter(v => v.featured === true);
-    if (featured.length === 0) featured = state.videos.filter(v => v.isVip).slice(0, 5);
-    if (featured.length === 0) featured = state.videos.slice(0, 5);
+    let featured=state.videos.filter(v=>v.featured===true);
+    if(featured.length===0) featured=state.videos.filter(v=>v.isVip).slice(0,5);
+    if(featured.length===0) featured=state.videos.slice(0,5);
+    if(featured.length===0){sec.classList.remove('show');return;}
 
-    if (featured.length === 0) { section.classList.remove('show'); return; }
-
-    section.classList.add('show');
-    slider.innerHTML = featured.map((item, i) => {
-        const bg = item.backdrop || item.image || item.poster || '';
-        const bgStyle = bg ? `background-image:url('${esc(bg)}')` : '';
-        return `
-            <div class="hero-slide ${i === 0 ? 'active' : ''}" data-idx="${i}" style="${bgStyle}">
-                <div class="hero-slide-content">
-                    ${item.isVip ? '<div class="hero-slide-badge"><i class="fa-solid fa-crown"></i> محتوى VIP</div>' : '<div class="hero-slide-badge"><i class="fa-solid fa-fire"></i> محتوى مميز</div>'}
-                    <h2>${esc(item.title)}</h2>
-                    <div class="hero-slide-meta">
-                        ${item.year ? `<span><i class="fa-solid fa-calendar"></i> ${item.year}</span>` : ''}
-                        ${item.category ? `<span><i class="fa-solid fa-folder"></i> ${esc(item.category)}</span>` : ''}
-                        ${item.ratingAvg ? `<span><i class="fa-solid fa-star" style="color:var(--vip)"></i> ${Number(item.ratingAvg).toFixed(1)}</span>` : ''}
-                        <span><i class="fa-regular fa-eye"></i> ${item.views || 0}</span>
-                    </div>
-                    <p>${esc(item.description || 'شاهد الآن على سيرفر الوحش بأفضل جودة.')}</p>
-                    <div class="hero-slide-actions">
-                        <button class="btn btn-primary" onclick="openPlayer('${esc(item.id)}','vod')"><i class="fa-solid fa-play"></i> مشاهدة الآن</button>
-                        <button class="btn btn-ghost" onclick="showItemDetails('${esc(item.id)}')"><i class="fa-solid fa-circle-info"></i> التفاصيل</button>
-                    </div>
+    sec.classList.add('show');
+    sl.innerHTML=featured.map((it,i)=>{
+        const bg=it.backdrop||it.image||it.poster||'';
+        const style=bg?`background-image:url('${esc(bg)}')`:'';
+        return `<div class="hero-slide ${i===0?'active':''}" data-i="${i}" style="${style}">
+            <div class="hero-slide-content">
+                <div class="hero-slide-badge">
+                    <i class="fa-solid fa-${it.isVip?'crown':'fire'}"></i>
+                    ${it.isVip?'محتوى VIP':'محتوى مميز'}
                 </div>
-            </div>`;
-    }).join('');
-
-    dots.innerHTML = featured.map((_, i) => `<button class="hero-dot ${i === 0 ? 'active' : ''}" data-idx="${i}"></button>`).join('');
-    $$('.hero-dot').forEach(d => d.onclick = () => goHero(+d.dataset.idx));
-
-    if (state.heroTimer) clearInterval(state.heroTimer);
-    state.heroTimer = setInterval(() => goHero(state.heroIndex + 1), 7000);
-}
-
-function goHero(idx) {
-    const slides = $$('.hero-slide');
-    const dots = $$('.hero-dot');
-    if (slides.length === 0) return;
-    idx = ((idx % slides.length) + slides.length) % slides.length;
-    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
-    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-    state.heroIndex = idx;
-}
-
-/* ---------- 10. MAIN RENDER ---------- */
-function renderAll() {
-    renderDynamicSections();
-    renderContinueWatching();
-    renderLive();
-}
-
-function renderDynamicSections() {
-    const wrap = $('#dynamicSections');
-    if (!wrap) return;
-
-    if (state.sections.length === 0) {
-        wrap.innerHTML = buildDefaultSections();
-        attachRowHandlers();
-        return;
-    }
-
-    wrap.innerHTML = state.sections.map(sec => {
-        const items = getItemsForSection(sec);
-        if (items.length === 0) return '';
-        const cardClass = sec.style === 'landscape' ? 'landscape' : '';
-        return `
-            <section class="content-row" data-section="${esc(sec.id)}">
-                <div class="row-header">
-                    <div class="row-title">
-                        <i class="fa-solid ${sec.icon || 'fa-film'}"></i>
-                        <h2>${esc(sec.title || 'قسم')}</h2>
-                    </div>
-                    <button class="row-action" data-section-view="${esc(sec.id)}">
-                        <span>عرض الكل</span><i class="fa-solid fa-chevron-left"></i>
-                    </button>
+                <h2>${esc(it.title||'')}</h2>
+                <div class="hero-slide-meta">
+                    ${it.year?`<span><i class="fa-solid fa-calendar"></i> ${it.year}</span>`:''}
+                    ${it.category?`<span><i class="fa-solid fa-folder"></i> ${esc(it.category)}</span>`:''}
+                    ${it.ratingAvg?`<span><i class="fa-solid fa-star" style="color:var(--vip)"></i> ${Number(it.ratingAvg).toFixed(1)}</span>`:''}
+                    <span><i class="fa-regular fa-eye"></i> ${it.views||0}</span>
                 </div>
-                <div class="row-scroll">
-                    ${items.slice(0, 20).map(it => renderCard(it, 'row-card ' + cardClass)).join('')}
-                </div>
-            </section>`;
-    }).join('');
-
-    attachRowHandlers();
-}
-
-function buildDefaultSections() {
-    const all = state.videos;
-    return `
-        <section class="content-row">
-            <div class="row-header">
-                <div class="row-title"><i class="fa-solid fa-fire"></i><h2>الأكثر مشاهدة</h2></div>
-                <button class="row-action" onclick="showAllInRow('trending')"><span>عرض الكل</span><i class="fa-solid fa-chevron-left"></i></button>
-            </div>
-            <div class="row-scroll">
-                ${all.slice().sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 20).map(it => renderCard(it, 'row-card')).join('')}
-            </div>
-        </section>
-        <section class="content-row">
-            <div class="row-header">
-                <div class="row-title"><i class="fa-solid fa-clock"></i><h2>أحدث الإضافات</h2></div>
-                <button class="row-action" onclick="showAllInRow('newest')"><span>عرض الكل</span><i class="fa-solid fa-chevron-left"></i></button>
-            </div>
-            <div class="row-scroll">
-                ${all.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 20).map(it => renderCard(it, 'row-card')).join('')}
-            </div>
-        </section>
-        <section class="content-row">
-            <div class="row-header">
-                <div class="row-title"><i class="fa-solid fa-crown" style="color:var(--vip)"></i><h2>محتوى VIP</h2></div>
-                <button class="row-action" onclick="showAllInRow('vip')"><span>عرض الكل</span><i class="fa-solid fa-chevron-left"></i></button>
-            </div>
-            <div class="row-scroll">
-                ${all.filter(v => v.isVip).slice(0, 20).map(it => renderCard(it, 'row-card')).join('') || '<p style="color:var(--text-2);padding:20px">لا يوجد محتوى VIP حالياً</p>'}
-            </div>
-        </section>`;
-}
-
-function getItemsForSection(sec) {
-    let items = state.videos.slice();
-    if (sec.filter === 'vip') items = items.filter(i => i.isVip);
-    else if (sec.filter === 'free') items = items.filter(i => !i.isVip);
-
-    if (sec.categories && Array.isArray(sec.categories) && sec.categories.length > 0) {
-        items = items.filter(i => sec.categories.includes(i.category));
-    }
-
-    const sort = sec.sort || 'newest';
-    if (sort === 'newest') items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    else if (sort === 'views') items.sort((a, b) => (b.views || 0) - (a.views || 0));
-    else if (sort === 'rating') items.sort((a, b) => (b.ratingAvg || 0) - (a.ratingAvg || 0));
-    else if (sort === 'random') items.sort(() => Math.random() - .5);
-
-    return items.slice(0, sec.limit || 20);
-}
-
-function attachRowHandlers() {
-    $$('[data-section-view]').forEach(btn => btn.onclick = () => openSectionDetail(btn.dataset.sectionView));
-}
-
-/* ---------- 11. CARD RENDER ---------- */
-function renderCard(item, extraClass = '') {
-    const isFav = state.favorites.includes(item.id);
-    const defaultImg = 'https://via.placeholder.com/400x580/141721/6b7280?text=' + encodeURIComponent(item.title || 'SW');
-    const img = item.poster || item.image || item.thumbnail || defaultImg;
-    const avg = item.ratingAvg ? Number(item.ratingAvg).toFixed(1) : null;
-
-    return `
-        <div class="card ${item.isVip ? 'is-vip' : ''} ${extraClass}" data-id="${esc(item.id)}">
-            <button class="card-fav ${isFav ? 'active' : ''}" onclick="toggleFav(event,'${esc(item.id)}')" title="المفضلة">
-                <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
-            </button>
-            <div class="card-thumb" onclick="openPlayer('${esc(item.id)}','vod')">
-                <img src="${esc(img)}" alt="${esc(item.title)}" loading="lazy" onerror="this.src='${defaultImg}'">
-                <div class="card-overlay"><div class="card-play"><i class="fa-solid fa-play"></i></div></div>
-                ${item.isVip ? '<div class="card-badge vip"><i class="fa-solid fa-crown"></i> VIP</div>' : ''}
-                ${item.isNew ? '<div class="card-badge new">جديد</div>' : ''}
-                ${item.category ? `<div class="card-badge cat">${esc(item.category)}</div>` : ''}
-                ${item.episode ? `<div class="card-badge episode">الحلقة ${esc(item.episode)}</div>` : ''}
-            </div>
-            <div class="card-info">
-                <div class="card-title">${esc(item.title)}</div>
-                <div class="card-meta">
-                    <span><i class="fa-regular fa-eye"></i> ${item.views || 0}</span>
-                    ${avg ? `<span class="card-rating"><i class="fa-solid fa-star"></i> ${avg}</span>` : `<span>${item.year || ''}</span>`}
+                <p>${esc(it.description||'شاهد الآن على سيرفر الوحش بأفضل جودة.')}</p>
+                <div class="hero-slide-actions">
+                    <button class="btn btn-primary" onclick="openPlayer('${esc(it.id)}','vod')"><i class="fa-solid fa-play"></i> مشاهدة</button>
+                    <button class="btn btn-outline" onclick="showItemDetails('${esc(it.id)}')"><i class="fa-solid fa-circle-info"></i> التفاصيل</button>
                 </div>
             </div>
         </div>`;
+    }).join('');
+
+    dots.innerHTML=featured.map((_,i)=>`<button class="hero-dot ${i===0?'active':''}" data-i="${i}"></button>`).join('');
+    $$('.hero-dot').forEach(d=>d.onclick=()=>goHero(+d.dataset.i));
+
+    if(state.heroTimer) clearInterval(state.heroTimer);
+    state.heroTimer=setInterval(()=>goHero(state.heroIndex+1),7000);
 }
 
-/* ---------- 12. CONTINUE WATCHING ---------- */
-function renderContinueWatching() {
-    const sec = $('#continueSection');
-    const scroll = $('#continueScroll');
-    if (!sec || !scroll) return;
+function goHero(i){
+    const sl=$$('.hero-slide'), dots=$$('.hero-dot');
+    if(!sl.length) return;
+    i=((i%sl.length)+sl.length)%sl.length;
+    sl.forEach((s,idx)=>s.classList.toggle('active',idx===i));
+    dots.forEach((d,idx)=>d.classList.toggle('active',idx===i));
+    state.heroIndex=i;
+}
 
-    const list = state.history.filter(x => (x.progress || 0) < 95).slice(0, 12);
-    if (list.length === 0) { sec.style.display = 'none'; return; }
-    sec.style.display = 'block';
-    scroll.innerHTML = list.map(item => `
-        <div class="card row-card" onclick="openPlayer('${esc(item.id)}','vod')">
-            <div class="card-thumb">
-                <img src="${esc(item.image || 'https://via.placeholder.com/220x320')}" alt="${esc(item.title)}" onerror="this.src='https://via.placeholder.com/220x320'">
-                <div class="card-progress"><div class="cp-fill" style="width:${item.progress || 0}%"></div></div>
-                <button class="card-remove" onclick="removeFromHistory(event,'${esc(item.id)}')"><i class="fa-solid fa-xmark"></i></button>
+/* ---------- 10. RENDER MAIN ---------- */
+function renderAll(){
+    renderDynamicSections();
+    renderLive();
+    renderMatches();
+}
+
+function renderDynamicSections(){
+    const w=$('#dynamicSections'); if(!w) return;
+
+    if(state.sections.length===0){
+        w.innerHTML=buildDefaultSections();
+        return;
+    }
+    w.innerHTML=state.sections.map(s=>{
+        const items=getItemsForSection(s);
+        if(items.length===0) return '';
+        const cls=s.style==='landscape'?'landscape':'';
+        return `<section class="content-row" data-sec="${esc(s.id)}">
+            <div class="row-header">
+                <div class="row-title"><i class="fa-solid ${s.icon||'fa-film'}"></i><h2>${esc(s.title||'قسم')}</h2></div>
+                <button class="row-action" onclick="openSectionDetail('${esc(s.id)}')"><span>الكل</span><i class="fa-solid fa-chevron-left"></i></button>
             </div>
-            <div class="card-info">
-                <div class="card-title">${esc(item.title)}</div>
-                <div class="card-meta"><span>${Math.round(item.progress || 0)}%</span></div>
+            <div class="row-scroll">
+                ${items.slice(0,20).map(it=>renderCard(it,'row-card '+cls)).join('')}
+            </div>
+        </section>`;
+    }).join('');
+}
+
+function buildDefaultSections(){
+    const v=state.videos;
+    const trending=v.slice().sort((a,b)=>(b.views||0)-(a.views||0)).slice(0,20);
+    const newest=v.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,20);
+    const vips=v.filter(i=>i.isVip).slice(0,20);
+
+    return `
+        ${trending.length?`<section class="content-row">
+            <div class="row-header"><div class="row-title"><i class="fa-solid fa-fire"></i><h2>الأكثر مشاهدة</h2></div>
+            <button class="row-action" onclick="showAllInRow('trending')"><span>الكل</span><i class="fa-solid fa-chevron-left"></i></button></div>
+            <div class="row-scroll">${trending.map(it=>renderCard(it,'row-card')).join('')}</div>
+        </section>`:''}
+        ${newest.length?`<section class="content-row">
+            <div class="row-header"><div class="row-title"><i class="fa-solid fa-clock"></i><h2>أحدث الإضافات</h2></div>
+            <button class="row-action" onclick="showAllInRow('newest')"><span>الكل</span><i class="fa-solid fa-chevron-left"></i></button></div>
+            <div class="row-scroll">${newest.map(it=>renderCard(it,'row-card')).join('')}</div>
+        </section>`:''}
+        ${vips.length?`<section class="content-row">
+            <div class="row-header"><div class="row-title"><i class="fa-solid fa-crown" style="color:var(--vip)"></i><h2>محتوى VIP</h2></div>
+            <button class="row-action" onclick="showAllInRow('vip')"><span>الكل</span><i class="fa-solid fa-chevron-left"></i></button></div>
+            <div class="row-scroll">${vips.map(it=>renderCard(it,'row-card')).join('')}</div>
+        </section>`:''}`;
+}
+
+function getItemsForSection(s){
+    let items=state.videos.slice();
+    if(s.filter==='vip') items=items.filter(i=>i.isVip);
+    else if(s.filter==='free') items=items.filter(i=>!i.isVip);
+    if(Array.isArray(s.categories)&&s.categories.length>0) items=items.filter(i=>s.categories.includes(i.category));
+    const sort=s.sort||'newest';
+    if(sort==='newest') items.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    else if(sort==='views') items.sort((a,b)=>(b.views||0)-(a.views||0));
+    else if(sort==='rating') items.sort((a,b)=>(b.ratingAvg||0)-(a.ratingAvg||0));
+    else if(sort==='random') items.sort(()=>Math.random()-.5);
+    return items.slice(0,s.limit||20);
+}
+
+/* ---------- 11. CARD ---------- */
+function renderCard(item,extra=''){
+    const isFav=state.favorites.includes(item.id);
+    const ph='https://via.placeholder.com/400x580/141721/6b7280?text='+encodeURIComponent(item.title||'SW');
+    const img=item.poster||item.image||item.thumbnail||ph;
+    const avg=item.ratingAvg?Number(item.ratingAvg).toFixed(1):null;
+
+    return `<div class="card ${item.isVip?'is-vip':''} ${extra}" data-id="${esc(item.id)}">
+        <button class="card-fav ${isFav?'active':''}" onclick="toggleFav(event,'${esc(item.id)}')">
+            <i class="fa-${isFav?'solid':'regular'} fa-heart"></i>
+        </button>
+        <div class="card-thumb" onclick="openPlayer('${esc(item.id)}','vod')">
+            <img src="${esc(img)}" alt="${esc(item.title)}" loading="lazy" onerror="this.src='${ph}'">
+            <div class="card-overlay"><div class="card-play"><i class="fa-solid fa-play"></i></div></div>
+            ${item.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i> VIP</div>':''}
+            ${item.isNew?'<div class="card-badge new">جديد</div>':''}
+            ${item.category?`<div class="card-badge cat">${esc(item.category)}</div>`:''}
+            ${item.episode?`<div class="card-badge episode">حلقة ${esc(item.episode)}</div>`:''}
+        </div>
+        <div class="card-info">
+            <div class="card-title">${esc(item.title)}</div>
+            <div class="card-meta">
+                <span><i class="fa-regular fa-eye"></i> ${item.views||0}</span>
+                ${avg?`<span class="card-rating"><i class="fa-solid fa-star"></i> ${avg}</span>`:`<span>${item.year||''}</span>`}
             </div>
         </div>
-    `).join('');
+    </div>`;
 }
 
-function removeFromHistory(e, id) {
-    e.stopPropagation();
-    state.history = state.history.filter(x => x.id !== id);
-    localStorage.setItem('sw_history', JSON.stringify(state.history));
-    renderContinueWatching();
-}
-
-/* ---------- 13. LIVE ---------- */
-function renderLiveTabs() {
-    const tabs = $('#liveTabs');
-    if (!tabs) return;
-    let html = '<button class="row-action" data-livetab="all"><span>الكل</span></button>';
-    state.liveCategories.forEach(c => {
-        if (c.name) html += `<button class="row-action" data-livetab="${esc(c.name)}"><span>${esc(c.name)}</span></button>`;
+/* ---------- 12. LIVE ---------- */
+function renderLiveTabs(){
+    const t=$('#liveTabs'); if(!t) return;
+    let h='<button class="row-action active" data-lt="all">الكل</button>';
+    state.liveCategories.forEach(c=>{if(c.name) h+=`<button class="row-action" data-lt="${esc(c.name)}">${esc(c.name)}</button>`;});
+    t.innerHTML=h;
+    $$('#liveTabs .row-action').forEach(b=>b.onclick=()=>{
+        $$('#liveTabs .row-action').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        state.activeLiveTab=b.dataset.lt;
+        renderLive();
     });
-    tabs.innerHTML = html;
 }
 
-function renderLive() {
-    const grid = $('#liveGrid');
-    if (!grid) return;
-    grid.innerHTML = state.liveChannels.map(ch => {
-        const name = ch.name || ch.title || 'قناة';
-        const logo = ch.logo || ch.image || 'https://via.placeholder.com/300x168/0f1117/ef4444?text=' + encodeURIComponent(name);
-        return `
-            <div class="card landscape ${ch.isVip ? 'is-vip' : ''}" onclick="openPlayer('${esc(ch.id)}','live')">
-                <div class="card-thumb">
-                    <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy">
-                    <div class="card-badge live">مباشر</div>
-                    ${ch.isVip ? '<div class="card-badge vip" style="top:8px;right:8px"><i class="fa-solid fa-crown"></i></div>' : ''}
+function renderLive(){
+    const g=$('#liveGrid'); if(!g) return;
+    let ch=state.liveChannels.slice();
+    if(state.activeLiveTab!=='all') ch=ch.filter(c=>c.category===state.activeLiveTab);
+    if(ch.length===0){g.innerHTML='<div class="empty-state"><i class="fa-solid fa-tower-broadcast"></i><h3>لا توجد قنوات</h3></div>';return;}
+    g.innerHTML=ch.map(c=>{
+        const name=c.name||c.title||'قناة';
+        const logo=c.logo||c.image||'https://via.placeholder.com/300x168/0f1117/ef4444?text='+encodeURIComponent(name);
+        return `<div class="card landscape ${c.isVip?'is-vip':''}" onclick="openPlayer('${esc(c.id)}','live')">
+            <div class="card-thumb">
+                <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy">
+                <div class="card-badge live">مباشر</div>
+                ${c.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i></div>':''}
+            </div>
+            <div class="card-info">
+                <div class="card-title">${esc(name)}</div>
+                <div class="card-meta"><span><i class="fa-solid fa-tv"></i> ${esc(c.category||'بث')}</span></div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* ---------- 13. MATCHES (Sports) ---------- */
+function renderMatchTabs(){
+    const t=$('#matchTabs'); if(!t) return;
+    let h='<button class="row-action active" data-mt="all">الكل</button>';
+    let h2='<button class="row-action active" data-mt="live">مباشر</button><button class="row-action" data-mt="upcoming">قادمة</button><button class="row-action" data-mt="finished">منتهية</button>';
+    state.matchCategories.forEach(c=>{if(c.name) h2+=`<button class="row-action" data-mt="${esc(c.name)}">${esc(c.name)}</button>`;});
+    t.innerHTML=h2;
+    $$('#matchTabs .row-action').forEach(b=>b.onclick=()=>{
+        $$('#matchTabs .row-action').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        state.activeMatchTab=b.dataset.mt;
+        renderMatches();
+    });
+}
+
+function renderMatches(){
+    const g=$('#matchGrid'); if(!g) return;
+    let m=state.matches.slice();
+    if(state.activeMatchTab==='live') m=m.filter(x=>x.status==='live');
+    else if(state.activeMatchTab==='upcoming') m=m.filter(x=>x.status==='upcoming'||!x.status);
+    else if(state.activeMatchTab==='finished') m=m.filter(x=>x.status==='finished');
+    else if(state.activeMatchTab!=='all') m=m.filter(x=>x.category===state.activeMatchTab);
+
+    if(m.length===0){g.innerHTML='<div class="empty-state"><i class="fa-solid fa-futbol"></i><h3>لا توجد مباريات</h3></div>';return;}
+
+    g.innerHTML=m.map(mt=>{
+        const live=mt.status==='live';
+        const fin=mt.status==='finished';
+        const badge=live?'<div class="match-live-badge"><span class="dot"></span> مباشر الآن</div>':
+                     fin?'<div class="match-badge" style="background:var(--text-3)">انتهت</div>':
+                     `<div class="match-badge">${mt.time||mt.date||'قريباً'}</div>`;
+        return `<div class="match-card ${mt.isVip?'is-vip':''}" onclick="openPlayer('${esc(mt.id)}','match')">
+            <div class="match-head">
+                ${badge}
+                ${mt.isVip?'<div class="card-badge vip" style="position:relative;top:0;right:0"><i class="fa-solid fa-crown"></i> VIP</div>':''}
+            </div>
+            <div class="match-teams">
+                <div class="team">
+                    <img src="${esc(mt.team1Logo||'https://via.placeholder.com/60')}" alt="" onerror="this.src='https://via.placeholder.com/60'">
+                    <span>${esc(mt.team1||'فريق 1')}</span>
                 </div>
-                <div class="card-info">
-                    <div class="card-title">${esc(name)}</div>
-                    <div class="card-meta"><span><i class="fa-solid fa-tv"></i> ${esc(ch.category || 'بث')}</span></div>
+                <div class="match-vs">
+                    <div class="vs">VS</div>
+                    ${mt.score1!==undefined?`<div class="match-score">${esc(mt.score1)} - ${esc(mt.score2||0)}</div>`:''}
                 </div>
-            </div>`;
+                <div class="team">
+                    <img src="${esc(mt.team2Logo||'https://via.placeholder.com/60')}" alt="" onerror="this.src='https://via.placeholder.com/60'">
+                    <span>${esc(mt.team2||'فريق 2')}</span>
+                </div>
+            </div>
+            <div class="match-info">
+                <span><i class="fa-solid fa-trophy"></i> ${esc(mt.league||mt.category||'')}</span>
+                <span><i class="fa-solid fa-tv"></i> ${esc(mt.channel||'')}</span>
+            </div>
+        </div>`;
     }).join('');
 }
 
 /* ---------- 14. FAVORITES ---------- */
-function toggleFav(e, id) {
-    e.stopPropagation();
-    const idx = state.favorites.indexOf(id);
-    if (idx > -1) { state.favorites.splice(idx, 1); toast('تمت الإزالة من المفضلة', 'warn'); }
-    else { state.favorites.push(id); toast('تمت الإضافة للمفضلة', 'ok'); checkAchievement('first_fav'); }
-    localStorage.setItem('sw_favs', JSON.stringify(state.favorites));
-    renderAll();
-    renderHero();
-    if (state.currentPlayerItem && state.currentPlayerItem.id === id) updatePlayerFavBtn();
+function toggleFav(e,id){
+    if(e) e.stopPropagation();
+    const i=state.favorites.indexOf(id);
+    if(i>-1){state.favorites.splice(i,1);toast('تمت الإزالة','warn');}
+    else{state.favorites.push(id);toast('تمت الإضافة للمفضلة','ok');checkAchievement('first_fav');}
+    localStorage.setItem('sw_favs',JSON.stringify(state.favorites));
+    renderAll(); renderHero();
+    if(state.currentItem && state.currentItem.id===id) updatePlayerFavBtn();
 }
 
 /* ---------- 15. VIEW SWITCHER ---------- */
-function setActiveView(view) {
-    state.activeTab = view;
-    $$('.nav-link').forEach(b => b.classList.toggle('active', b.dataset.nav === view));
-    $$('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === view));
+function setActiveView(v){
+    state.activeView=v;
+    $$('.nav-link').forEach(b=>b.classList.toggle('active',b.dataset.nav===v));
+    $$('.bn-item').forEach(b=>b.classList.toggle('active',b.dataset.bn===v));
 
-    const liveSection = $('#liveSection');
-    const dyn = $('#dynamicSections');
-    const cont = $('#continueSection');
+    const live=$('#liveSection'), match=$('#matchSection'), dyn=$('#dynamicSections');
 
-    if (view === 'live') {
-        if (dyn) dyn.style.display = 'none';
-        if (cont) cont.style.display = 'none';
-        if (liveSection) liveSection.style.display = 'block';
+    if(v==='live'){
+        if(dyn)dyn.style.display='none';
+        if(match)match.style.display='none';
+        if(live)live.style.display='block';
         $('#heroSection')?.classList.remove('show');
-    } else {
-        if (dyn) dyn.style.display = 'block';
-        if (cont) cont.style.display = state.history.filter(x => (x.progress || 0) < 95).length ? 'block' : 'none';
-        if (liveSection) liveSection.style.display = 'none';
+    }else if(v==='matches'){
+        if(dyn)dyn.style.display='none';
+        if(live)live.style.display='none';
+        if(match)match.style.display='block';
+        $('#heroSection')?.classList.remove('show');
+    }else if(v==='movies'||v==='series'||v==='vip'){
+        if(dyn)dyn.style.display='block';
+        if(live)live.style.display='none';
+        if(match)match.style.display='none';
+        renderHero();
+        let filtered=state.videos.slice();
+        let title='';
+        if(v==='movies'){filtered=filtered.filter(x=>(x.category||'').includes('فيلم')||(x.type||'')==='movie');title='أفلام';}
+        else if(v==='series'){filtered=filtered.filter(x=>(x.category||'').includes('مسلسل')||(x.type||'')==='series');title='مسلسلات';}
+        else if(v==='vip'){filtered=filtered.filter(x=>x.isVip);title='محتوى VIP';}
+        if(filtered.length===0){toast('لا يوجد محتوى في هذا القسم','info');return;}
+        $('#sectionDetailTitle').textContent=title;
+        $('#sectionDetailCount').textContent=filtered.length+' عنصر';
+        $('#sectionDetailGrid').innerHTML=filtered.map(it=>renderCard(it)).join('');
+        openModal('sectionModal');
+    }else{
+        if(dyn)dyn.style.display='block';
+        if(live)live.style.display='none';
+        if(match)match.style.display='none';
         renderHero();
     }
-
-    // Filter videos by category for movies/series/vip tabs
-    if (view === 'movies' || view === 'series') {
-        const filtered = state.videos.filter(v => (v.category || '').includes(view === 'movies' ? 'فيلم' : 'مسلسل'));
-        if (filtered.length > 0) {
-            $('#sectionDetailTitle').textContent = view === 'movies' ? 'أفلام' : 'مسلسلات';
-            $('#sectionDetailCount').textContent = `${filtered.length} عنصر`;
-            $('#sectionDetailGrid').innerHTML = filtered.map(it => renderCard(it)).join('');
-            openModal('sectionModal');
-        }
-    } else if (view === 'vip') {
-        const filtered = state.videos.filter(v => v.isVip);
-        $('#sectionDetailTitle').textContent = 'محتوى VIP';
-        $('#sectionDetailCount').textContent = `${filtered.length} عنصر`;
-        $('#sectionDetailGrid').innerHTML = filtered.map(it => renderCard(it)).join('');
-        openModal('sectionModal');
-    }
 }
 
-/* ---------- 16. SEARCH (Feature #8) ---------- */
-const performSearch = debounce(() => {
-    const q = (state.searchQuery || '').trim().toLowerCase();
-    if (!q) { renderAll(); renderHero(); closeModal('sectionModal'); return; }
-
-    const results = state.videos.filter(v =>
-        (v.title || '').toLowerCase().includes(q) ||
-        (v.description || '').toLowerCase().includes(q) ||
-        (v.category || '').toLowerCase().includes(q)
+/* ---------- 16. SEARCH ---------- */
+const performSearch = debounce(()=>{
+    const q=state.searchQuery.trim();
+    if(!q){renderAll();renderHero();closeModal('sectionModal');return;}
+    const nq=normalize(q);
+    const results=state.videos.filter(v=>
+        normalize(v.title).includes(nq) ||
+        normalize(v.description).includes(nq) ||
+        normalize(v.category).includes(nq)
     );
-
-    $('#sectionDetailTitle').textContent = `نتائج البحث: "${q}"`;
-    $('#sectionDetailCount').textContent = `${results.length} نتيجة`;
-    $('#sectionDetailGrid').innerHTML = results.length === 0
-        ? `<div class="empty-state"><i class="fa-solid fa-search"></i><h3>لا توجد نتائج</h3><p>جرّب كلمة بحث أخرى</p></div>`
-        : results.map(it => renderCard(it)).join('');
+    $('#sectionDetailTitle').textContent=`نتائج: "${q}"`;
+    $('#sectionDetailCount').textContent=results.length+' نتيجة';
+    $('#sectionDetailGrid').innerHTML=results.length===0
+        ?'<div class="empty-state"><i class="fa-solid fa-search"></i><h3>لا توجد نتائج</h3><p>جرّب كلمة أخرى</p></div>'
+        :results.map(it=>renderCard(it)).join('');
     openModal('sectionModal');
-}, 500);
+},500);
 
 /* ---------- 17. PLAYER ---------- */
-async function openPlayer(id, type = 'vod') {
-    let item = null;
-    if (type === 'live') item = state.liveChannels.find(c => c.id === id);
-    else item = state.videos.find(v => v.id === id);
+async function openPlayer(id,type='vod'){
+    let item=null;
+    if(type==='live') item=state.liveChannels.find(c=>c.id===id);
+    else if(type==='match') item=state.matches.find(m=>m.id===id);
+    else item=state.videos.find(v=>v.id===id);
 
-    if (!item) { toast('المحتوى غير موجود', 'err'); return; }
+    if(!item){toast('المحتوى غير موجود','err');return;}
+    if(!state.currentUser){toast('سجل دخول للمشاهدة','warn');openAuthModal('login');return;}
+    if(item.isVip && !isVip(state.userData)){openSubModal();toast('هذا المحتوى لـ VIP','warn');return;}
 
-    if (!state.currentUser) {
-        toast('سجل دخول للمشاهدة', 'warn', 'مطلوب تسجيل دخول');
-        openAuthModal('login');
-        return;
-    }
+    state.currentItem=item;
+    state.playerType=type;
 
-    if (item.isVip && !getUserVip(state.userData)) {
-        openSubModal();
-        toast('هذا المحتوى لـ VIP فقط', 'warn');
-        return;
-    }
+    const title=item.title||`${item.team1||''} vs ${item.team2||''}`||item.name||'عرض';
+    $('#ppTitle').textContent=title;
+    $('#ppTitleBig').textContent=title;
+    $('#ppViews').textContent=(item.views||0)+1;
+    $('#ppCategory').innerHTML=`<i class="fa-solid fa-folder"></i> ${esc(item.category||(type==='live'?'بث مباشر':type==='match'?'مباراة':'عام'))}`;
+    $('#ppYear').textContent=item.year?'📅 '+item.year:'';
+    $('#ppBadges').innerHTML=item.isVip?'<span class="card-badge vip" style="position:static;display:inline-flex"><i class="fa-solid fa-crown"></i> VIP</span>':'';
 
-    state.currentPlayerItem = item;
-    state.playerType = type;
+    // Show/hide blocks based on type
+    const isVod=type==='vod';
+    $('#ratingBlock').style.display=isVod?'flex':'none';
+    document.querySelector('.comments-block').style.display=isVod?'block':'none';
+    $('#downloadsBlock').style.display=isVod?'block':'none';
 
-    $('#playerTitle').textContent = item.title || item.name || 'عرض';
-    $('#playerViews').textContent = (item.views || 0) + 1;
-    $('#playerCategory').textContent = item.category || (type === 'live' ? 'بث مباشر' : 'عام');
-    $('#playerDesc').textContent = item.description || 'لا يوجد وصف.';
-    $('#playerBadges').innerHTML = item.isVip
-        ? '<span class="card-badge vip" style="position:static;display:inline-flex"><i class="fa-solid fa-crown"></i> VIP</span>'
-        : '';
+    // Description
+    $('#ppDesc').textContent=item.description||'لا يوجد وصف.';
+    $('#ppDesc').style.display=item.description?'block':'none';
 
-    if (type === 'vod') {
-        $('#ratingBlock').style.display = 'flex';
-        $('.comments-block').style.display = 'block';
+    if(isVod){
         setupRating(item.id);
         setupComments(item.id);
-        db.ref('videos/' + id + '/views').transaction(v => (v || 0) + 1);
-        const existing = state.history.find(h => h.id === id);
-        const startAt = existing && existing.progress < 95 ? existing.currentTime : 0;
-        saveHistory(item, startAt, 0);
-    } else {
-        $('#ratingBlock').style.display = 'none';
-        $('.comments-block').style.display = 'none';
+        db.ref('videos/'+id+'/views').transaction(v=>(v||0)+1);
+        const h=state.history.find(x=>x.id===id);
+        saveHistory(item, h&&h.progress<95?h.currentTime:0, 0);
     }
 
-    setupServers(item, type);
-    $('#playerDlBtn').onclick = () => openDownloadModal(item.id);
+    // Servers
+    setupServers(item);
+
+    // Download buttons
+    setupDownloadButtons(item);
+
+    // Actions
+    $('#ppFavBtn').onclick=(e)=>toggleFav(e,item.id);
+    $('#ppShareBtn').onclick=()=>shareCurrent();
+    $('#ppAddListBtn').onclick=()=>addToWatchlistUI(item.id);
+
     updatePlayerFavBtn();
-    $('#playerShareBtn').onclick = () => shareItem(item, type);
 
-    openModal('playerModal');
+    // Show page
+    $('#playerPage').classList.add('active');
+    document.body.style.overflow='hidden';
 
-    if (type === 'vod') {
-        const existing = state.history.find(h => h.id === id);
-        if (existing && existing.currentTime > 0 && existing.progress < 95) {
-            setTimeout(() => {
-                if (state.currentVideoEl && state.currentVideoEl.duration) {
-                    try { state.currentVideoEl.currentTime = existing.currentTime; } catch (e) { }
+    // Restore position after video loads
+    if(isVod){
+        const h=state.history.find(x=>x.id===id);
+        if(h&&h.currentTime>0&&h.progress<95){
+            setTimeout(()=>{
+                if(state.currentVideoEl&&state.currentVideoEl.duration){
+                    try{state.currentVideoEl.currentTime=h.currentTime;}catch(e){}
                 }
-            }, 1500);
+            },1800);
         }
     }
+
+    // Update URL hash
+    history.replaceState(null,'',`#${type==='live'?'live':type==='match'?'match':'watch'}=${id}`);
 }
 
-function updatePlayerFavBtn() {
-    const btn = $('#playerFavBtn');
-    if (!btn || !state.currentPlayerItem) return;
-    const isFav = state.favorites.includes(state.currentPlayerItem.id);
-    btn.className = `btn ${isFav ? 'btn-vip' : 'btn-outline'}`;
-    btn.innerHTML = `<i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i> ${isFav ? 'في المفضلة' : 'المفضلة'}`;
-    btn.onclick = (e) => toggleFav(e, state.currentPlayerItem.id);
+function updatePlayerFavBtn(){
+    const b=$('#ppFavBtn'); if(!b||!state.currentItem) return;
+    const f=state.favorites.includes(state.currentItem.id);
+    b.className=`btn ${f?'btn-vip':'btn-outline'}`;
+    b.innerHTML=`<i class="fa-${f?'solid':'regular'} fa-heart"></i> ${f?'في المفضلة':'المفضلة'}`;
 }
 
-function setupServers(item, type) {
-    const block = $('#serversBlock');
-    const grid = $('#serversGrid');
-    grid.innerHTML = '';
+function setupServers(item){
+    const block=$('#serversBlock'), grid=$('#serversGrid');
+    grid.innerHTML='';
 
-    let servers = [];
-    if (Array.isArray(item.servers) && item.servers.length > 0) {
-        servers = item.servers.filter(s => s && (s.url || s.link));
-    } else if (item.url || item.streamUrl || item.link) {
-        servers = [{ name: 'السيرفر الرئيسي', url: item.url || item.streamUrl || item.link, type: item.streamType || 'auto' }];
+    let servers=[];
+    if(Array.isArray(item.servers)&&item.servers.length>0) servers=item.servers.filter(s=>s&&(s.url||s.link));
+    else if(item.url||item.streamUrl||item.link) servers=[{name:'السيرفر الرئيسي',url:item.url||item.streamUrl||item.link,type:item.streamType||'auto'}];
+
+    if(servers.length===0){
+        if(block) block.style.display='none';
+        renderPlayer('','auto');
+        return;
     }
-
-    if (servers.length === 0) { block.style.display = 'none'; renderPlayer('', 'auto'); return; }
-
-    block.style.display = 'block';
-    servers.forEach((s, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'server-btn' + (i === 0 ? ' active' : '');
-        btn.textContent = s.name || `سيرفر ${i + 1}`;
-        btn.onclick = () => {
-            $$('#serversGrid .server-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderPlayer(s.url, s.type || 'auto');
+    if(block) block.style.display='block';
+    servers.forEach((s,i)=>{
+        const b=document.createElement('button');
+        b.className='server-btn'+(i===0?' active':'');
+        b.textContent=s.name||`سيرفر ${i+1}`;
+        b.onclick=()=>{
+            $$('#serversGrid .server-btn').forEach(x=>x.classList.remove('active'));
+            b.classList.add('active');
+            renderPlayer(s.url,s.type||'auto');
         };
-        grid.appendChild(btn);
+        grid.appendChild(b);
     });
-
-    renderPlayer(servers[0].url, servers[0].type || 'auto');
+    renderPlayer(servers[0].url,servers[0].type||'auto');
 }
 
-function renderPlayer(url, type = 'auto') {
+function renderPlayer(url,type='auto'){
     destroyPlayer();
-    const container = $('#playerContainer');
-    container.innerHTML = '';
+    const c=$('#playerContainer'); c.innerHTML='';
 
-    if (!url) {
-        container.innerHTML = `<div class="player-error"><i class="fa-solid fa-triangle-exclamation"></i><p>الرابط غير متوفر</p></div>`;
+    if(!url){
+        c.innerHTML='<div class="player-error"><i class="fa-solid fa-triangle-exclamation"></i><p>الرابط غير متوفر</p></div>';
         return;
     }
-    const cleanUrl = String(url).trim();
-    if (!/^https?:\/\//i.test(cleanUrl)) {
-        container.innerHTML = `<div class="player-error"><i class="fa-solid fa-link-slash"></i><p>رابط غير صالح</p></div>`;
+    const u=String(url).trim();
+    if(!/^https?:\/\//i.test(u)){
+        c.innerHTML='<div class="player-error"><i class="fa-solid fa-link-slash"></i><p>رابط غير صالح</p></div>';
         return;
     }
 
-    const isHls = cleanUrl.includes('.m3u8') || type === 'hls';
-    const isDash = cleanUrl.includes('.mpd') || type === 'dash';
-    const isVideo = cleanUrl.match(/\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i) || type === 'video';
+    const isHls=u.includes('.m3u8')||type==='hls';
+    const isDash=u.includes('.mpd')||type==='dash';
+    const isVid=u.match(/\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i)||type==='video';
 
-    if (isHls) {
-        const video = document.createElement('video');
-        video.controls = true; video.autoplay = true; video.playsInline = true;
-        video.style.cssText = 'width:100%;height:100%;';
-        container.appendChild(video);
-        state.currentVideoEl = video;
-        attachToolbar(container, video);
-        attachProgressSaver(video);
-
-        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-            state.hlsInstance = new Hls({ enableWorker: true });
-            state.hlsInstance.loadSource(cleanUrl);
-            state.hlsInstance.attachMedia(video);
-            state.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => { }));
-            state.hlsInstance.on(Hls.Events.ERROR, (_, data) => {
-                if (data.fatal) container.innerHTML = `<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i><p>خطأ في تحميل HLS</p></div>`;
-            });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = cleanUrl;
-            video.play().catch(() => { });
+    if(isHls){
+        const v=document.createElement('video');
+        v.controls=true; v.autoplay=true; v.playsInline=true;
+        v.style.cssText='width:100%;height:100%;background:#000;';
+        c.appendChild(v);
+        state.currentVideoEl=v;
+        attachToolbar(c,v); attachProgressSaver(v);
+        if(typeof Hls!=='undefined'&&Hls.isSupported()){
+            state.hls=new Hls({enableWorker:true});
+            state.hls.loadSource(u);
+            state.hls.attachMedia(v);
+            state.hls.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));
+            state.hls.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal)c.innerHTML='<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i><p>خطأ في HLS</p></div>';});
+        }else if(v.canPlayType('application/vnd.apple.mpegurl')){
+            v.src=u; v.play().catch(()=>{});
         }
-    } else if (isDash) {
-        const video = document.createElement('video');
-        video.controls = true; video.autoplay = true; video.playsInline = true;
-        video.style.cssText = 'width:100%;height:100%;';
-        container.appendChild(video);
-        state.currentVideoEl = video;
-        attachToolbar(container, video);
-        attachProgressSaver(video);
-        if (typeof dashjs !== 'undefined') {
-            state.dashInstance = dashjs.MediaPlayer().create();
-            state.dashInstance.initialize(video, cleanUrl, true);
+    }else if(isDash){
+        const v=document.createElement('video');
+        v.controls=true; v.autoplay=true; v.playsInline=true;
+        v.style.cssText='width:100%;height:100%;background:#000;';
+        c.appendChild(v);
+        state.currentVideoEl=v;
+        attachToolbar(c,v); attachProgressSaver(v);
+        if(typeof dashjs!=='undefined'){
+            state.dash=dashjs.MediaPlayer().create();
+            state.dash.initialize(v,u,true);
         }
-    } else if (isVideo) {
-        const video = document.createElement('video');
-        video.controls = true; video.autoplay = true; video.playsInline = true;
-        video.src = cleanUrl;
-        video.style.cssText = 'width:100%;height:100%;';
-        container.appendChild(video);
-        state.currentVideoEl = video;
-        attachToolbar(container, video);
-        attachProgressSaver(video);
-        video.play().catch(() => { });
-    } else {
-        const iframe = document.createElement('iframe');
-        iframe.src = cleanUrl;
-        iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
-        iframe.allowFullscreen = true;
-        container.appendChild(iframe);
+    }else if(isVid){
+        const v=document.createElement('video');
+        v.controls=true; v.autoplay=true; v.playsInline=true;
+        v.src=u; v.style.cssText='width:100%;height:100%;background:#000;';
+        c.appendChild(v);
+        state.currentVideoEl=v;
+        attachToolbar(c,v); attachProgressSaver(v);
+        v.play().catch(()=>{});
+    }else{
+        const f=document.createElement('iframe');
+        f.src=u;
+        f.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';
+        f.allowFullscreen=true;
+        c.appendChild(f);
     }
 }
 
-function attachToolbar(container, video) {
-    const tb = document.createElement('div');
-    tb.className = 'player-toolbar';
-    tb.innerHTML = `
+function attachToolbar(container,video){
+    const tb=document.createElement('div');
+    tb.className='player-toolbar';
+    tb.innerHTML=`
         <button class="player-tool" id="pipBtn" title="صورة داخل صورة"><i class="fa-solid fa-clone"></i></button>
         <button class="player-tool" id="speedBtn" title="السرعة"><i class="fa-solid fa-gauge-high"></i></button>
         <button class="player-tool" id="sleepBtn" title="مؤقت النوم"><i class="fa-solid fa-moon"></i></button>
-    `;
+        <button class="player-tool" id="shotBtn" title="لقطة شاشة"><i class="fa-solid fa-camera"></i></button>`;
     container.appendChild(tb);
 
-    const speedMenu = document.createElement('div');
-    speedMenu.className = 'speed-menu';
-    [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].forEach(s => {
-        const b = document.createElement('button');
-        b.textContent = s + 'x';
-        if (s === 1) b.classList.add('active');
-        b.onclick = () => {
-            video.playbackRate = s;
-            speedMenu.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+    const sm=document.createElement('div');
+    sm.className='speed-menu';
+    [0.5,0.75,1,1.25,1.5,1.75,2].forEach(s=>{
+        const b=document.createElement('button');
+        b.textContent=s+'x';
+        if(s===1)b.classList.add('active');
+        b.onclick=()=>{
+            video.playbackRate=s;
+            sm.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
             b.classList.add('active');
-            speedMenu.classList.remove('show');
+            sm.classList.remove('show');
         };
-        speedMenu.appendChild(b);
+        sm.appendChild(b);
     });
-    container.appendChild(speedMenu);
+    container.appendChild(sm);
 
-    tb.querySelector('#speedBtn').onclick = (e) => { e.stopPropagation(); speedMenu.classList.toggle('show'); };
-    tb.querySelector('#pipBtn').onclick = async () => {
-        try {
-            if (document.pictureInPictureElement) await document.exitPictureInPicture();
-            else if (video.requestPictureInPicture) await video.requestPictureInPicture();
-        } catch (e) { toast('PiP غير مدعوم', 'warn'); }
+    tb.querySelector('#speedBtn').onclick=e=>{e.stopPropagation();sm.classList.toggle('show');};
+
+    tb.querySelector('#pipBtn').onclick=async()=>{
+        try{
+            if(document.pictureInPictureElement) await document.exitPictureInPicture();
+            else if(video.requestPictureInPicture) await video.requestPictureInPicture();
+        }catch(e){toast('PiP غير مدعوم','warn');}
     };
-    tb.querySelector('#sleepBtn').onclick = () => showSleepTimerMenu(video);
-    document.addEventListener('click', () => speedMenu.classList.remove('show'), { once: true });
+
+    tb.querySelector('#sleepBtn').onclick=()=>showSleepTimer(video);
+    tb.querySelector('#shotBtn').onclick=()=>captureScreenshot(video);
+
+    document.addEventListener('click',()=>sm.classList.remove('show'),{once:true});
 }
 
-/* ---------- 18. SLEEP TIMER (Feature #2) ---------- */
-function showSleepTimerMenu(video) {
-    const mins = prompt('مؤقت النوم (بالدقائق):\n0 = إلغاء', '30');
-    if (mins === null) return;
-    const m = parseInt(mins);
-    if (state.sleepTimer) { clearTimeout(state.sleepTimer); state.sleepTimer = null; }
-    if (!m || m <= 0) { toast('تم إلغاء مؤقت النوم', 'ok'); return; }
-    state.sleepTimer = setTimeout(() => {
-        if (state.currentVideoEl) state.currentVideoEl.pause();
-        toast(`انتهى مؤقت النوم (${m} دقيقة)`, 'warn');
-    }, m * 60000);
-    toast(`⏰ سيتم إيقاف التشغيل بعد ${m} دقيقة`, 'ok');
-}
-
-function attachProgressSaver(video) {
-    if (state.progressTimer) clearInterval(state.progressTimer);
-    state.progressTimer = setInterval(() => {
-        if (state.currentPlayerItem && video.currentTime > 5 && video.duration > 0 && !video.paused) {
-            saveHistory(state.currentPlayerItem, video.currentTime, video.duration);
+function attachProgressSaver(video){
+    if(state.progressTimer) clearInterval(state.progressTimer);
+    state.progressTimer=setInterval(()=>{
+        if(state.currentItem&&video.currentTime>5&&video.duration>0&&!video.paused){
+            saveHistory(state.currentItem,video.currentTime,video.duration);
         }
-    }, 8000);
+    },8000);
 
-    video.addEventListener('pause', () => {
-        if (state.currentPlayerItem && video.duration > 0) saveHistory(state.currentPlayerItem, video.currentTime, video.duration);
+    video.addEventListener('pause',()=>{
+        if(state.currentItem&&video.duration>0) saveHistory(state.currentItem,video.currentTime,video.duration);
     });
 
-    /* Feature #3: Auto-play next episode */
-    video.addEventListener('ended', () => {
-        if (state.autoPlayNext && state.playerType === 'vod') playNextEpisode();
+    video.addEventListener('ended',()=>{
+        if(state.autoPlay && state.playerType==='vod') playNextEpisode();
     });
 }
 
-function saveHistory(item, currentTime, duration) {
-    const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
-    state.history = state.history.filter(h => h.id !== item.id);
+function showSleepTimer(video){
+    const mins=prompt('مؤقت النوم (دقائق):\n0 = إلغاء','30');
+    if(mins===null) return;
+    const m=parseInt(mins);
+    if(state.sleepTimer){clearTimeout(state.sleepTimer);state.sleepTimer=null;}
+    if(!m||m<=0){toast('تم إلغاء المؤقت','ok');return;}
+    state.sleepTimer=setTimeout(()=>{
+        if(state.currentVideoEl) state.currentVideoEl.pause();
+        toast(`انتهى مؤقت النوم (${m} دقيقة)`,'warn');
+    },m*60000);
+    toast(`⏰ سيتم الإيقاف بعد ${m} دقيقة`,'ok');
+}
+
+function captureScreenshot(video){
+    try{
+        const c=document.createElement('canvas');
+        c.width=video.videoWidth; c.height=video.videoHeight;
+        c.getContext('2d').drawImage(video,0,0);
+        c.toBlob(b=>{
+            const u=URL.createObjectURL(b);
+            const a=document.createElement('a');
+            a.href=u; a.download=`screenshot-${Date.now()}.png`;
+            a.click();
+            URL.revokeObjectURL(u);
+            toast('تم حفظ اللقطة','ok');
+        });
+    }catch(e){toast('فشل اللقطة','err');}
+}
+
+function saveHistory(item,ct,dur){
+    const p=dur>0?Math.min(100,(ct/dur)*100):0;
+    state.history=state.history.filter(h=>h.id!==item.id);
     state.history.unshift({
-        id: item.id, title: item.title,
-        image: item.poster || item.image || item.thumbnail,
-        currentTime: currentTime || 0, duration: duration || 0,
-        progress, time: Date.now()
+        id:item.id,title:item.title||item.name,
+        image:item.poster||item.image||item.thumbnail,
+        currentTime:ct||0,duration:dur||0,progress:p,time:Date.now()
     });
-    if (state.history.length > 40) state.history.pop();
-    localStorage.setItem('sw_history', JSON.stringify(state.history));
-    renderContinueWatching();
-    if (state.history.length >= 10) checkAchievement('ten_watches');
+    if(state.history.length>40) state.history.pop();
+    localStorage.setItem('sw_history',JSON.stringify(state.history));
+    if(state.history.length>=10) checkAchievement('ten_watches');
 }
 
-function destroyPlayer() {
-    if (state.hlsInstance) { try { state.hlsInstance.destroy(); } catch (e) { } state.hlsInstance = null; }
-    if (state.dashInstance) { try { state.dashInstance.reset(); } catch (e) { } state.dashInstance = null; }
-    if (state.progressTimer) { clearInterval(state.progressTimer); state.progressTimer = null; }
-    if (state.sleepTimer) { clearTimeout(state.sleepTimer); state.sleepTimer = null; }
-    const c = $('#playerContainer');
-    if (c) c.innerHTML = '';
-    state.currentVideoEl = null;
+function destroyPlayer(){
+    if(state.hls){try{state.hls.destroy();}catch(e){}state.hls=null;}
+    if(state.dash){try{state.dash.reset();}catch(e){}state.dash=null;}
+    if(state.progressTimer){clearInterval(state.progressTimer);state.progressTimer=null;}
+    if(state.sleepTimer){clearTimeout(state.sleepTimer);state.sleepTimer=null;}
+    const c=$('#playerContainer'); if(c) c.innerHTML='';
+    state.currentVideoEl=null;
 }
 
-function closePlayer() {
-    if (state.currentVideoEl && state.currentPlayerItem && state.currentVideoEl.duration > 0) {
-        saveHistory(state.currentPlayerItem, state.currentVideoEl.currentTime, state.currentVideoEl.duration);
+function closePlayer(){
+    if(state.currentVideoEl&&state.currentItem&&state.currentVideoEl.duration>0){
+        saveHistory(state.currentItem,state.currentVideoEl.currentTime,state.currentVideoEl.duration);
     }
-    if (state.currentVideoEl) {
-        try { state.currentVideoEl.pause(); state.currentVideoEl.src = ''; } catch (e) { }
-    }
-    if (state.ratingsListenerRef) { state.ratingsListenerRef.off(); state.ratingsListenerRef = null; }
-    if (state.commentsListenerRef) { state.commentsListenerRef.off(); state.commentsListenerRef = null; }
+    if(state.currentVideoEl){try{state.currentVideoEl.pause();state.currentVideoEl.src='';}catch(e){}}
+    if(state.ratingRef){state.ratingRef.off();state.ratingRef=null;}
+    if(state.commentRef){state.commentRef.off();state.commentRef=null;}
     destroyPlayer();
-    closeModal('playerModal');
-    state.currentPlayerItem = null;
+    $('#playerPage').classList.remove('active');
+    document.body.style.overflow='';
+    state.currentItem=null;
+    history.replaceState(null,'',location.pathname);
 }
 
-/* ---------- 19. AUTO-PLAY NEXT EPISODE (Feature #3) ---------- */
-function playNextEpisode() {
-    const cur = state.currentPlayerItem;
-    if (!cur || !cur.seriesId) return;
-    const epNum = parseInt(cur.episode) || 0;
-    const next = state.videos.find(v => v.seriesId === cur.seriesId && parseInt(v.episode) === epNum + 1);
-    if (!next) { toast('لا توجد حلقة تالية', 'info'); return; }
-    toast('⏭️ تشغيل الحلقة التالية...', 'ok');
+function playNextEpisode(){
+    const c=state.currentItem;
+    if(!c||!c.seriesId) return;
+    const ep=parseInt(c.episode)||0;
+    const next=state.videos.find(v=>v.seriesId===c.seriesId&&parseInt(v.episode)===ep+1);
+    if(!next){toast('لا توجد حلقة تالية','info');return;}
+    toast('⏭️ الحلقة التالية...','ok');
     closePlayer();
-    setTimeout(() => openPlayer(next.id, 'vod'), 800);
+    setTimeout(()=>openPlayer(next.id,'vod'),700);
 }
 
-/* ---------- 20. RATINGS ---------- */
-function setupRating(itemId) {
-    const starsEl = $('#rbStars');
-    const avgEl = $('#rbAvg');
-    starsEl.querySelectorAll('i').forEach(i => i.className = 'fa-solid fa-star');
+function shareCurrent(){
+    if(!state.currentItem) return;
+    const t=state.currentItem.title||state.currentItem.name;
+    const url=location.origin+location.pathname+`#${state.playerType==='live'?'live':state.playerType==='match'?'match':'watch'}=${state.currentItem.id}`;
+    const data={title:t,text:`شاهد "${t}" على سيرفر الوحش 🐺`,url};
+    if(navigator.share){navigator.share(data).catch(()=>{});}
+    else{navigator.clipboard.writeText(url);toast('تم نسخ الرابط','ok');}
+}
 
-    if (state.ratingsListenerRef) state.ratingsListenerRef.off();
-    state.ratingsListenerRef = db.ref('ratings/' + itemId);
-    state.ratingsListenerRef.on('value', snap => {
-        let count = 0, sum = 0, myVal = 0;
-        if (snap.exists()) {
-            snap.forEach(c => {
-                const v = Number(c.val().value) || 0;
-                if (v > 0) { count++; sum += v; }
-                if (state.currentUser && c.key === state.currentUser.uid) myVal = v;
-            });
-        }
-        if (count > 0) {
-            const avg = sum / count;
-            avgEl.innerHTML = `<strong>${avg.toFixed(1)}</strong> / 5 • ${count} تقييم`;
-            starsEl.querySelectorAll('i').forEach(i => i.classList.toggle('active', Number(i.dataset.v) <= Math.round(avg)));
-        } else {
-            avgEl.textContent = 'لا توجد تقييمات';
-            starsEl.querySelectorAll('i').forEach(i => i.classList.remove('active'));
-        }
-        if (myVal > 0) starsEl.querySelectorAll('i').forEach(i => { if (Number(i.dataset.v) === myVal) i.classList.add('active'); });
-    });
+/* ---------- 18. DOWNLOAD BUTTONS ---------- */
+function setupDownloadButtons(item){
+    const fast=$('#dlFastBtn'), free=$('#dlAdsBtn');
+    const fastUrl=item.downloadFast||item.downloadUrl||'';
+    const adsUrl=item.downloadAds||item.downloadNormal||item.url||'';
 
-    starsEl.querySelectorAll('i').forEach(star => {
-        star.onclick = async () => {
-            if (!state.currentUser) { toast('سجل دخول للتقييم', 'warn'); openAuthModal('login'); return; }
-            const val = Number(star.dataset.v);
-            try {
-                await db.ref(`ratings/${itemId}/${state.currentUser.uid}`).set({ value: val, ts: Date.now() });
-                const snap = await db.ref('ratings/' + itemId).once('value');
-                let c = 0, s = 0;
-                snap.forEach(x => { const v = Number(x.val().value) || 0; if (v > 0) { c++; s += v; } });
-                if (c > 0) {
-                    db.ref('videos/' + itemId + '/ratingAvg').set((s / c).toFixed(2));
-                    db.ref('videos/' + itemId + '/ratingCount').set(c);
-                }
-                toast(`قيّمت بـ ${val} نجوم ⭐`, 'ok');
-                checkAchievement('first_rating');
-            } catch (e) { toast('فشل التقييم', 'err'); }
+    if(fast){
+        fast.onclick=()=>{
+            if(!isVip(state.userData)){openSubModal();toast('التحميل المباشر لـ VIP','warn');return;}
+            if(!fastUrl){toast('رابط VIP غير متوفر','err');return;}
+            toast('⚡ جاري التحميل...','ok');
+            window.open(fastUrl,'_blank');
         };
-        star.onmouseenter = () => starsEl.querySelectorAll('i').forEach(i => { if (Number(i.dataset.v) <= Number(star.dataset.v)) i.classList.add('hover'); });
-        star.onmouseleave = () => starsEl.querySelectorAll('i').forEach(i => i.classList.remove('hover'));
+    }
+    if(free){
+        free.onclick=()=>{
+            if(!adsUrl){toast('رابط التحميل غير متوفر','err');return;}
+            openFreeDownloadModal(item,adsUrl);
+        };
+    }
+}
+
+function openFreeDownloadModal(item,url){
+    const card=$('#dlModalCard');
+    card.innerHTML=`
+        <button class="modal-close" data-close="dlModal"><i class="fa-solid fa-xmark"></i></button>
+        <div class="dl-hero">
+            <div class="dl-icon"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+            <h3>تحميل: ${esc(item.title||'')}</h3>
+            <p>سيبدأ التحميل بعد انتهاء الإعلان</p>
+        </div>
+        <div id="adContainer" class="ad-slot show" style="margin:14px 0;min-height:180px">${state.ads.downloadAd||'<div style="color:var(--text-3);padding:40px">مساحة إعلانية</div>'}</div>
+        <div id="dlTimerArea"></div>`;
+    card.querySelector('[data-close]').onclick=()=>closeModal('dlModal');
+    openModal('dlModal');
+    startFreeDownload(url);
+}
+
+function startFreeDownload(url){
+    const area=$('#dlTimerArea');
+    if(!area) return;
+    let sec=15;
+    area.innerHTML=`
+        <div class="countdown-wrap">
+            <div class="countdown-circle" id="cdCircle"><span class="countdown-num" id="cdNum">15</span></div>
+            <p class="countdown-txt">جاري تحضير الرابط...</p>
+        </div>
+        <button class="dl-ready-btn" id="dlReady"><i class="fa-solid fa-cloud-arrow-down"></i> اضغط للتحميل</button>`;
+    const b=$('#dlReady');
+    b.onclick=()=>{
+        window.open(url,'_blank');
+        closeModal('dlModal');
+    };
+    const t=setInterval(()=>{
+        sec--;
+        const n=$('#cdNum'), c=$('#cdCircle');
+        if(n) n.textContent=sec;
+        if(c) c.style.setProperty('--progress',((15-sec)/15*100)+'%');
+        if(sec<=0){
+            clearInterval(t);
+            if(b) b.classList.add('show');
+            toast('الرابط جاهز','ok');
+        }
+    },1000);
+}
+
+/* ---------- 19. RATINGS ---------- */
+function setupRating(id){
+    const s=$('#rbStars'), a=$('#rbAvg');
+    if(!s) return;
+    s.querySelectorAll('i').forEach(i=>i.className='fa-solid fa-star');
+    if(state.ratingRef) state.ratingRef.off();
+    state.ratingRef=db.ref('ratings/'+id);
+    state.ratingRef.on('value',snap=>{
+        let c=0,sum=0,my=0;
+        if(snap.exists()) snap.forEach(x=>{
+            const v=Number(x.val().value)||0;
+            if(v>0){c++;sum+=v;}
+            if(state.currentUser&&x.key===state.currentUser.uid) my=v;
+        });
+        if(c>0){
+            const avg=sum/c;
+            a.innerHTML=`<strong>${avg.toFixed(1)}</strong> / 5 • ${c} تقييم`;
+            s.querySelectorAll('i').forEach(i=>i.classList.toggle('active',Number(i.dataset.v)<=Math.round(avg)));
+        }else{a.textContent='لا توجد تقييمات';s.querySelectorAll('i').forEach(i=>i.classList.remove('active'));}
+        if(my>0) s.querySelectorAll('i').forEach(i=>{if(Number(i.dataset.v)===my)i.classList.add('active');});
+    });
+    s.querySelectorAll('i').forEach(st=>{
+        st.onclick=async()=>{
+            if(!state.currentUser){toast('سجل دخول','warn');return;}
+            const v=Number(st.dataset.v);
+            try{
+                await db.ref(`ratings/${id}/${state.currentUser.uid}`).set({value:v,ts:Date.now()});
+                const sn=await db.ref('ratings/'+id).once('value');
+                let cc=0,ss=0;
+                sn.forEach(x=>{const vv=Number(x.val().value)||0;if(vv>0){cc++;ss+=vv;}});
+                if(cc>0){
+                    db.ref('videos/'+id+'/ratingAvg').set((ss/cc).toFixed(2));
+                    db.ref('videos/'+id+'/ratingCount').set(cc);
+                }
+                toast(`قيّمت بـ ${v} نجوم ⭐`,'ok');
+                checkAchievement('first_rating');
+            }catch(e){toast('فشل التقييم','err');}
+        };
+        st.onmouseenter=()=>s.querySelectorAll('i').forEach(i=>{if(Number(i.dataset.v)<=Number(st.dataset.v))i.classList.add('hover');});
+        st.onmouseleave=()=>s.querySelectorAll('i').forEach(i=>i.classList.remove('hover'));
     });
 }
 
-/* ---------- 21. COMMENTS ---------- */
-function setupComments(itemId) {
-    const listEl = $('#commentsList');
-    const countEl = $('#commentsCount');
-    listEl.innerHTML = '<div class="status-box"><div class="spinner"></div></div>';
-
-    if (state.commentsListenerRef) state.commentsListenerRef.off();
-    state.commentsListenerRef = db.ref('comments/' + itemId).limitToLast(80);
-    state.commentsListenerRef.on('value', snap => {
-        const arr = [];
-        if (snap.exists()) snap.forEach(c => arr.push({ id: c.key, ...c.val() }));
-        arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        countEl.textContent = arr.length;
-        if (arr.length === 0) {
-            listEl.innerHTML = '<div class="status-box"><i class="fa-regular fa-comment empty-icon"></i><p>كن أول من يعلّق</p></div>';
-            return;
-        }
-        listEl.innerHTML = arr.map(c => {
-            const isOwner = state.currentUser && c.uid === state.currentUser.uid;
-            const letter = (c.name || '?').trim().charAt(0).toUpperCase();
+/* ---------- 20. COMMENTS ---------- */
+function setupComments(id){
+    const l=$('#commentsList'), c=$('#commentsCount');
+    if(!l) return;
+    l.innerHTML='<div class="status-box"><div class="spinner"></div></div>';
+    if(state.commentRef) state.commentRef.off();
+    state.commentRef=db.ref('comments/'+id).limitToLast(80);
+    state.commentRef.on('value',snap=>{
+        const arr=[];
+        if(snap.exists()) snap.forEach(x=>arr.push({id:x.key,...x.val()}));
+        arr.sort((a,b)=>(b.ts||0)-(a.ts||0));
+        c.textContent=arr.length;
+        if(arr.length===0){l.innerHTML='<div class="status-box"><i class="fa-regular fa-comment empty-icon"></i><p>كن أول من يعلّق</p></div>';return;}
+        l.innerHTML=arr.map(x=>{
+            const owner=state.currentUser&&x.uid===state.currentUser.uid;
+            const letter=(x.name||'?').trim().charAt(0).toUpperCase();
             return `<div class="comment-item">
                 <div class="ci-avatar">${esc(letter)}</div>
                 <div class="ci-body">
                     <div class="ci-head">
-                        <span class="ci-name">${esc(c.name || 'مستخدم')}</span>
-                        ${c.isVip ? '<span class="ci-vip">👑 VIP</span>' : ''}
-                        <span class="ci-time">${fmtRel(c.ts)}</span>
-                        ${isOwner ? `<button class="ci-del" onclick="deleteComment('${esc(itemId)}','${esc(c.id)}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        <span class="ci-name">${esc(x.name||'مستخدم')}</span>
+                        ${x.isVip?'<span class="ci-vip">👑 VIP</span>':''}
+                        <span class="ci-time">${fmtRel(x.ts)}</span>
+                        ${owner?`<button class="ci-del" onclick="deleteComment('${esc(id)}','${esc(x.id)}')"><i class="fa-solid fa-trash"></i></button>`:''}
                     </div>
-                    <div class="ci-text">${esc(c.text)}</div>
+                    <div class="ci-text">${esc(x.text)}</div>
                 </div>
             </div>`;
         }).join('');
     });
 }
 
-async function sendComment() {
-    if (!state.currentUser) { toast('سجل دخول للتعليق', 'warn'); openAuthModal('login'); return; }
-    if (!state.currentPlayerItem) return;
-    const input = $('#commentInput');
-    const text = input.value.trim();
-    if (!text) return;
-    if (text.length > 300) { toast('التعليق طويل جداً', 'warn'); return; }
-    input.value = '';
-    try {
-        await db.ref('comments/' + state.currentPlayerItem.id).push({
-            uid: state.currentUser.uid,
-            name: state.userData ? state.userData.name : 'مستخدم',
-            isVip: getUserVip(state.userData),
-            text, ts: Date.now()
+async function sendComment(){
+    if(!state.currentUser){toast('سجل دخول','warn');return;}
+    if(!state.currentItem) return;
+    const inp=$('#commentInput');
+    const txt=inp.value.trim();
+    if(!txt) return;
+    if(txt.length>300){toast('التعليق طويل','warn');return;}
+    inp.value='';
+    try{
+        await db.ref('comments/'+state.currentItem.id).push({
+            uid:state.currentUser.uid,
+            name:state.userData?state.userData.name:'مستخدم',
+            isVip:isVip(state.userData),
+            text:txt, ts:Date.now()
         });
         checkAchievement('first_comment');
-    } catch (e) { toast('فشل إرسال التعليق', 'err'); }
+    }catch(e){toast('فشل الإرسال','err');}
 }
 
-async function deleteComment(itemId, commentId) {
-    const ok = await askConfirm({ title: 'حذف', msg: 'حذف تعليقك؟' });
-    if (ok) { await db.ref(`comments/${itemId}/${commentId}`).remove(); toast('تم الحذف', 'ok'); }
+async function deleteComment(itemId,commentId){
+    const ok=await askConfirm({title:'حذف',msg:'حذف تعليقك؟'});
+    if(ok){await db.ref(`comments/${itemId}/${commentId}`).remove();toast('تم الحذف','ok');}
 }
 
-/* ---------- 22. DOWNLOAD ---------- */
-function openDownloadModal(id) {
-    const item = state.videos.find(v => v.id === id);
-    if (!item) { toast('غير موجود', 'err'); return; }
-    if (!state.currentUser) { toast('سجل دخول للتحميل', 'warn'); openAuthModal('login'); return; }
+/* ---------- 21. PROFILE ---------- */
+function openProfileModal(){
+    if(!state.userData) return;
+    const u=state.userData;
+    const lvl=getUserLevel(u);
+    const vip=isVip(u);
+    const exp=u.vipExpireDate||u.expireAt||0;
 
-    const url = item.downloadUrl || item.url || '';
-    const card = $('#dlModalCard');
-    card.innerHTML = `
-        <button class="modal-close" data-close="dlModal"><i class="fa-solid fa-xmark"></i></button>
-        <div class="dl-hero">
-            <div class="dl-icon"><i class="fa-solid fa-download"></i></div>
-            <h3>تحميل: ${esc(item.title)}</h3>
-            <p>اختر وسيلة التحميل</p>
-        </div>
-        <div class="dl-options">
-            <button class="dl-opt vip" id="dlVip">
-                <div class="dl-opt-icon"><i class="fa-solid fa-bolt"></i></div>
-                <div class="dl-opt-text">
-                    <div class="dl-opt-title">تحميل فوري VIP</div>
-                    <div class="dl-opt-sub">بدون انتظار - روابط سريعة</div>
-                </div>
-            </button>
-            <button class="dl-opt free" id="dlFree">
-                <div class="dl-opt-icon"><i class="fa-solid fa-hourglass-half"></i></div>
-                <div class="dl-opt-text">
-                    <div class="dl-opt-title">تحميل مجاني (15 ثانية)</div>
-                    <div class="dl-opt-sub">رابط عادي مع إعلان</div>
-                </div>
-            </button>
-        </div>
-        <div id="dlTimerArea"></div>`;
+    $('#profileAvatar').textContent=(u.name||'?').trim().charAt(0).toUpperCase();
+    $('#profileName').textContent=u.name||'مستخدم';
+    $('#profileEmail').textContent=u.email||'---';
+    $('#profileLevelWrap').innerHTML=`<span class="tag ${vip?'vip':'free'}">${lvl.label}</span>`;
+    $('#profileSubStatus').textContent=vip?'VIP':'عادي';
+    $('#profileExpireDate').textContent=exp?fmtDate(exp):'—';
+    if(vip&&exp>0){$('#profileDaysLeft').textContent=Math.ceil((exp-Date.now())/86400000)+' يوم';}
+    else{$('#profileDaysLeft').textContent=vip?'دائم':'0';}
+    $('#profileFavCount').textContent=state.favorites.length;
 
-    $('#dlVip').onclick = () => {
-        if (!getUserVip(state.userData)) { openSubModal(); toast('متاح لـ VIP فقط', 'warn'); return; }
-        if (!url) { toast('رابط التحميل غير متوفر', 'err'); return; }
-        toast('جاري التحميل...', 'ok');
-        window.open(url, '_blank');
-    };
-    $('#dlFree').onclick = () => startFreeDownload(url);
-    card.querySelector('[data-close]').onclick = () => closeModal('dlModal');
-
-    openModal('dlModal');
-}
-
-function startFreeDownload(url) {
-    if (!url) { toast('رابط غير متوفر', 'err'); return; }
-    const area = $('#dlTimerArea');
-    let sec = 15;
-    area.innerHTML = `
-        <div class="countdown-wrap">
-            <div class="countdown-circle" id="cdCircle"><span class="countdown-num" id="cdNum">15</span></div>
-            <p class="countdown-txt">جاري تحضير الرابط...</p>
-        </div>
-        <button class="dl-ready-btn" id="dlReady"><i class="fa-solid fa-cloud-arrow-down"></i> اضغط للتحميل</button>`;
-    $('#dlReady').onclick = () => window.open(url, '_blank');
-    const timer = setInterval(() => {
-        sec--;
-        const num = $('#cdNum'), circ = $('#cdCircle');
-        if (num) num.textContent = sec;
-        if (circ) circ.style.setProperty('--progress', `${((15 - sec) / 15) * 100}%`);
-        if (sec <= 0) {
-            clearInterval(timer);
-            const b = $('#dlReady');
-            if (b) b.classList.add('show');
-            toast('الرابط جاهز', 'ok');
-        }
-    }, 1000);
-}
-
-/* ---------- 23. SHARE (Feature #7) ---------- */
-async function shareItem(item, type) {
-    const url = location.origin + location.pathname + `#${type === 'live' ? 'live' : 'watch'}=${item.id}`;
-    const shareData = {
-        title: item.title || item.name,
-        text: `شاهد "${item.title || item.name}" على سيرفر الوحش 🐺`,
-        url
-    };
-    try {
-        if (navigator.share) await navigator.share(shareData);
-        else { await navigator.clipboard.writeText(url); toast('تم نسخ الرابط', 'ok'); }
-    } catch (e) { }
-}
-
-/* ---------- 24. PROFILE ---------- */
-function openProfileModal() {
-    if (!state.userData) return;
-    const u = state.userData;
-    const lvl = getUserLevel(u);
-    const isVip = getUserVip(u);
-    const exp = getUserExp(u);
-
-    $('#profileAvatar').textContent = (u.name || '?').trim().charAt(0).toUpperCase();
-    $('#profileName').textContent = u.name || 'مستخدم';
-    $('#profileEmail').textContent = u.email || '---';
-    $('#profileLevelWrap').innerHTML = `<span class="tag ${isVip ? 'vip' : 'free'}">${lvl.label}</span>`;
-
-    $('#profileSubStatus').textContent = isVip ? 'VIP' : 'عادي';
-    $('#profileExpireDate').textContent = exp ? fmtDate(exp) : '—';
-    if (isVip && exp > 0) {
-        const days = Math.ceil((exp - Date.now()) / 86400000);
-        $('#profileDaysLeft').textContent = days + ' يوم';
-    } else {
-        $('#profileDaysLeft').textContent = isVip ? 'دائم' : '0';
-    }
-    $('#profileFavCount').textContent = state.favorites.length;
-
-    const box = $('#profileVipStatus');
-    if (state.vipStatus && state.vipStatus.status === 'pending') {
-        box.innerHTML = `<div class="vip-status-card pending">
+    const box=$('#profileVipStatus');
+    if(state.vipStatus&&state.vipStatus.status==='pending'){
+        box.innerHTML=`<div class="vip-status-card pending">
             <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
             <div><div class="vsc-title">طلب VIP قيد المراجعة</div>
             <div class="vsc-sub">سيتم التفعيل قريباً</div></div>
         </div>`;
-    } else box.innerHTML = '';
-
+    }else box.innerHTML='';
     openModal('profileModal');
 }
 
-/* ---------- 25. VIP MODAL ---------- */
-function openSubModal() {
-    const box = $('#subModalStatusBox');
-    if (state.vipStatus && state.vipStatus.status === 'pending') {
-        box.innerHTML = `<div class="vip-status-card pending">
+/* ---------- 22. VIP ---------- */
+function openSubModal(){
+    const box=$('#subModalStatusBox');
+    if(state.vipStatus&&state.vipStatus.status==='pending'){
+        box.innerHTML=`<div class="vip-status-card pending">
             <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
             <div><div class="vsc-title">طلبك قيد المراجعة</div>
             <div class="vsc-sub">تم الإرسال للإدارة</div></div>
         </div>`;
-    } else box.innerHTML = '';
+    }else box.innerHTML='';
     openModal('subModal');
 }
 
-async function requestVip() {
-    const num = state.settings.whatsappNumber || '201000000000';
-    const msg = encodeURIComponent(`مرحباً، أريد الاشتراك في VIP.\nالبريد: ${state.currentUser?.email || '—'}`);
-    if (state.currentUser) {
-        try {
+async function requestVip(){
+    const num=state.settings.whatsappNumber||'201000000000';
+    const msg=encodeURIComponent(`مرحباً، أريد الاشتراك في VIP.\nالبريد: ${state.currentUser?.email||'—'}`);
+    if(state.currentUser){
+        try{
             await db.ref('vipRequests').push({
-                uid: state.currentUser.uid,
-                email: state.currentUser.email,
-                name: state.userData?.name || '',
-                status: 'pending',
-                createdAt: Date.now()
+                uid:state.currentUser.uid,
+                email:state.currentUser.email,
+                name:state.userData?.name||'',
+                status:'pending',
+                createdAt:Date.now()
             });
-            toast('تم تسجيل طلبك', 'ok');
-        } catch (e) { console.error(e); }
+            toast('تم تسجيل طلبك','ok');
+        }catch(e){console.error(e);}
     }
-    window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${num}?text=${msg}`,'_blank');
 }
 
-/* ---------- 26. NOTIFICATIONS ---------- */
-function renderNotifList() {
-    const list = $('#notifList');
-    if (!list) return;
-    if (state.notifications.length === 0) {
-        list.innerHTML = '<div class="status-box"><i class="fa-solid fa-bell-slash empty-icon"></i><p>لا توجد إشعارات</p></div>';
+/* ---------- 23. NOTIFICATIONS ---------- */
+function renderNotifList(){
+    const l=$('#notifList'); if(!l) return;
+    if(state.notifications.length===0){
+        l.innerHTML='<div class="status-box"><i class="fa-solid fa-bell-slash empty-icon"></i><p>لا توجد إشعارات</p></div>';
         return;
     }
-    list.innerHTML = state.notifications.map(n => `
+    l.innerHTML=state.notifications.map(n=>`
         <div class="notif-item">
-            <div class="ni-icon"><i class="fa-solid ${n.type === 'vip' ? 'fa-crown' : n.type === 'banned' ? 'fa-ban' : 'fa-bell'}"></i></div>
+            <div class="ni-icon"><i class="fa-solid ${n.type==='vip'?'fa-crown':n.type==='banned'?'fa-ban':'fa-bell'}"></i></div>
             <div class="ni-body">
-                <div class="ni-title">${esc(n.title || 'إشعار')}</div>
-                <div class="ni-text">${esc(n.text || '')}</div>
+                <div class="ni-title">${esc(n.title||'إشعار')}</div>
+                <div class="ni-text">${esc(n.text||'')}</div>
                 <div class="ni-time">${fmtRel(n.createdAt)}</div>
             </div>
-        </div>
-    `).join('');
+        </div>`).join('');
 }
 
-function openNotifModal() {
+function openNotifModal(){
     openModal('notifModal');
-    if (state.currentUser) {
-        db.ref('notifications/' + state.currentUser.uid).once('value').then(snap => {
-            if (snap.exists()) {
-                const updates = {};
-                snap.forEach(c => { if (!c.val().read) updates[c.key + '/read'] = true; });
-                if (Object.keys(updates).length) db.ref('notifications/' + state.currentUser.uid).update(updates);
+    if(state.currentUser){
+        db.ref('notifications/'+state.currentUser.uid).once('value').then(snap=>{
+            if(snap.exists()){
+                const u={};
+                snap.forEach(c=>{if(!c.val().read)u[c.key+'/read']=true;});
+                if(Object.keys(u).length) db.ref('notifications/'+state.currentUser.uid).update(u);
             }
         });
     }
 }
 
-/* ---------- 27. HISTORY MODAL ---------- */
-function openHistoryModal() {
-    const list = $('#historyList');
-    if (state.history.length === 0) {
-        list.innerHTML = '<div class="status-box"><i class="fa-solid fa-clock empty-icon"></i><p>السجل فارغ</p></div>';
-    } else {
-        list.innerHTML = state.history.map(it => `
-            <div class="history-item">
-                <div class="hi-thumb"><img src="${esc(it.image || 'https://via.placeholder.com/80x50')}" alt=""></div>
-                <div class="hi-body">
-                    <div class="hi-title">${esc(it.title)}</div>
-                    <div class="hi-time">${fmtRel(it.time)} • ${Math.round(it.progress || 0)}%</div>
-                </div>
-                <div class="hi-actions">
-                    <button class="hi-btn" onclick="closeModal('historyModal');openPlayer('${esc(it.id)}','vod')"><i class="fa-solid fa-play"></i></button>
-                    <button class="hi-btn danger" onclick="removeHistoryItem('${esc(it.id)}')"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </div>
-        `).join('');
-    }
-    openModal('historyModal');
-}
-
-function removeHistoryItem(id) {
-    state.history = state.history.filter(h => h.id !== id);
-    localStorage.setItem('sw_history', JSON.stringify(state.history));
-    openHistoryModal();
-    renderContinueWatching();
-}
-
-async function clearAllHistory() {
-    const ok = await askConfirm({ title: 'مسح السجل', msg: 'مسح كل السجل؟' });
-    if (ok) {
-        state.history = [];
-        localStorage.removeItem('sw_history');
-        openHistoryModal();
-        renderContinueWatching();
-        toast('تم مسح السجل', 'ok');
-    }
-}
-
-/* ---------- 28. SECTION DETAIL ---------- */
-function openSectionDetail(secId) {
-    const sec = state.sections.find(s => s.id === secId);
-    if (!sec) return;
-    const items = getItemsForSection(sec);
-    $('#sectionDetailTitle').textContent = sec.title || 'قسم';
-    $('#sectionDetailCount').textContent = `${items.length} عنصر`;
-    $('#sectionDetailGrid').innerHTML = items.map(it => renderCard(it)).join('');
+/* ---------- 24. SECTIONS ---------- */
+function openSectionDetail(id){
+    const s=state.sections.find(x=>x.id===id);
+    if(!s) return;
+    const items=getItemsForSection(s);
+    $('#sectionDetailTitle').textContent=s.title||'قسم';
+    $('#sectionDetailCount').textContent=items.length+' عنصر';
+    $('#sectionDetailGrid').innerHTML=items.length===0
+        ?'<div class="empty-state"><i class="fa-solid fa-folder-open"></i><h3>القسم فارغ</h3></div>'
+        :items.map(it=>renderCard(it)).join('');
     openModal('sectionModal');
 }
 
-function showAllInRow(type) {
-    let items = state.videos.slice();
-    let title = 'الكل';
-    if (type === 'trending') { items.sort((a, b) => (b.views || 0) - (a.views || 0)); title = 'الأكثر مشاهدة'; }
-    else if (type === 'newest') { items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); title = 'أحدث الإضافات'; }
-    else if (type === 'vip') { items = items.filter(i => i.isVip); title = 'محتوى VIP'; }
-    $('#sectionDetailTitle').textContent = title;
-    $('#sectionDetailCount').textContent = `${items.length} عنصر`;
-    $('#sectionDetailGrid').innerHTML = items.map(it => renderCard(it)).join('');
+function showAllInRow(type){
+    let items=state.videos.slice();
+    let title='الكل';
+    if(type==='trending'){items.sort((a,b)=>(b.views||0)-(a.views||0));title='الأكثر مشاهدة';}
+    else if(type==='newest'){items.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));title='أحدث الإضافات';}
+    else if(type==='vip'){items=items.filter(i=>i.isVip);title='محتوى VIP';}
+    $('#sectionDetailTitle').textContent=title;
+    $('#sectionDetailCount').textContent=items.length+' عنصر';
+    $('#sectionDetailGrid').innerHTML=items.map(it=>renderCard(it)).join('');
     openModal('sectionModal');
 }
 
-function showItemDetails(id) {
-    const item = state.videos.find(v => v.id === id);
-    if (!item) return;
-    $('#sectionDetailTitle').textContent = item.title;
-    $('#sectionDetailCount').textContent = item.category || '';
-    $('#sectionDetailGrid').innerHTML = `<div style="grid-column:1/-1">${renderCard(item)}</div>`;
-    openModal('sectionModal');
+function showItemDetails(id){
+    const item=state.videos.find(v=>v.id===id);
+    if(!item) return;
+    openPlayer(id,'vod');
 }
 
-/* ---------- 29. ACHIEVEMENTS (Feature #4) ---------- */
-const ACHIEVEMENTS = {
-    first_fav: { title: 'المفضلة الأولى', icon: 'fa-heart', desc: 'أضفت أول عنصر للمفضلة' },
-    first_rating: { title: 'أول تقييم', icon: 'fa-star', desc: 'قيّمت محتوى لأول مرة' },
-    ten_watches: { title: 'مشاهد نشيط', icon: 'fa-eye', desc: 'شاهدت 10 محتويات' },
-    vip_member: { title: 'عضو VIP', icon: 'fa-crown', desc: 'أصبحت عضو VIP' },
-    first_comment: { title: 'صوتك مسموع', icon: 'fa-comment', desc: 'علّقت لأول مرة' }
+/* ---------- 25. ACHIEVEMENTS ---------- */
+const ACHIEVEMENTS={
+    first_fav:{title:'المفضلة الأولى',icon:'fa-heart'},
+    first_rating:{title:'أول تقييم',icon:'fa-star'},
+    ten_watches:{title:'مشاهد نشيط',icon:'fa-eye'},
+    vip_member:{title:'عضو VIP',icon:'fa-crown'},
+    first_comment:{title:'صوتك مسموع',icon:'fa-comment'},
+    first_download:{title:'أول تحميل',icon:'fa-download'}
 };
 
-function checkAchievement(key) {
-    if (!state.currentUser || !ACHIEVEMENTS[key]) return;
-    db.ref(`achievements/${state.currentUser.uid}/${key}`).once('value').then(snap => {
-        if (!snap.exists()) {
-            db.ref(`achievements/${state.currentUser.uid}/${key}`).set({ unlockedAt: Date.now() });
-            toast(`🏆 إنجاز جديد: ${ACHIEVEMENTS[key].title}`, 'ok');
+function checkAchievement(key){
+    if(!state.currentUser||!ACHIEVEMENTS[key]) return;
+    if(state.achievements[key]) return;
+    db.ref(`achievements/${state.currentUser.uid}/${key}`).once('value').then(snap=>{
+        if(!snap.exists()){
+            db.ref(`achievements/${state.currentUser.uid}/${key}`).set({unlockedAt:Date.now()});
+            toast(`🏆 إنجاز: ${ACHIEVEMENTS[key].title}`,'ok');
         }
     });
 }
 
-function checkAchievements() {
-    if (!state.achievements || !state.userData) return;
-    if (getUserVip(state.userData)) checkAchievement('vip_member');
-    if (state.history.length >= 10) checkAchievement('ten_watches');
+/* ---------- 26. WATCHLIST ---------- */
+function addToWatchlistUI(itemId){
+    if(!state.currentUser){toast('سجل دخول','warn');return;}
+    if(state.watchlists.length===0){
+        const name=prompt('اسم القائمة الجديدة:','قائمتي');
+        if(!name) return;
+        db.ref('watchlists/'+state.currentUser.uid).push({name,items:[itemId],createdAt:Date.now()});
+        toast('تمت الإضافة','ok');
+        return;
+    }
+    const list=state.watchlists[0];
+    const items=list.items||[];
+    if(!items.includes(itemId)) items.push(itemId);
+    db.ref(`watchlists/${state.currentUser.uid}/${list.id}/items`).set(items);
+    toast('تمت الإضافة للقائمة','ok');
 }
 
-/* ---------- 30. LIVE CHAT (Feature #5) ---------- */
-function setupLiveChat() {
-    const chat = $('#liveChatMessages');
-    if (!chat) return;
-    const roomRef = db.ref('chat/' + state.chatRoom).limitToLast(50);
-    roomRef.on('child_added', snap => appendChatMessage(snap.val()));
+/* ---------- 27. AI VOICE ASSISTANT ---------- */
+function initVoiceAssistant(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){$('#voiceBtn').style.display='none';return;}
+
+    const rec=new SR();
+    rec.lang='ar-EG';
+    rec.continuous=false;
+    rec.interimResults=true;
+    rec.maxAlternatives=1;
+
+    rec.onstart=()=>{
+        state.voiceActive=true;
+        $('#voiceBtn').classList.add('listening');
+        $('#voiceOverlay').classList.add('active');
+        $('#voiceStatus').textContent='🎤 أستمع إليك...';
+        $('#voiceTranscript').textContent='';
+    };
+
+    rec.onresult=(e)=>{
+        let interim='',final='';
+        for(let i=e.resultIndex;i<e.results.length;i++){
+            if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+            else interim+=e.results[i][0].transcript;
+        }
+        $('#voiceTranscript').textContent=final||interim;
+        if(final) processVoiceCommand(final.trim());
+    };
+
+    rec.onerror=(e)=>{
+        const msgs={ 'no-speech':'لم أسمع شيئاً، حاول مرة أخرى', 'audio-capture':'لا يوجد ميكروفون', 'not-allowed':'مطلوب إذن الميكروفون' };
+        toast(msgs[e.error]||'خطأ في الميكروفون','err');
+        stopVoiceAssistant();
+    };
+
+    rec.onend=()=>{
+        state.voiceActive=false;
+        $('#voiceBtn').classList.remove('listening');
+        setTimeout(()=>{if(!state.voiceActive) $('#voiceOverlay').classList.remove('active');},1200);
+    };
+
+    state.voiceRecognition=rec;
 }
 
-function appendChatMessage(msg) {
-    const chat = $('#liveChatMessages');
-    if (!chat) return;
-    const isMine = state.currentUser && msg.uid === state.currentUser.uid;
-    const el = document.createElement('div');
-    el.className = 'chat-msg' + (isMine ? ' mine' : '');
-    el.innerHTML = `<strong>${esc(msg.name)}:</strong> <span>${esc(msg.text)}</span>`;
-    chat.appendChild(el);
-    chat.scrollTop = chat.scrollHeight;
+function startVoiceAssistant(){
+    if(!state.voiceRecognition) return toast('المتصفح لا يدعم المساعد الصوتي','warn');
+    try{state.voiceRecognition.start();}catch(e){toast('جاري التشغيل...','info');}
 }
 
-async function sendChatMessage() {
-    if (!state.currentUser) { toast('سجل دخول للدردشة', 'warn'); return; }
-    const input = $('#chatInput');
-    const text = input.value.trim();
-    if (!text) return;
-    input.value = '';
-    await db.ref('chat/' + state.chatRoom).push({
-        uid: state.currentUser.uid,
-        name: state.userData?.name || 'مستخدم',
-        text, ts: Date.now()
-    });
+function stopVoiceAssistant(){
+    if(state.voiceRecognition){
+        try{state.voiceRecognition.abort();}catch(e){}
+    }
+    state.voiceActive=false;
+    $('#voiceBtn').classList.remove('listening');
+    $('#voiceOverlay').classList.remove('active');
 }
 
-/* ---------- 31. WATCHLISTS (Feature #6) ---------- */
-async function createWatchlist(name) {
-    if (!state.currentUser || !name) return;
-    const ref = db.ref('watchlists/' + state.currentUser.uid).push();
-    await ref.set({ name, items: [], createdAt: Date.now() });
-    toast('تم إنشاء القائمة', 'ok');
+function processVoiceCommand(cmd){
+    const c=normalize(cmd);
+    $('#voiceStatus').textContent='✅ '+cmd;
+    setTimeout(()=>stopVoiceAssistant(),900);
+
+    // Navigation commands
+    if(c.includes('الرئيسيه')||c.includes('الرئيسية')||c==='home'){setActiveView('home');toast('الرئيسية','ok');return;}
+    if(c.includes('فيلم')||c.includes('افلام')||c.includes('movie')){setActiveView('movies');toast('الأفلام','ok');return;}
+    if(c.includes('مسلسل')||c.includes('مسلسلات')||c.includes('series')){setActiveView('series');toast('المسلسلات','ok');return;}
+    if(c.includes('بث مباشر')||c.includes('قنوات')||c.includes('live')){setActiveView('live');toast('البث المباشر','ok');return;}
+    if(c.includes('مباريات')||c.includes('مباراه')||c.includes('match')){setActiveView('matches');toast('المباريات','ok');return;}
+    if(c.includes('vip')||c.includes('في اي بي')||c.includes('مميز')){setActiveView('vip');toast('VIP','ok');return;}
+    if(c.includes('مفضل')||c.includes('المفضله')||c.includes('favorite')){
+        setActiveView('home');
+        $('#sectionDetailTitle').textContent='المفضلة';
+        const favs=state.videos.filter(v=>state.favorites.includes(v.id));
+        $('#sectionDetailCount').textContent=favs.length+' عنصر';
+        $('#sectionDetailGrid').innerHTML=favs.length?favs.map(it=>renderCard(it)).join(''):'<div class="empty-state"><i class="fa-heart"></i><h3>لا توجد مفضلات</h3></div>';
+        openModal('sectionModal');
+        return;
+    }
+    if(c.includes('حساب')||c.includes('ملفي')||c.includes('profile')){state.currentUser?openProfileModal():openAuthModal('login');return;}
+    if(c.includes('اشعار')||c.includes('notif')){if(state.currentUser)openNotifModal();return;}
+
+    // Media control
+    if(state.currentVideoEl){
+        if(c.includes('وقف')||c.includes('ايقاف')||c.includes('كتم')){state.currentVideoEl.muted=!state.currentVideoEl.muted;toast(state.currentVideoEl.muted?'🔇 كتم':'🔊 صوت','ok');return;}
+        if(c.includes('شغل')||c.includes('تشغيل')||c.includes('play')){state.currentVideoEl.play();toast('▶️ تشغيل','ok');return;}
+        if(c.includes('ايقاف مؤقت')||c.includes('pause')){state.currentVideoEl.pause();toast('⏸️ إيقاف','ok');return;}
+        if(c.includes('اغلق')||c.includes('خروج')||c.includes('close')){closePlayer();return;}
+    }
+
+    // Search command
+    if(c.startsWith('ابحث')||c.startsWith('بحث عن')){
+        const q=cmd.replace(/^ابحث(\s+عن)?\s*/i,'').trim();
+        if(q){state.searchQuery=q;const si=$('#searchInput');if(si)si.value=q;performSearch();toast('بحث: '+q,'ok');return;}
+    }
+    if(c.startsWith('اعرض')||c.startsWith('افتح')||c.startsWith('شغل')){
+        const q=cmd.replace(/^(اعرض|افتح|شغل)\s*/i,'').trim();
+        if(q){
+            const nq=normalize(q);
+            const match=state.videos.find(v=>normalize(v.title).includes(nq));
+            if(match){openPlayer(match.id,'vod');toast('▶️ '+match.title,'ok');return;}
+            const liveMatch=state.liveChannels.find(cn=>normalize(cn.name||cn.title||'').includes(nq));
+            if(liveMatch){openPlayer(liveMatch.id,'live');toast('📺 '+liveMatch.name,'ok');return;}
+            const mm=state.matches.find(m=>normalize((m.team1||'')+' '+(m.team2||'')).includes(nq));
+            if(mm){openPlayer(mm.id,'match');toast('⚽ المباراة','ok');return;}
+            state.searchQuery=q;const si=$('#searchInput');if(si)si.value=q;performSearch();
+            toast('نتائج: '+q,'ok');
+            return;
+        }
+    }
+
+    // Fallback: search
+    state.searchQuery=cmd;
+    const si=$('#searchInput');
+    if(si) si.value=cmd;
+    performSearch();
 }
 
-async function addToWatchlist(listId, itemId) {
-    if (!state.currentUser) return;
-    const ref = db.ref(`watchlists/${state.currentUser.uid}/${listId}/items`);
-    const snap = await ref.once('value');
-    const items = snap.val() || [];
-    if (!items.includes(itemId)) {
-        items.push(itemId);
-        await ref.set(items);
-        toast('تمت الإضافة للقائمة', 'ok');
+/* ---------- 28. KEYBOARD ---------- */
+function handleKeyboard(e){
+    if(!state.currentVideoEl) return;
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+    const v=state.currentVideoEl;
+    switch(e.key){
+        case ' ': e.preventDefault(); v.paused?v.play():v.pause(); break;
+        case 'ArrowRight': v.currentTime+=5; break;
+        case 'ArrowLeft': v.currentTime-=5; break;
+        case 'ArrowUp': e.preventDefault(); v.volume=Math.min(1,v.volume+.1); break;
+        case 'ArrowDown': e.preventDefault(); v.volume=Math.max(0,v.volume-.1); break;
+        case 'm': case 'M': v.muted=!v.muted; break;
+        case 'f': case 'F': document.fullscreenElement?document.exitFullscreen?.():v.requestFullscreen?.(); break;
+        case 'Escape': closePlayer(); break;
     }
 }
 
-/* ---------- 32. EVENT HANDLERS ---------- */
-function initEventHandlers() {
-    $$('.nav-link').forEach(b => b.onclick = () => setActiveView(b.dataset.nav));
-    $$('.bn-item').forEach(b => b.onclick = () => {
-        const bn = b.dataset.bn;
-        if (bn === 'search') { $('#mobileSearch').classList.toggle('open'); setTimeout(() => $('#mobileSearchInput')?.focus(), 100); }
-        else if (bn === 'profile') { state.currentUser ? openProfileModal() : openAuthModal('login'); }
+/* ---------- 29. URL HASH ---------- */
+function handleUrlHash(){
+    const h=location.hash;
+    if(h.startsWith('#watch=')){const id=h.replace('#watch=','');setTimeout(()=>openPlayer(id,'vod'),1000);}
+    else if(h.startsWith('#live=')){const id=h.replace('#live=','');setTimeout(()=>openPlayer(id,'live'),1000);}
+    else if(h.startsWith('#match=')){const id=h.replace('#match=','');setTimeout(()=>openPlayer(id,'match'),1000);}
+}
+
+/* ---------- 30. EVENTS ---------- */
+function initEvents(){
+    $$('.nav-link').forEach(b=>b.onclick=()=>setActiveView(b.dataset.nav));
+    $$('.bn-item').forEach(b=>b.onclick=()=>{
+        const bn=b.dataset.bn;
+        if(bn==='search'){$('#mobileSearch').classList.toggle('open');setTimeout(()=>$('#mobileSearchInput')?.focus(),100);}
+        else if(bn==='profile'){state.currentUser?openProfileModal():openAuthModal('login');}
         else setActiveView(bn);
     });
 
-    const si = $('#searchInput');
-    const msi = $('#mobileSearchInput');
-    if (si) si.oninput = (e) => { state.searchQuery = e.target.value; $('#searchClear').classList.toggle('show', !!e.target.value); performSearch(); };
-    if (msi) msi.oninput = (e) => { state.searchQuery = e.target.value; performSearch(); };
-    $('#searchClear')?.addEventListener('click', () => { si.value = ''; state.searchQuery = ''; $('#searchClear').classList.remove('show'); renderAll(); renderHero(); closeModal('sectionModal'); });
-    $('#mobileSearchClear')?.addEventListener('click', () => { msi.value = ''; state.searchQuery = ''; renderAll(); renderHero(); closeModal('sectionModal'); });
+    const si=$('#searchInput'), msi=$('#mobileSearchInput');
+    if(si) si.oninput=(e)=>{state.searchQuery=e.target.value;$('#searchClear').classList.toggle('show',!!e.target.value);performSearch();};
+    if(msi) msi.oninput=(e)=>{state.searchQuery=e.target.value;performSearch();};
+    $('#searchClear')?.addEventListener('click',()=>{si.value='';state.searchQuery='';$('#searchClear').classList.remove('show');renderAll();renderHero();closeModal('sectionModal');});
+    $('#mobileSearchClear')?.addEventListener('click',()=>{msi.value='';state.searchQuery='';renderAll();renderHero();closeModal('sectionModal');});
 
-    $('#authForm')?.addEventListener('submit', handleAuthSubmit);
-    $('#authToggleBtn')?.addEventListener('click', e => { e.preventDefault(); openAuthModal(state.authMode === 'login' ? 'register' : 'login'); });
-    $('#forgotPassLink')?.addEventListener('click', handleForgotPass);
-    $('#btnRequestVip')?.addEventListener('click', requestVip);
-    $('#openHistoryBtn')?.addEventListener('click', openHistoryModal);
-    $('#commentSendBtn')?.addEventListener('click', sendComment);
-    $('#commentInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendComment(); });
+    $('#authForm')?.addEventListener('submit',handleAuthSubmit);
+    $('#authToggleBtn')?.addEventListener('click',e=>{e.preventDefault();openAuthModal(state.authMode==='login'?'register':'login');});
+    $('#forgotPassLink')?.addEventListener('click',handleForgotPass);
+    $('#btnRequestVip')?.addEventListener('click',requestVip);
+    $('#commentSendBtn')?.addEventListener('click',sendComment);
+    $('#commentInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')sendComment();});
 
-    $('#cfYes')?.addEventListener('click', () => { closeModal('confirmModal'); if (confirmResolver) { confirmResolver(true); confirmResolver = null; } });
-    $('#cfNo')?.addEventListener('click', () => { closeModal('confirmModal'); if (confirmResolver) { confirmResolver(false); confirmResolver = null; } });
+    $('#cfYes')?.addEventListener('click',()=>{closeModal('confirmModal');if(confirmResolver){confirmResolver(true);confirmResolver=null;}});
+    $('#cfNo')?.addEventListener('click',()=>{closeModal('confirmModal');if(confirmResolver){confirmResolver(false);confirmResolver=null;}});
 
-    $$('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
-    $$('.modal').forEach(m => {
-        m.addEventListener('click', e => {
-            if (e.target === m) { if (m.id === 'playerModal') closePlayer(); else m.classList.remove('active'); }
-        });
-    });
+    $$('[data-close]').forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
+    $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('active');}));
 
-    document.addEventListener('keydown', handleKeyboard);
-    window.addEventListener('scroll', () => { $('#mainNavbar')?.classList.toggle('scrolled', window.scrollY > 30); });
+    $('#voiceBtn')?.addEventListener('click',startVoiceAssistant);
+    $('#voiceOverlay')?.addEventListener('click',e=>{if(e.target===$('#voiceOverlay'))stopVoiceAssistant();});
 
-    handleUrlHash();
-    window.addEventListener('hashchange', handleUrlHash);
+    document.addEventListener('keydown',handleKeyboard);
+    window.addEventListener('scroll',()=>{$('#mainNavbar')?.classList.toggle('scrolled',window.scrollY>30);});
+    window.addEventListener('hashchange',handleUrlHash);
 
-    const y = $('#yearSpan');
-    if (y) y.textContent = new Date().getFullYear();
-
-    setupLiveChat();
-    $('#chatSendBtn')?.addEventListener('click', sendChatMessage);
-    $('#chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
+    const y=$('#yearSpan'); if(y) y.textContent=new Date().getFullYear();
 }
 
-async function handleAuthSubmit(e) {
-    e.preventDefault();
-    const email = $('#authEmail').value.trim();
-    const pass = $('#authPassword').value;
-    const name = $('#authName').value.trim();
-    const btn = $('#authSubmitBtn');
-    btn.disabled = true;
-
-    try {
-        if (state.authMode === 'login') {
-            await auth.signInWithEmailAndPassword(email, pass);
-            toast('تم تسجيل الدخول ✅', 'ok');
-        } else {
-            if (!name) { toast('أدخل اسمك', 'warn'); btn.disabled = false; return; }
-            const res = await auth.createUserWithEmailAndPassword(email, pass);
-            await res.user.updateProfile({ displayName: name });
-            await db.ref('users/' + res.user.uid).set({
-                email, name,
-                isBanned: false, isBlocked: false, isVip: false,
-                vipExpireDate: 0, expireAt: 0, createdAt: Date.now()
-            });
-            await db.ref('notifications/' + res.user.uid).push({
-                title: 'أهلاً بك في سيرفر الوحش 🐺',
-                text: 'استمتع بمشاهدة المحتوى. ترقّ إلى VIP لفتح كل المميز!',
-                type: 'welcome', read: false, createdAt: Date.now()
-            });
-            toast('تم إنشاء الحساب ✅', 'ok');
-        }
-        closeModal('authModal');
-        $('#authForm').reset();
-    } catch (err) {
-        toast(err.message, 'err', 'خطأ');
-    } finally { btn.disabled = false; }
-}
-
-async function handleForgotPass(e) {
-    e.preventDefault();
-    const email = $('#authEmail').value.trim();
-    if (!email) { toast('اكتب بريدك أولاً', 'warn'); return; }
-    try { await auth.sendPasswordResetEmail(email); toast('تم إرسال رابط إعادة الضبط', 'ok'); }
-    catch (err) { toast(err.message, 'err'); }
-}
-
-function handleKeyboard(e) {
-    if (!$('#playerModal')?.classList.contains('active') || !state.currentVideoEl) return;
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    const v = state.currentVideoEl;
-    switch (e.key) {
-        case ' ': e.preventDefault(); v.paused ? v.play() : v.pause(); break;
-        case 'ArrowRight': v.currentTime += 5; break;
-        case 'ArrowLeft': v.currentTime -= 5; break;
-        case 'ArrowUp': e.preventDefault(); v.volume = Math.min(1, v.volume + .1); break;
-        case 'ArrowDown': e.preventDefault(); v.volume = Math.max(0, v.volume - .1); break;
-        case 'm': case 'M': v.muted = !v.muted; break;
-        case 'f': case 'F': document.fullscreenElement ? document.exitFullscreen?.() : v.requestFullscreen?.(); break;
-    }
-}
-
-function handleUrlHash() {
-    const hash = location.hash;
-    if (hash.startsWith('#watch=')) {
-        const id = hash.replace('#watch=', '');
-        setTimeout(() => openPlayer(id, 'vod'), 900);
-    } else if (hash.startsWith('#live=')) {
-        const id = hash.replace('#live=', '');
-        setTimeout(() => openPlayer(id, 'live'), 900);
-    }
-}
-
-function openPage(page) { toast('سيتم إضافة صفحة "' + page + '" قريباً', 'info'); }
-function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); setActiveView('home'); }
-
-/* ---------- 33. BOOT ---------- */
-document.addEventListener('DOMContentLoaded', () => {
+/* ---------- 31. BOOT ---------- */
+document.addEventListener('DOMContentLoaded',()=>{
     applyTheme();
     renderNavActions();
     updateGuestWarn();
-    initEventHandlers();
+    initEvents();
+    initVoiceAssistant();
     fetchAll();
-    renderContinueWatching();
-    setTimeout(hideLoader, 1200);
+    setTimeout(hideLoader,1000);
 });
