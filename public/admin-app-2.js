@@ -101,10 +101,13 @@ function loadLiveChannels(){
 function renderLiveChannelsList(){
     const q = ($('#qLive').value||'').toLowerCase().trim();
     const f = $('#filterLiveCat').value;
+    const ft = ($('#filterLiveType')?.value) || 'all';
     const box = $('#liveChannelsList');
     if(!box) return;
     let list = allLiveChs.filter(c=>{
         if(f !== 'all' && c.category !== f) return false;
+        if(ft === 'vip' && !c.isVip) return false;
+        if(ft === 'free' && c.isVip) return false;
         if(q){
             const n = (c.name||'').toLowerCase();
             const cat = (c.category||'').toLowerCase();
@@ -114,6 +117,10 @@ function renderLiveChannelsList(){
     });
     if(!list.length){
         box.innerHTML = `<div class="empty"><i class="fa-solid fa-tv"></i><p>لا توجد قنوات مطابقة</p></div>`;
+        return;
+    }
+    if((localStorage.getItem('admin_live_view')||'list')==='grid'){
+        box.innerHTML = adminCardGrid(list,'live');
         return;
     }
     box.innerHTML = list.map(c=>`
@@ -133,6 +140,7 @@ function renderLiveChannelsList(){
 }
 $('#qLive')?.addEventListener('input',debounce(renderLiveChannelsList,220));
 $('#filterLiveCat')?.addEventListener('change',renderLiveChannelsList);
+$('#filterLiveType')?.addEventListener('change',renderLiveChannelsList);
 $('#btnNewLiveChannel')?.addEventListener('click',()=>openLiveChannelModal());
 
 function openLiveChannelModal(ch = null){
@@ -1463,5 +1471,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     loadAds();
     loadNotifHistory();
     loadSettings();
+    if(window.initViewToggles) initViewToggles();
     setTimeout(renderTopViewedChart, 800);
 });

@@ -123,11 +123,48 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---------- LOGIN ---------- */
-let SECURITY_PIN = '171002';
+const DEFAULT_PIN = '171002';
 let pinValue = '';
+let failCount = parseInt(sessionStorage.getItem('adm_fails')||'0',10) || 0;
+let lockUntil = parseInt(sessionStorage.getItem('adm_lock')||'0',10) || 0;
 const isAuthed = ()=> sessionStorage.getItem('adm_authed') === '1';
 const pinInput = $('#pinReal');
 const pinWrap = $('#pinWrap');
+
+/* هل الرمز يُخزَّن مُشفَّراً (SHA-256) مع رجوع آمن للسياقات غير الآمنة */
+async function sha256(str){
+    try{
+        if(window.crypto && crypto.subtle && window.isSecureContext){
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+            return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+        }
+    }catch(_){}
+    let h = 5381;
+    for(let i=0;i<str.length;i++) h = ((h<<5)+h) + str.charCodeAt(i);
+    return 'fb' + (h>>>0).toString(16);
+}
+
+function setPinDisabled(disabled){
+    if(pinInput) pinInput.disabled = disabled;
+    const btn = $('#pinBtn');
+    if(btn) btn.disabled = disabled;
+}
+
+function showLock(){
+    const left = Math.ceil((lockUntil - Date.now())/1000);
+    if(left <= 0){
+        failCount = 0; lockUntil = 0;
+        sessionStorage.removeItem('adm_fails'); sessionStorage.removeItem('adm_lock');
+        setPinDisabled(false);
+        const err = $('#pinErr'); if(err) err.textContent = '';
+        renderPinDots();
+        return;
+    }
+    setPinDisabled(true);
+    const err = $('#pinErr');
+    if(err) err.textContent = `🔒 محظور مؤقتاً، حاول بعد ${left} ثانية`;
+    setTimeout(showLock, 1000);
+}
 
 function renderPinDots(){
     $$('#pinWrap .pin-dot').forEach((d,i)=>{
@@ -159,20 +196,42 @@ pinInput.addEventListener('paste', () => {
 pinInput.addEventListener('keydown', e => { if(e.key === 'Enter') verifyPin(); });
 
 async function verifyPin(){
+    if(lockUntil > Date.now()){ showLock(); return; }
     $('#pinErr').textContent = '';
+    let stored = {};
     try{
         const snap = await db.ref('adminPin').once('value');
-        if(snap.exists() && snap.val() && snap.val().pin){
-            SECURITY_PIN = String(snap.val().pin);
-        }
+        stored = snap.val() || {};
     }catch(_){}
-    if(pinValue === SECURITY_PIN){
+    const enteredHash = await sha256(pinValue);
+    let ok = false, migrate = false;
+    if(stored && stored.hash){
+        ok = enteredHash === stored.hash;
+    }else if(stored && stored.pin){
+        ok = pinValue === String(stored.pin);
+        migrate = ok;
+    }else{
+        ok = enteredHash === await sha256(DEFAULT_PIN);
+        migrate = ok;
+    }
+    if(ok){
+        failCount = 0;
+        sessionStorage.removeItem('adm_fails');
         sessionStorage.setItem('adm_authed','1');
+        if(migrate){ try{ await db.ref('adminPin').set({hash:enteredHash, updatedAt:Date.now()}); }catch(_){} }
         $('#loginOverlay').classList.add('hidden');
         logActivity('تسجيل دخول للوحة');
         toast('مرحباً بك 👋','تم الدخول بنجاح','ok');
     }else{
-        $('#pinErr').textContent = '❌ رمز غير صحيح';
+        failCount++;
+        sessionStorage.setItem('adm_fails', String(failCount));
+        if(failCount >= 5){
+            lockUntil = Date.now() + 30000;
+            sessionStorage.setItem('adm_lock', String(lockUntil));
+            pinValue = ''; pinInput.value = ''; renderPinDots(); showLock();
+            return;
+        }
+        $('#pinErr').textContent = `❌ رمز غير صحيح (${failCount}/5)`;
         pinValue = '';
         pinInput.value = '';
         renderPinDots();
@@ -184,11 +243,22 @@ function bootLogin(){
     if(isAuthed()) $('#loginOverlay').classList.add('hidden');
     else{
         $('#loginOverlay').classList.remove('hidden');
-        setTimeout(() => pinInput.focus(), 300);
+        if(lockUntil > Date.now()) showLock();
+        else setTimeout(() => pinInput.focus(), 300);
     }
     renderPinDots();
 }
 bootLogin();
+
+/* قفل تلقائي عند عدم النشاط (30 دقيقة) */
+let idleTimer = null;
+function resetIdle(){
+    if(!isAuthed()) return;
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(()=>{ toast('قفل تلقائي بسبب عدم النشاط','','warn'); logout(); }, 30*60000);
+}
+['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev, resetIdle, {passive:true}));
+resetIdle();
 
 function logout(){
     sessionStorage.removeItem('adm_authed');
@@ -607,6 +677,10 @@ function renderMedia(){
         box.innerHTML = `<div class="empty"><i class="fa-solid fa-film"></i><p>لا يوجد محتوى مطابق</p></div>`;
         return;
     }
+    if((localStorage.getItem('admin_media_view')||'list')==='grid'){
+        box.innerHTML = adminCardGrid(list,'media');
+        return;
+    }
     box.innerHTML = list.map(i=>{
         const hasDl = !!(i.downloadUrl || i.adDownloadUrl);
         return `
@@ -626,6 +700,54 @@ function renderMedia(){
 }
 $('#qMedia')?.addEventListener('input',debounce(renderMedia,220));
 $('#filterVip')?.addEventListener('change',renderMedia);
+
+function adminCardGrid(list, kind){
+    const btn=(fn,id,title,icon,color)=>`<button class="btn ${color} sm" onclick="${fn}('${esc(id)}'${fn==='delItem'||fn==='delLiveChannel'?`,'${esc(title)}'`:''})"><i class="fa-solid ${icon}"></i></button>`;
+    return `<div class="admin-grid">`+list.map(i=>{
+        const title=i.title||i.name||'بدون عنوان';
+        const img=kind==='live'?(i.logo||i.image||i.poster):(i.thumbnailUrl||i.image||i.thumbnail||i.poster);
+        const ph='https://via.placeholder.com/300x450/141826/6b7280?text='+encodeURIComponent(title);
+        const vip=!!i.isVip;
+        const meta = kind==='live'
+            ? `<i class="fa-solid fa-tv"></i> ${esc(i.category||'بث')}`
+            : `<i class="fa-regular fa-eye"></i> ${(i.views||0).toLocaleString('ar-EG')}`;
+        const edit=kind==='live'?`editLiveChannel`:`editItem`;
+        const del=kind==='live'?`delLiveChannel`:`delItem`;
+        return `<div class="admin-grid-card ${vip?'is-vip':''} ${kind}">
+            <div class="agc-thumb">
+                <img src="${esc(img||ph)}" alt="" loading="lazy" onerror="this.src='${ph}'">
+                ${vip?'<span class="agc-badge vip"><i class="fa-solid fa-crown"></i> VIP</span>':'<span class="agc-badge free">مجاني</span>'}
+            </div>
+            <div class="agc-body">
+                <div class="agc-title" title="${esc(title)}">${esc(title)}</div>
+                <div class="agc-meta">${meta}</div>
+            </div>
+            <div class="agc-actions">
+                ${btn(edit,i.id,title,'fa-pen','ghost')}
+                ${btn(del,i.id,title,'fa-trash','red')}
+            </div>
+        </div>`;
+    }).join('')+`</div>`;
+}
+window.adminCardGrid = adminCardGrid;
+
+function initViewToggles(){
+    document.querySelectorAll('.view-toggle').forEach(t=>{
+        const key=t.dataset.key;
+        const render=t.dataset.render;
+        const saved=localStorage.getItem(key)||'list';
+        t.querySelectorAll('.vt-btn').forEach(b=>{
+            b.classList.toggle('active',b.dataset.view===saved);
+            b.onclick=()=>{
+                t.querySelectorAll('.vt-btn').forEach(x=>x.classList.remove('active'));
+                b.classList.add('active');
+                localStorage.setItem(key,b.dataset.view);
+                if(window[render]) window[render]();
+            };
+        });
+    });
+}
+window.initViewToggles = initViewToggles;
 
 async function editItem(id){
     const snap = await db.ref('videos/'+id).once('value');
@@ -992,11 +1114,17 @@ $('#pinForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const oldP = $('#pinOld').value.trim();
     const newP = $('#pinNew').value.trim();
-    if(oldP !== SECURITY_PIN) return toast('خطأ','الرمز الحالي غير صحيح','err');
     if(!/^\d{4,6}$/.test(newP)) return toast('خطأ','يجب أن يكون 4-6 أرقام','err');
+    let stored = {};
+    try{ const snap = await db.ref('adminPin').once('value'); stored = snap.val() || {}; }catch(_){}
+    let oldOk = false;
+    const oldHash = await sha256(oldP);
+    if(stored && stored.hash) oldOk = oldHash === stored.hash;
+    else if(stored && stored.pin) oldOk = oldP === String(stored.pin);
+    else oldOk = oldHash === await sha256(DEFAULT_PIN);
+    if(!oldOk) return toast('خطأ','الرمز الحالي غير صحيح','err');
     try{
-        await db.ref('adminPin').set({pin:newP, updatedAt:Date.now()});
-        SECURITY_PIN = newP;
+        await db.ref('adminPin').set({hash:await sha256(newP), updatedAt:Date.now()});
         closeModal('mPin');
         logActivity('تغيير رمز الدخول');
         toast('تم التغيير','','ok');

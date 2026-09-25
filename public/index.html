@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0b0f">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="سيرفر الوحش - منصة البث المتكاملة للأفلام والمسلسلات والبث المباشر والمباريات">
 <title>سيرفر الوحش | منصة البث المتكاملة</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +27,9 @@
     <div class="loader-bar"><div class="loader-fill"></div></div>
 </div>
 
+<!-- SCROLL PROGRESS -->
+<div class="scroll-progress"><div class="scroll-progress-fill" id="scrollProgress"></div></div>
+
 <!-- NAVBAR -->
 <nav class="navbar" id="mainNavbar">
     <a href="#" class="nav-brand" onclick="event.preventDefault();scrollToTop();">
@@ -36,6 +41,7 @@
         <button class="nav-link" data-nav="movies"><i class="fa-solid fa-film"></i> أفلام</button>
         <button class="nav-link" data-nav="series"><i class="fa-solid fa-tv"></i> مسلسلات</button>
         <button class="nav-link" data-nav="live"><i class="fa-solid fa-tower-broadcast"></i> بث مباشر</button>
+        <button class="nav-link" data-nav="matches"><i class="fa-solid fa-futbol"></i> مباريات</button>
         <button class="nav-link" data-nav="vip"><i class="fa-solid fa-crown"></i> VIP</button>
     </div>
     <div class="search-box" id="desktopSearch">
@@ -85,6 +91,29 @@
 
     <div class="ad-slot ad-mid" id="adMid"></div>
 
+    <!-- BROWSE GRID (all movies / series / VIP) -->
+    <section class="content-row browse-row" id="browseSection" style="display:none">
+        <div class="row-header">
+            <div class="row-title" id="browseTitle"><i class="fa-solid fa-film"></i><h2>محتوى</h2></div>
+            <p class="browse-count" id="browseCount"></p>
+        </div>
+        <div class="browse-toolbar">
+            <div class="filter-chips" id="browseVipChips">
+                <button class="chip active" data-f="all">الكل</button>
+                <button class="chip" data-f="free"><i class="fa-solid fa-unlock"></i> مجاني</button>
+                <button class="chip" data-f="vip"><i class="fa-solid fa-crown"></i> VIP</button>
+            </div>
+            <select id="browseSort" class="browse-sort">
+                <option value="newest">الأحدث</option>
+                <option value="views">الأكثر مشاهدة</option>
+                <option value="rating">الأعلى تقييماً</option>
+                <option value="title">أبجدي</option>
+            </select>
+        </div>
+        <div class="filter-chips browse-cats" id="browseCatChips"></div>
+        <div class="grid-content" id="browseGrid"></div>
+    </section>
+
     <!-- LIVE SECTION -->
     <section class="content-row live-row" id="liveSection" style="display:none">
         <div class="row-header">
@@ -92,6 +121,15 @@
             <div class="live-tabs-scroll" id="liveTabs"></div>
         </div>
         <div class="grid-content" id="liveGrid"></div>
+    </section>
+
+    <!-- MATCHES SECTION -->
+    <section class="content-row match-row" id="matchSection" style="display:none">
+        <div class="row-header">
+            <div class="row-title"><i class="fa-solid fa-futbol"></i><h2>المباريات</h2></div>
+            <div class="live-tabs-scroll" id="matchTabs"></div>
+        </div>
+        <div class="grid-content match-grid" id="matchGrid"></div>
     </section>
 
     <div class="ad-slot ad-bottom" id="adBottom"></div>
@@ -110,7 +148,7 @@
             <a onclick="toast('قريباً','info')">DMCA</a>
             <a onclick="toast('قريباً','info')">الشروط</a>
         </div>
-        <div class="footer-copy">© <span id="yearSpan"></span> سيرفر الوحش</div>
+        <div class="footer-copy">© <span id="yearSpan"></span> سيرفر الوحش - جميع الحقوق محفوظة</div>
     </div>
 </footer>
 
@@ -122,6 +160,9 @@
     <button class="bn-item" data-bn="search"><i class="fa-solid fa-magnifying-glass"></i><span>بحث</span></button>
     <button class="bn-item" data-bn="profile"><i class="fa-solid fa-user"></i><span>حسابي</span></button>
 </nav>
+
+<!-- BACK TO TOP -->
+<button id="backToTop" class="back-to-top" title="للأعلى"><i class="fa-solid fa-chevron-up"></i></button>
 
 <!-- ========== AI VOICE ASSISTANT ============ -->
 <button id="voiceBtn" class="voice-btn" title="المساعد الصوتي">

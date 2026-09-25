@@ -33,6 +33,7 @@ const state = {
     autoPlay: localStorage.getItem('sw_autoplay')!=='false',
     heroIndex:0, heroTimer:null, activeView:'home',
     activeLiveTab:'all', activeMatchTab:'all',
+    browseType:'movies', browseVip:'all', browseCat:'all', browseSort:'newest',
     userRef:null, vipRef:null, notifRef:null, ratingRef:null, commentRef:null,
     voiceRecognition:null, voiceActive:false,
     parentalPin: localStorage.getItem('sw_pin')||null,
@@ -55,7 +56,12 @@ const fmtRel = ts => {
     if(dd<30) return `منذ ${dd} يوم`;
     return fmtDate(ts);
 };
-const isVip = u => { if(!u) return false; const e=u.vipExpireDate||u.expireAt||0; return u.isVip===true && e===0 || e>Date.now(); };
+const isVip = u => {
+    if(!u) return false;
+    const e = Number(u.vipExpireDate||u.expireAt||0);
+    if(e > 0) return e > Date.now();
+    return u.isVip === true;
+};
 const isBanned = u => !!(u && (u.isBanned||u.isBlocked));
 const getUserLevel = u => {
     if(!u) return {key:'new',label:'زائر'};
@@ -96,6 +102,18 @@ function askConfirm({title='تأكيد',msg='هل أنت متأكد؟',ok='تأ�
     });
 }
 function hideLoader(){const l=$('#appLoader');if(l){l.classList.add('hide');setTimeout(()=>l.remove(),600);}}
+function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
+function clearHistory(){
+    askConfirm({title:'مسح سجل المشاهدة',msg:'حذف كل سجل المشاهدة؟',ok:'مسح'}).then(ok=>{
+        if(!ok) return;
+        state.history=[];
+        localStorage.removeItem('sw_history');
+        renderAll(); renderHero();
+        toast('تم مسح السجل','ok');
+    });
+}
+window.scrollToTop=scrollToTop;
+window.clearHistory=clearHistory;
 
 /* ---------- 5. THEME ---------- */
 function applyTheme(){
@@ -400,16 +418,19 @@ function renderAll(){
     renderDynamicSections();
     renderLive();
     renderMatches();
+    if($('#browseSection') && $('#browseSection').style.display!=='none') renderBrowse();
 }
 
 function renderDynamicSections(){
     const w=$('#dynamicSections'); if(!w) return;
+    const cont=renderContinueWatching();
+    const live=buildLivePreview();
 
     if(state.sections.length===0){
-        w.innerHTML=buildDefaultSections();
+        w.innerHTML=cont+buildDefaultSections()+live;
         return;
     }
-    w.innerHTML=state.sections.map(s=>{
+    w.innerHTML=cont+state.sections.map(s=>{
         const items=getItemsForSection(s);
         if(items.length===0) return '';
         const cls=s.style==='landscape'?'landscape':'';
@@ -422,7 +443,39 @@ function renderDynamicSections(){
                 ${items.slice(0,20).map(it=>renderCard(it,'row-card '+cls)).join('')}
             </div>
         </section>`;
-    }).join('');
+    }).join('')+live;
+}
+
+function buildLivePreview(){
+    if(!state.liveChannels.length) return '';
+    const ch=state.liveChannels.slice().sort((a,b)=>(a.order||0)-(b.order||0)).slice(0,15);
+    const lockedCount=ch.filter(c=>c.isVip&&!isVip(state.userData)).length;
+    return `<section class="content-row live-row">
+        <div class="row-header">
+            <div class="row-title"><span class="live-dot"></span><h2>قنوات البث المباشر</h2></div>
+            <button class="row-action" onclick="setActiveView('live')"><span>كل القنوات (${state.liveChannels.length})</span><i class="fa-solid fa-chevron-left"></i></button>
+        </div>
+        <div class="row-scroll">
+            ${ch.map(c=>liveCardHTML(c,'row-live-card')).join('')}
+        </div>
+    </section>`;
+}
+
+function renderContinueWatching(){
+    const hist=(state.history||[]).slice();
+    if(!hist.length) return '';
+    const items=hist.map(h=>state.videos.find(v=>v.id===h.id)).filter(Boolean);
+    if(!items.length) return '';
+    const filtered=items.slice(0,15);
+    return `<section class="content-row continue-row">
+        <div class="row-header">
+            <div class="row-title"><i class="fa-solid fa-clock-rotate-left"></i><h2>متابعة المشاهدة</h2></div>
+            <button class="row-action" onclick="clearHistory()"><span>مسح</span><i class="fa-solid fa-trash"></i></button>
+        </div>
+        <div class="row-scroll">
+            ${filtered.map(it=>renderCard(it,'row-card')).join('')}
+        </div>
+    </section>`;
 }
 
 function buildDefaultSections(){
@@ -468,8 +521,9 @@ function renderCard(item,extra=''){
     const ph='https://via.placeholder.com/400x580/141721/6b7280?text='+encodeURIComponent(item.title||'SW');
     const img=item.poster||item.image||item.thumbnail||ph;
     const avg=item.ratingAvg?Number(item.ratingAvg).toFixed(1):null;
+    const locked=item.isVip&&!isVip(state.userData);
 
-    return `<div class="card ${item.isVip?'is-vip':''} ${extra}" data-id="${esc(item.id)}">
+    return `<div class="card ${item.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" data-id="${esc(item.id)}">
         <button class="card-fav ${isFav?'active':''}" onclick="toggleFav(event,'${esc(item.id)}')">
             <i class="fa-${isFav?'solid':'regular'} fa-heart"></i>
         </button>
@@ -480,6 +534,7 @@ function renderCard(item,extra=''){
             ${item.isNew?'<div class="card-badge new">جديد</div>':''}
             ${item.category?`<div class="card-badge cat">${esc(item.category)}</div>`:''}
             ${item.episode?`<div class="card-badge episode">حلقة ${esc(item.episode)}</div>`:''}
+            ${locked?'<div class="card-lock"><i class="fa-solid fa-lock"></i><span>VIP</span></div>':''}
         </div>
         <div class="card-info">
             <div class="card-title">${esc(item.title)}</div>
@@ -495,6 +550,8 @@ function renderCard(item,extra=''){
 function renderLiveTabs(){
     const t=$('#liveTabs'); if(!t) return;
     let h='<button class="row-action active" data-lt="all">الكل</button>';
+    h+='<button class="row-action" data-lt="__vip"><i class="fa-solid fa-crown"></i> VIP</button>';
+    h+='<button class="row-action" data-lt="__free"><i class="fa-solid fa-tower-broadcast"></i> مجاني</button>';
     state.liveCategories.forEach(c=>{if(c.name) h+=`<button class="row-action" data-lt="${esc(c.name)}">${esc(c.name)}</button>`;});
     t.innerHTML=h;
     $$('#liveTabs .row-action').forEach(b=>b.onclick=()=>{
@@ -508,23 +565,31 @@ function renderLiveTabs(){
 function renderLive(){
     const g=$('#liveGrid'); if(!g) return;
     let ch=state.liveChannels.slice();
-    if(state.activeLiveTab!=='all') ch=ch.filter(c=>c.category===state.activeLiveTab);
+    if(state.activeLiveTab==='__vip') ch=ch.filter(c=>c.isVip);
+    else if(state.activeLiveTab==='__free') ch=ch.filter(c=>!c.isVip);
+    else if(state.activeLiveTab!=='all') ch=ch.filter(c=>c.category===state.activeLiveTab);
+    ch.sort((a,b)=>(a.order||0)-(b.order||0));
     if(ch.length===0){g.innerHTML='<div class="empty-state"><i class="fa-solid fa-tower-broadcast"></i><h3>لا توجد قنوات</h3></div>';return;}
-    g.innerHTML=ch.map(c=>{
-        const name=c.name||c.title||'قناة';
-        const logo=c.logo||c.image||'https://via.placeholder.com/300x168/0f1117/ef4444?text='+encodeURIComponent(name);
-        return `<div class="card landscape ${c.isVip?'is-vip':''}" onclick="openPlayer('${esc(c.id)}','live')">
-            <div class="card-thumb">
-                <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy">
-                <div class="card-badge live">مباشر</div>
-                ${c.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i></div>':''}
-            </div>
-            <div class="card-info">
-                <div class="card-title">${esc(name)}</div>
-                <div class="card-meta"><span><i class="fa-solid fa-tv"></i> ${esc(c.category||'بث')}</span></div>
-            </div>
-        </div>`;
-    }).join('');
+    g.innerHTML=ch.map(c=>liveCardHTML(c)).join('');
+}
+
+function liveCardHTML(c, extra=''){
+    const name=c.name||c.title||'قناة';
+    const logo=c.logo||c.image||'https://via.placeholder.com/300x168/0f1117/ef4444?text='+encodeURIComponent(name);
+    const locked=c.isVip&&!isVip(state.userData);
+    return `<div class="card landscape ${c.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer('${esc(c.id)}','live')">
+        <div class="card-thumb">
+            <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy">
+            <div class="card-badge live">مباشر</div>
+            ${c.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i></div>':''}
+            ${(c.viewers>0)?`<div class="card-badge viewers"><i class="fa-solid fa-eye"></i> ${Number(c.viewers).toLocaleString('ar-EG')}</div>`:''}
+            ${locked?'<div class="card-lock"><i class="fa-solid fa-lock"></i><span>VIP</span></div>':''}
+        </div>
+        <div class="card-info">
+            <div class="card-title">${esc(name)}</div>
+            <div class="card-meta"><span><i class="fa-solid fa-tv"></i> ${esc(c.category||'بث')}</span></div>
+        </div>
+    </div>`;
 }
 
 /* ---------- 13. MATCHES (Sports) ---------- */
@@ -552,37 +617,41 @@ function renderMatches(){
 
     if(m.length===0){g.innerHTML='<div class="empty-state"><i class="fa-solid fa-futbol"></i><h3>لا توجد مباريات</h3></div>';return;}
 
-    g.innerHTML=m.map(mt=>{
-        const live=mt.status==='live';
-        const fin=mt.status==='finished';
-        const badge=live?'<div class="match-live-badge"><span class="dot"></span> مباشر الآن</div>':
-                     fin?'<div class="match-badge" style="background:var(--text-3)">انتهت</div>':
-                     `<div class="match-badge">${mt.time||mt.date||'قريباً'}</div>`;
-        return `<div class="match-card ${mt.isVip?'is-vip':''}" onclick="openPlayer('${esc(mt.id)}','match')">
-            <div class="match-head">
-                ${badge}
-                ${mt.isVip?'<div class="card-badge vip" style="position:relative;top:0;right:0"><i class="fa-solid fa-crown"></i> VIP</div>':''}
+    g.innerHTML=m.map(mt=>matchCardHTML(mt)).join('');
+}
+
+function matchCardHTML(mt, extra=''){
+    const live=mt.status==='live';
+    const fin=mt.status==='finished';
+    const locked=mt.isVip&&!isVip(state.userData);
+    const badge=live?'<div class="match-live-badge"><span class="dot"></span> مباشر الآن</div>':
+                 fin?'<div class="match-badge" style="background:var(--text-3)">انتهت</div>':
+                 `<div class="match-badge">${esc(mt.time||mt.date||'قريباً')}</div>`;
+    return `<div class="match-card ${mt.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer('${esc(mt.id)}','match')">
+        <div class="match-head">
+            ${badge}
+            ${mt.isVip?'<div class="card-badge vip" style="position:relative;top:0;right:0"><i class="fa-solid fa-crown"></i> VIP</div>':''}
+            ${locked?'<div class="card-lock" style="position:relative"><i class="fa-solid fa-lock"></i><span>VIP</span></div>':''}
+        </div>
+        <div class="match-teams">
+            <div class="team">
+                <img src="${esc(mt.team1Logo||'https://via.placeholder.com/60')}" alt="" onerror="this.src='https://via.placeholder.com/60'">
+                <span>${esc(mt.team1||'فريق 1')}</span>
             </div>
-            <div class="match-teams">
-                <div class="team">
-                    <img src="${esc(mt.team1Logo||'https://via.placeholder.com/60')}" alt="" onerror="this.src='https://via.placeholder.com/60'">
-                    <span>${esc(mt.team1||'فريق 1')}</span>
-                </div>
-                <div class="match-vs">
-                    <div class="vs">VS</div>
-                    ${mt.score1!==undefined?`<div class="match-score">${esc(mt.score1)} - ${esc(mt.score2||0)}</div>`:''}
-                </div>
-                <div class="team">
-                    <img src="${esc(mt.team2Logo||'https://via.placeholder.com/60')}" alt="" onerror="this.src='https://via.placeholder.com/60'">
-                    <span>${esc(mt.team2||'فريق 2')}</span>
-                </div>
+            <div class="match-vs">
+                <div class="vs">VS</div>
+                ${mt.score1!==undefined?`<div class="match-score">${esc(mt.score1)} - ${esc(mt.score2||0)}</div>`:''}
             </div>
-            <div class="match-info">
-                <span><i class="fa-solid fa-trophy"></i> ${esc(mt.league||mt.category||'')}</span>
-                <span><i class="fa-solid fa-tv"></i> ${esc(mt.channel||'')}</span>
+            <div class="team">
+                <img src="${esc(mt.team2Logo||'https://via.placeholder.com/60')}" alt="" onerror="this.src='https://via.placeholder.com/60'">
+                <span>${esc(mt.team2||'فريق 2')}</span>
             </div>
-        </div>`;
-    }).join('');
+        </div>
+        <div class="match-info">
+            <span><i class="fa-solid fa-trophy"></i> ${esc(mt.league||mt.category||'')}</span>
+            <span><i class="fa-solid fa-tv"></i> ${esc(mt.channel||'')}</span>
+        </div>
+    </div>`;
 }
 
 /* ---------- 14. FAVORITES ---------- */
@@ -602,39 +671,105 @@ function setActiveView(v){
     $$('.nav-link').forEach(b=>b.classList.toggle('active',b.dataset.nav===v));
     $$('.bn-item').forEach(b=>b.classList.toggle('active',b.dataset.bn===v));
 
-    const live=$('#liveSection'), match=$('#matchSection'), dyn=$('#dynamicSections');
+    const live=$('#liveSection'), match=$('#matchSection'), dyn=$('#dynamicSections'), browse=$('#browseSection');
 
     if(v==='live'){
         if(dyn)dyn.style.display='none';
         if(match)match.style.display='none';
+        if(browse)browse.style.display='none';
         if(live)live.style.display='block';
         $('#heroSection')?.classList.remove('show');
     }else if(v==='matches'){
         if(dyn)dyn.style.display='none';
         if(live)live.style.display='none';
+        if(browse)browse.style.display='none';
         if(match)match.style.display='block';
         $('#heroSection')?.classList.remove('show');
     }else if(v==='movies'||v==='series'||v==='vip'){
-        if(dyn)dyn.style.display='block';
-        if(live)live.style.display='none';
-        if(match)match.style.display='none';
-        renderHero();
-        let filtered=state.videos.slice();
-        let title='';
-        if(v==='movies'){filtered=filtered.filter(x=>(x.category||'').includes('فيلم')||(x.type||'')==='movie');title='أفلام';}
-        else if(v==='series'){filtered=filtered.filter(x=>(x.category||'').includes('مسلسل')||(x.type||'')==='series');title='مسلسلات';}
-        else if(v==='vip'){filtered=filtered.filter(x=>x.isVip);title='محتوى VIP';}
-        if(filtered.length===0){toast('لا يوجد محتوى في هذا القسم','info');return;}
-        $('#sectionDetailTitle').textContent=title;
-        $('#sectionDetailCount').textContent=filtered.length+' عنصر';
-        $('#sectionDetailGrid').innerHTML=filtered.map(it=>renderCard(it)).join('');
-        openModal('sectionModal');
+        showBrowse(v);
     }else{
         if(dyn)dyn.style.display='block';
         if(live)live.style.display='none';
         if(match)match.style.display='none';
+        if(browse)browse.style.display='none';
         renderHero();
     }
+}
+
+/* ---------- 15b. BROWSE GRID (all content) ---------- */
+const BROWSE_META={
+    movies:{title:'أفلام',icon:'fa-film'},
+    series:{title:'مسلسلات',icon:'fa-tv'},
+    vip:{title:'محتوى VIP',icon:'fa-crown'},
+    free:{title:'محتوى مجاني',icon:'fa-unlock'}
+};
+
+function browseItems(type){
+    let items=state.videos.slice();
+    if(type==='movies') items=items.filter(x=>(x.category||'').includes('فيلم')||(x.type||'')==='movie');
+    else if(type==='series') items=items.filter(x=>(x.category||'').includes('مسلسل')||(x.type||'')==='series');
+    else if(type==='vip') items=items.filter(x=>x.isVip);
+    else if(type==='free') items=items.filter(x=>!x.isVip);
+    return items;
+}
+
+function showBrowse(type){
+    state.browseType=type||'movies';
+    state.browseCat='all';
+    state.browseVip = type==='vip' ? 'vip' : (type==='free' ? 'free' : 'all');
+    const meta=BROWSE_META[state.browseType]||BROWSE_META.movies;
+
+    const sec=$('#browseSection'), dyn=$('#dynamicSections'), live=$('#liveSection'), match=$('#matchSection');
+    if(dyn)dyn.style.display='none';
+    if(live)live.style.display='none';
+    if(match)match.style.display='none';
+    if(sec)sec.style.display='block';
+    $('#heroSection')?.classList.remove('show');
+
+    const t=$('#browseTitle');
+    if(t) t.innerHTML=`<i class="fa-solid ${meta.icon}"></i><h2>${meta.title}</h2>`;
+    document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active',b.dataset.nav===state.browseType));
+    document.querySelectorAll('.bn-item').forEach(b=>b.classList.toggle('active',b.dataset.bn===state.browseType));
+    renderBrowse();
+    scrollToTop();
+}
+
+function renderBrowse(){
+    const g=$('#browseGrid'); if(!g) return;
+    const type=state.browseType||'movies';
+    let items=browseItems(type);
+
+    const cats=[...new Set(items.map(i=>i.category).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'ar'));
+    const cw=$('#browseCatChips');
+    if(cw){
+        cw.innerHTML='<button class="chip active" data-c="all">كل التصنيفات</button>'+
+            cats.map(c=>`<button class="chip" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+        $$('#browseCatChips .chip').forEach(b=>{
+            b.classList.toggle('active',b.dataset.c===(state.browseCat||'all'));
+            b.onclick=()=>{
+                state.browseCat=b.dataset.c;
+                renderBrowse();
+            };
+        });
+    }
+    $$('#browseVipChips .chip').forEach(b=>b.classList.toggle('active',b.dataset.f===(state.browseVip||'all')));
+    const vc=$('#browseVipChips'); if(vc) vc.style.display=(type==='vip'||type==='free')?'none':'flex';
+    const bs=$('#browseSort'); if(bs) bs.value=state.browseSort||'newest';
+
+    if(state.browseCat && state.browseCat!=='all') items=items.filter(i=>i.category===state.browseCat);
+    if(state.browseVip==='vip') items=items.filter(i=>i.isVip);
+    else if(state.browseVip==='free') items=items.filter(i=>!i.isVip);
+
+    const sort=state.browseSort||'newest';
+    if(sort==='newest') items.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    else if(sort==='views') items.sort((a,b)=>(b.views||0)-(a.views||0));
+    else if(sort==='rating') items.sort((a,b)=>(b.ratingAvg||0)-(a.ratingAvg||0));
+    else if(sort==='title') items.sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),'ar'));
+
+    const cnt=$('#browseCount'); if(cnt) cnt.textContent=items.length+' عنصر';
+    g.innerHTML=items.length
+        ? items.map(it=>renderCard(it)).join('')
+        : '<div class="empty-state"><i class="fa-solid fa-folder-open"></i><h3>لا يوجد محتوى</h3><p>جرّب تصنيفاً آخر</p></div>';
 }
 
 /* ---------- 16. SEARCH ---------- */
@@ -642,16 +777,29 @@ const performSearch = debounce(()=>{
     const q=state.searchQuery.trim();
     if(!q){renderAll();renderHero();closeModal('sectionModal');return;}
     const nq=normalize(q);
-    const results=state.videos.filter(v=>
+    const vids=state.videos.filter(v=>
         normalize(v.title).includes(nq) ||
         normalize(v.description).includes(nq) ||
         normalize(v.category).includes(nq)
     );
+    const lives=state.liveChannels.filter(c=>
+        normalize(c.name||c.title||'').includes(nq) || normalize(c.category||'').includes(nq)
+    );
+    const mts=state.matches.filter(m=>
+        normalize((m.team1||'')+' '+(m.team2||'')+' '+(m.league||'')+' '+(m.category||'')).includes(nq)
+    );
+    const total=vids.length+lives.length+mts.length;
     $('#sectionDetailTitle').textContent=`نتائج: "${q}"`;
-    $('#sectionDetailCount').textContent=results.length+' نتيجة';
-    $('#sectionDetailGrid').innerHTML=results.length===0
-        ?'<div class="empty-state"><i class="fa-solid fa-search"></i><h3>لا توجد نتائج</h3><p>جرّب كلمة أخرى</p></div>'
-        :results.map(it=>renderCard(it)).join('');
+    $('#sectionDetailCount').textContent=total+' نتيجة';
+    if(total===0){
+        $('#sectionDetailGrid').innerHTML='<div class="empty-state"><i class="fa-solid fa-search"></i><h3>لا توجد نتائج</h3><p>جرّب كلمة أخرى</p></div>';
+    }else{
+        let html='';
+        if(vids.length) html+=`<div class="search-group-title"><i class="fa-solid fa-clapperboard"></i> محتوى <span>${vids.length}</span></div>`+vids.map(it=>renderCard(it)).join('');
+        if(lives.length) html+=`<div class="search-group-title"><i class="fa-solid fa-tower-broadcast"></i> قنوات بث <span>${lives.length}</span></div>`+lives.map(c=>liveCardHTML(c)).join('');
+        if(mts.length) html+=`<div class="search-group-title"><i class="fa-solid fa-futbol"></i> مباريات <span>${mts.length}</span></div>`+mts.map(mt=>matchCardHTML(mt)).join('');
+        $('#sectionDetailGrid').innerHTML=html;
+    }
     openModal('sectionModal');
 },500);
 
@@ -665,6 +813,10 @@ async function openPlayer(id,type='vod'){
     if(!item){toast('المحتوى غير موجود','err');return;}
     if(!state.currentUser){toast('سجل دخول للمشاهدة','warn');openAuthModal('login');return;}
     if(item.isVip && !isVip(state.userData)){openSubModal();toast('هذا المحتوى لـ VIP','warn');return;}
+
+    if(type==='live' && item.id){
+        try{ db.ref('liveChannels/'+item.id+'/viewers').transaction(v=>(v||0)+1).catch(()=>{}); }catch(e){}
+    }
 
     state.currentItem=item;
     state.playerType=type;
@@ -1439,6 +1591,8 @@ function handleUrlHash(){
 /* ---------- 30. EVENTS ---------- */
 function initEvents(){
     $$('.nav-link').forEach(b=>b.onclick=()=>setActiveView(b.dataset.nav));
+    $$('#browseVipChips .chip').forEach(b=>b.onclick=()=>{state.browseVip=b.dataset.f;renderBrowse();});
+    $('#browseSort')?.addEventListener('change',e=>{state.browseSort=e.target.value;renderBrowse();});
     $$('.bn-item').forEach(b=>b.onclick=()=>{
         const bn=b.dataset.bn;
         if(bn==='search'){$('#mobileSearch').classList.toggle('open');setTimeout(()=>$('#mobileSearchInput')?.focus(),100);}
@@ -1469,7 +1623,18 @@ function initEvents(){
     $('#voiceOverlay')?.addEventListener('click',e=>{if(e.target===$('#voiceOverlay'))stopVoiceAssistant();});
 
     document.addEventListener('keydown',handleKeyboard);
-    window.addEventListener('scroll',()=>{$('#mainNavbar')?.classList.toggle('scrolled',window.scrollY>30);});
+    const onScroll=()=>{
+        $('#mainNavbar')?.classList.toggle('scrolled',window.scrollY>30);
+        const doc=document.documentElement;
+        const max=(doc.scrollHeight-doc.clientHeight)||1;
+        const pct=Math.min(100,Math.max(0,(window.scrollY/max)*100));
+        const bar=$('#scrollProgress'); if(bar) bar.style.width=pct+'%';
+        const btt=$('#backToTop');
+        if(btt) btt.classList.toggle('show',window.scrollY>500);
+    };
+    window.addEventListener('scroll',onScroll,{passive:true});
+    onScroll();
+    $('#backToTop')?.addEventListener('click',scrollToTop);
     window.addEventListener('hashchange',handleUrlHash);
 
     const y=$('#yearSpan'); if(y) y.textContent=new Date().getFullYear();

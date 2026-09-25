@@ -367,6 +367,31 @@ input[type="checkbox"]{width:auto;transform:scale(1.3);accent-color:var(--accent
     .match-teams-edit{grid-template-columns:1fr}
     .match-teams-edit .vs-cell{text-align:center;padding:4px 0}
 }
+/* View toggle (list / grid) */
+.view-toggle{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px}
+.vt-btn{width:34px;height:30px;border:0;border-radius:8px;background:transparent;color:var(--text-3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;transition:var(--fast);font-family:inherit}
+.vt-btn:hover{color:var(--text)}
+.vt-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 3px 10px var(--accent-glow)}
+
+/* Admin card grid */
+.admin-grid{display:grid;width:100%;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.admin-grid-card{background:#0b0b12;border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:var(--fast)}
+.admin-grid-card:hover{border-color:var(--border-strong);transform:translateY(-3px)}
+.admin-grid-card.is-vip{border-color:rgba(245,158,11,.4)}
+.agc-thumb{position:relative;aspect-ratio:2/3;background:#0f0f18;overflow:hidden}
+.agc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.admin-grid-card.live .agc-thumb{aspect-ratio:16/9}
+.admin-grid-card.live .agc-thumb img{object-fit:contain;background:#0a0a12}
+.agc-badge{position:absolute;top:7px;inset-inline-start:7px;font-size:.6rem;font-weight:900;padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;backdrop-filter:blur(6px)}
+.agc-badge.vip{background:linear-gradient(135deg,var(--vip),var(--vip-2));color:#111}
+.agc-badge.free{background:rgba(16,185,129,.9);color:#04120c}
+.agc-body{padding:9px 10px 6px;display:flex;flex-direction:column;gap:4px}
+.agc-title{font-size:.78rem;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agc-meta{font-size:.66rem;color:var(--text-3);font-weight:700;display:flex;align-items:center;gap:5px}
+.agc-actions{display:flex;gap:6px;padding:6px 10px 10px}
+.agc-actions .btn{flex:1;justify-content:center}
+body.light-theme .admin-grid-card{background:#fff}
+body.light-theme .agc-thumb{background:#eef1f7}
 </style>
 </head>
 <body>
@@ -515,6 +540,10 @@ input[type="checkbox"]{width:auto;transform:scale(1.3);accent-color:var(--accent
                         <option value="vip">VIP</option>
                         <option value="dl">قابل للتحميل</option>
                     </select>
+                    <div class="view-toggle" data-key="admin_media_view" data-render="renderMedia">
+                        <button type="button" class="vt-btn active" data-view="list" title="قائمة"><i class="fa-solid fa-list"></i></button>
+                        <button type="button" class="vt-btn" data-view="grid" title="شبكة كروت"><i class="fa-solid fa-table-cells-large"></i></button>
+                    </div>
                     <button class="btn ghost sm" id="btnExportMediaCSV"><i class="fa-solid fa-file-csv"></i> CSV</button>
                 </div>
             </div>
@@ -653,6 +682,15 @@ input[type="checkbox"]{width:auto;transform:scale(1.3);accent-color:var(--accent
             <div class="card-tools" style="margin-bottom:12px">
                 <input type="text" id="qLive" placeholder="ابحث...">
                 <select id="filterLiveCat"><option value="all">كل التصنيفات</option></select>
+                <select id="filterLiveType">
+                    <option value="all">الكل</option>
+                    <option value="vip">VIP فقط</option>
+                    <option value="free">مجاني فقط</option>
+                </select>
+                <div class="view-toggle" data-key="admin_live_view" data-render="renderLiveChannelsList">
+                    <button type="button" class="vt-btn active" data-view="list" title="قائمة"><i class="fa-solid fa-list"></i></button>
+                    <button type="button" class="vt-btn" data-view="grid" title="شبكة كروت"><i class="fa-solid fa-table-cells-large"></i></button>
+                </div>
             </div>
             <div class="dl" id="liveChannelsList"></div>
         </div>
