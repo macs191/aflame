@@ -87,9 +87,16 @@ window.delLiveCat = delLiveCat;
    LIVE CHANNELS
    ============================================================ */
 function loadLiveChannels(){
-    db.ref('liveChannels').on('value', snap=>{
+    db.ref('liveChannels').on('value', async snap=>{
+        let source=snap;
+        if(snap.numChildren()<=1){
+            try{
+                const full=await db.ref('liveChannels').once('value');
+                if(full.numChildren()>snap.numChildren()) source=full;
+            }catch(e){}
+        }
         allLiveChs = [];
-        if(snap.exists()) snap.forEach(c=>allLiveChs.push({id:c.key,...c.val()}));
+        if(source.exists()) source.forEach(c=>allLiveChs.push({id:c.key,...c.val()}));
         const vip = allLiveChs.filter(c=>c.isVip).length;
         $('#liveStatChannels').textContent = allLiveChs.length.toLocaleString('ar-EG');
         $('#livePanelCount').textContent = `${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;

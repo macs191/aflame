@@ -332,9 +332,17 @@ function fetchAll(){
         }
         renderDynamicSections();
     });
-    db.ref('liveChannels').on('value',snap=>{
+    db.ref('liveChannels').on('value',async snap=>{
+        // بعض جلسات Firebase قد تبدأ بـ snapshot جزئي قديم؛ لا نرسمه كأنه الجدول الكامل.
+        let source=snap;
+        if(snap.numChildren()<=1){
+            try{
+                const full=await db.ref('liveChannels').once('value');
+                if(full.numChildren()>snap.numChildren()) source=full;
+            }catch(e){}
+        }
         state.liveChannels=[];
-        if(snap.exists()) snap.forEach(c=>state.liveChannels.push({id:c.key,...c.val()}));
+        if(source.exists()) source.forEach(c=>state.liveChannels.push({id:c.key,...c.val()}));
         renderLiveTabs();
         renderLive();
         renderDynamicSections();
