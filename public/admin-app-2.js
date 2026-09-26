@@ -868,6 +868,10 @@ function loadAds(){
         if($('#adMidHtml')) $('#adMidHtml').value = ads.midBanner || '';
         if($('#adBottomHtml')) $('#adBottomHtml').value = ads.bottomBanner || '';
         if($('#adDownloadHtml')) $('#adDownloadHtml').value = ads.downloadAd || '';
+        if($('#adVideoHtml')) $('#adVideoHtml').value = ads.videoAd || '';
+        if($('#adVideoDelay')) $('#adVideoDelay').value = ads.videoAdDelay ?? 120;
+        if($('#adVideoInterval')) $('#adVideoInterval').value = ads.videoAdInterval ?? 300;
+        if($('#adVideoDuration')) $('#adVideoDuration').value = ads.videoAdDuration ?? 10;
     });
     db.ref('settings/popupBanner').on('value', snap=>{
         if($('#adPopupHtml')) $('#adPopupHtml').value = snap.val() || '';
@@ -896,6 +900,16 @@ $('#btnSaveAdDownload')?.addEventListener('click',async()=>{
     await db.ref('ads').child('downloadAd').set($('#adDownloadHtml').value);
     logActivity('حفظ إعلان التحميل');
     toast('تم الحفظ','','ok');
+});
+$('#btnSaveAdVideo')?.addEventListener('click',async()=>{
+    await db.ref('ads').update({
+        videoAd:$('#adVideoHtml').value,
+        videoAdDelay:Math.max(0,parseInt($('#adVideoDelay').value)||120),
+        videoAdInterval:Math.max(30,parseInt($('#adVideoInterval').value)||300),
+        videoAdDuration:Math.max(5,parseInt($('#adVideoDuration').value)||10)
+    });
+    logActivity('حفظ إعلان الفيديو المجاني');
+    toast('تم حفظ إعلان الفيديو','','ok');
 });
 $('#btnSaveAdPopup')?.addEventListener('click',async()=>{
     await db.ref('settings/popupBanner').set($('#adPopupHtml').value);

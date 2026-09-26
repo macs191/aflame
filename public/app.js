@@ -1137,6 +1137,32 @@ function attachProgressSaver(video){
     video.addEventListener('ended',()=>{
         if(state.autoPlay && state.playerType==='vod') playNextEpisode();
     });
+    if(state.playerType==='vod' && state.currentItem && !state.currentItem.isVip && !isVip(state.userData)) startVideoAdCycle(video);
+}
+
+function startVideoAdCycle(video){
+    stopVideoAdCycle();
+    const ads=state.ads||{}, html=ads.videoAd||'';
+    if(!html) return;
+    const delay=Math.max(0,Number(ads.videoAdDelay)||120)*1000;
+    const interval=Math.max(30,Number(ads.videoAdInterval)||300)*1000;
+    const show=()=>{
+        const host=video.closest('.pp-player-wrap')||video.parentElement;
+        if(!host) return;
+        host.querySelector('.video-ad-overlay')?.remove();
+        const ad=document.createElement('div');
+        ad.className='video-ad-overlay';
+        ad.innerHTML=`<button class="video-ad-close" aria-label="إغلاق الإعلان">×</button><span class="video-ad-label">إعلان</span><div class="video-ad-content">${html}</div>`;
+        host.appendChild(ad);
+        ad.querySelector('.video-ad-close').onclick=()=>ad.remove();
+        const duration=Math.max(5,Number(ads.videoAdDuration)||10)*1000;
+        setTimeout(()=>ad.remove(),duration);
+    };
+    state.videoAdTimer=setTimeout(()=>{show();state.videoAdTimer=setInterval(show,interval);},delay);
+}
+function stopVideoAdCycle(){
+    if(state.videoAdTimer){clearTimeout(state.videoAdTimer);clearInterval(state.videoAdTimer);state.videoAdTimer=null;}
+    document.querySelectorAll('.video-ad-overlay').forEach(x=>x.remove());
 }
 
 function showSleepTimer(video,minutes){
@@ -1184,7 +1210,11 @@ function destroyPlayer(){
     if(state.dash){try{state.dash.reset();}catch(e){}state.dash=null;}
     if(state.progressTimer){clearInterval(state.progressTimer);state.progressTimer=null;}
     if(state.sleepTimer){clearTimeout(state.sleepTimer);state.sleepTimer=null;}
-    const c=$('#playerContainer'); if(c) c.innerHTML='';
+    stopVideoAdCycle();
+    const c=$('#playerContainer');
+    const wrap=c?.parentElement;
+    wrap?.querySelectorAll('.player-toolbar,.speed-menu,.sleep-menu').forEach(x=>x.remove());
+    if(c) c.innerHTML='';
     state.currentVideoEl=null;
 }
 

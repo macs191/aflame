@@ -954,6 +954,7 @@ function renderUsers(){
             <div class="dl-cell"><span class="k">المتبقي</span><span class="v">${days}</span></div>
             <div class="dl-cell"><span class="k">الحالة</span>${statusBadge}</div>
             <div class="dl-actions">
+                <button class="btn info sm" onclick="showUserDetails('${esc(u.id)}')" title="كل البيانات والسجل"><i class="fa-solid fa-database"></i></button>
                 <button class="btn ghost sm" onclick="editUser('${esc(u.id)}')"><i class="fa-solid fa-user-pen"></i></button>
                 <button class="btn ${banned?'green':'gold'} sm" onclick="toggleBan('${esc(u.id)}',${!banned})"><i class="fa-solid ${banned?'fa-lock-open':'fa-ban'}"></i></button>
                 <button class="btn red sm" onclick="delUser('${esc(u.id)}','${esc(u.name||'')}')"><i class="fa-solid fa-trash"></i></button>
@@ -984,6 +985,22 @@ async function editUser(id){
     openModal('mUser');
 }
 window.editUser = editUser;
+
+async function showUserDetails(id){
+    try{
+        const [user,watchlists,notifications,requests]=await Promise.all([
+            db.ref('users/'+id).once('value'),db.ref('watchlists/'+id).once('value'),db.ref('notifications/'+id).once('value'),db.ref('vipRequests').orderByChild('uid').equalTo(id).once('value')
+        ]);
+        const data=user.val()||{};
+        const record={profile:data,watchlists:watchlists.val()||{},notifications:notifications.val()||{},vipRequests:requests.val()||{}};
+        $('#userDetailsTitle').textContent=data.name||data.email||'بيانات المستخدم';
+        $('#userDetailsSub').textContent=`UID: ${id}`;
+        $('#userDetailsBody').innerHTML=`<div class="user-detail-summary"><span>الحقول: ${Object.keys(data).length}</span><span>المفضلات/القوائم: ${Object.keys(watchlists.val()||{}).length}</span><span>طلبات VIP: ${Object.keys(requests.val()||{}).length}</span></div><pre class="user-json">${esc(JSON.stringify(record,null,2))}</pre>`;
+        $('#userDetailsEdit').onclick=()=>{closeModal('mUserDetails');editUser(id)};
+        openModal('mUserDetails');
+    }catch(err){toast('تعذر تحميل سجل المستخدم',err.message,'err')}
+}
+window.showUserDetails=showUserDetails;
 
 $('#userForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
