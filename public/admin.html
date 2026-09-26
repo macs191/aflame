@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -410,17 +411,16 @@ body.light-theme .agc-thumb{background:#eef1f7}
         <div class="hacker-grid"></div><div class="hacker-status"><span class="status-led"></span> SECURE CONSOLE // ACCESS GATE</div>
         <div class="login-logo"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 style="font-weight:900;margin-bottom:6px;font-size:1.2rem">لوحة إدارة سيرفر الوحش</h2>
-        <p style="color:var(--text-3);font-size:.8rem">أدخل رمز الأمان للمتابعة</p>
-        <div class="terminal-line"><span>&gt; system.check</span><b> READY</b></div>
-        <div class="pin-wrap" id="pinWrap">
-            <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-            <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-            <input type="tel" id="pinReal" class="pin-input-real" maxlength="6" inputmode="numeric" autocomplete="off">
-        </div>
-        <p id="pinErr" style="color:var(--danger);font-size:.82rem;font-weight:700;min-height:18px;margin-top:8px"></p>
-        <button class="btn gold block" id="pinBtn" style="padding:13px">
-            <i class="fa-solid fa-lock-open"></i> تأكيد الدخول
-        </button>
+        <p style="color:var(--text-3);font-size:.8rem">سجّل الدخول بحساب Firebase مخوّل للإدارة</p>
+        <div class="terminal-line"><span>&gt; firebase.auth</span><b> ROLE CHECK</b></div>
+        <form id="adminLoginForm" style="position:relative;z-index:1;text-align:right;margin-top:18px" autocomplete="on">
+            <label for="adminEmail" style="display:block;color:var(--text-2);font-size:.78rem;font-weight:700;margin:10px 0 5px">البريد الإلكتروني</label>
+            <input id="adminEmail" type="email" required autocomplete="username" style="width:100%;padding:12px;border:1px solid var(--border-strong);border-radius:10px;background:#0a0a12;color:var(--text);font-size:16px">
+            <label for="adminPassword" style="display:block;color:var(--text-2);font-size:.78rem;font-weight:700;margin:12px 0 5px">كلمة المرور</label>
+            <input id="adminPassword" type="password" required autocomplete="current-password" style="width:100%;padding:12px;border:1px solid var(--border-strong);border-radius:10px;background:#0a0a12;color:var(--text);font-size:16px">
+            <p id="loginErr" role="alert" aria-live="polite" style="color:var(--danger);font-size:.82rem;font-weight:700;min-height:20px;margin-top:8px"></p>
+            <button type="submit" class="btn gold block" id="adminLoginBtn" style="padding:13px"><i class="fa-solid fa-lock-open"></i> دخول آمن</button>
+        </form>
     </div>
 </div>
 
@@ -980,7 +980,6 @@ body.light-theme .agc-thumb{background:#eef1f7}
             <div style="display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
                 <button class="btn ghost block" id="btnExportJSON"><i class="fa-solid fa-cloud-arrow-down"></i> تصدير JSON</button>
                 <button class="btn ghost block" id="btnImportJSON"><i class="fa-solid fa-cloud-arrow-up"></i> استيراد JSON</button>
-                <button class="btn ghost block" id="btnChangePin"><i class="fa-solid fa-key"></i> تغيير الرمز</button>
             </div>
             <input type="file" id="jsonFileInput" accept=".json" style="display:none">
         </div>
@@ -1115,11 +1114,12 @@ body.light-theme .agc-thumb{background:#eef1f7}
                 <div class="fg"><label>الاسم</label><input type="text" id="userName" required></div>
                 <div class="fg"><label>البريد</label><input type="email" id="userEmail" required></div>
                 <div class="fg"><label>رقم الهاتف</label><input type="text" id="userPhone" inputmode="tel"></div>
-                <div class="fg"><label>النوع</label><select id="userIsVip"><option value="false">عادي</option><option value="true">VIP</option></select></div>
-                <div class="fg"><label>مدة التمديد</label><input type="number" id="subValue" value="1" min="1"></div>
-                <div class="fg"><label>الوحدة</label><select id="subUnit"><option value="days">أيام</option><option value="months" selected>أشهر</option><option value="years">سنوات</option></select></div>
-                <div class="fg"><label>الدور</label><select id="userRole"><option value="user">مستخدم</option><option value="admin">مدير</option></select></div>
-                <div class="fg"><label>حالة الحساب</label><select id="userBlocked"><option value="false">مفتوح</option><option value="true">محظور</option></select></div>
+                <div class="fg"><label for="userIsVip">النوع</label><select id="userIsVip"><option value="false">عادي</option><option value="true">VIP</option></select></div>
+                <div class="fg"><label for="subValue">مدة التمديد</label><input type="number" id="subValue" value="1" min="1" max="3650"></div>
+                <div class="fg"><label for="subUnit">الوحدة</label><select id="subUnit"><option value="days">أيام</option><option value="months" selected>أشهر</option><option value="years">سنوات</option></select></div>
+                <div class="fg full"><label><input type="checkbox" id="extendVipOnSave"> إضافة مدة الاشتراك المحددة (عند تفعيلها فقط)</label></div>
+                <div class="fg"><label for="userRole">الدور</label><select id="userRole"><option value="user">مستخدم</option><option value="admin">مدير</option></select></div>
+                <div class="fg"><label for="userBlocked">حالة الحساب</label><select id="userBlocked"><option value="false">مفتوح</option><option value="true">محظور</option></select></div>
                 <div class="fg full"><label>ملاحظات الحساب</label><textarea id="userNote" placeholder="ملاحظات الإدارة أو حالة الحساب"></textarea></div>
             </div>
             <div class="modal-foot"><button type="submit" class="btn gold"><i class="fa-solid fa-floppy-disk"></i> حفظ</button><button type="button" class="btn ghost" data-close="mUser">إلغاء</button></div>
@@ -1184,11 +1184,12 @@ body.light-theme .agc-thumb{background:#eef1f7}
             <div class="fg"><label>إنشاء تصنيفات</label><select id="m3uAutoCat"><option value="true">نعم</option><option value="false">لا</option></select></div>
         </div>
         <div id="m3uProgressWrap" style="display:none;margin-top:12px;background:#0a0a10;border:1px solid var(--border);border-radius:12px;padding:12px">
-            <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:800;margin-bottom:8px"><span id="m3uProgressLabel" style="color:var(--info)"><i class="fa-solid fa-flask"></i> اختبار...</span><span id="m3uProgressCount" style="font-family:monospace">0 / 0</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.78rem;font-weight:800;margin-bottom:8px"><span id="m3uProgressLabel" style="color:var(--info)"><i class="fa-solid fa-flask"></i> اختبار...</span><span id="m3uProgressCount" style="font-family:monospace">0 / 0</span><button type="button" id="m3uStopBtn" class="btn red sm" style="display:none" aria-label="إيقاف اختبار قنوات M3U"><i class="fa-solid fa-stop"></i> إيقاف</button></div>
             <div style="height:8px;background:#050508;border-radius:8px;overflow:hidden"><div id="m3uProgressBar" style="height:100%;background:linear-gradient(90deg,var(--info),var(--success));width:0%;transition:width .25s;border-radius:8px"></div></div>
             <div style="display:flex;gap:12px;margin-top:8px;font-size:.72rem;flex-wrap:wrap">
                 <span style="color:var(--success)"><i class="fa-solid fa-circle-check"></i> يعمل: <strong id="m3uStatWork">0</strong></span>
                 <span style="color:var(--danger)"><i class="fa-solid fa-circle-xmark"></i> معطل: <strong id="m3uStatFail">0</strong></span>
+                <span style="color:var(--warning)"><i class="fa-solid fa-circle-question"></i> تعذر التحقق: <strong id="m3uStatUnverified">0</strong></span>
                 <span style="color:var(--text-3)"><i class="fa-solid fa-clock"></i> متبقي: <strong id="m3uStatRemain">0</strong></span>
             </div>
         </div>
@@ -1196,6 +1197,7 @@ body.light-theme .agc-thumb{background:#eef1f7}
             <button class="m3u-tab active" data-m3u-tab="all"><i class="fa-solid fa-layer-group"></i> الكل <span class="m3u-count" id="m3uCntAll">0</span></button>
             <button class="m3u-tab" data-m3u-tab="working"><i class="fa-solid fa-circle-check"></i> يعمل <span class="m3u-count" id="m3uCntWork">0</span></button>
             <button class="m3u-tab" data-m3u-tab="broken"><i class="fa-solid fa-circle-xmark"></i> معطل <span class="m3u-count" id="m3uCntFail">0</span></button>
+            <button class="m3u-tab" data-m3u-tab="unverified"><i class="fa-solid fa-circle-question"></i> تعذر التحقق <span class="m3u-count" id="m3uCntUnverified">0</span></button>
             <button class="m3u-tab" data-m3u-tab="untested"><i class="fa-solid fa-clock"></i> لم يُختبَر <span class="m3u-count" id="m3uCntUntested">0</span></button>
         </div>
         <div id="m3uPreview" style="margin-top:10px;max-height:340px;overflow-y:auto;background:#08080e;border:1px solid var(--border);border-radius:12px;padding:8px;display:none"></div>
@@ -1220,18 +1222,6 @@ body.light-theme .agc-thumb{background:#eef1f7}
         <div class="modal-head"><div class="mi" id="cfIcon"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="mh-text"><h3 id="cfTitle">تأكيد</h3></div></div>
         <p class="confirm-msg" id="cfMsg"></p>
         <div class="modal-foot"><button class="btn red" id="cfYes"><i class="fa-solid fa-check"></i> تأكيد</button><button class="btn ghost" data-close="mConfirm">إلغاء</button></div>
-    </div>
-</div>
-
-<div class="modal" id="mPin">
-    <div class="modal-box" style="max-width:440px">
-        <div class="modal-grab"></div>
-        <div class="modal-head"><div class="mi"><i class="fa-solid fa-key"></i></div><div class="mh-text"><h3>تغيير الرمز</h3></div><button class="modal-close" data-close="mPin"><i class="fa-solid fa-xmark"></i></button></div>
-        <form id="pinForm">
-            <div class="fg"><label>الرمز الحالي</label><input type="password" id="pinOld" maxlength="6" inputmode="numeric" required></div>
-            <div class="fg" style="margin-top:10px"><label>الرمز الجديد</label><input type="password" id="pinNew" maxlength="6" inputmode="numeric" required></div>
-            <div class="modal-foot"><button type="submit" class="btn green"><i class="fa-solid fa-check"></i> تغيير</button><button type="button" class="btn ghost" data-close="mPin">إلغاء</button></div>
-        </form>
     </div>
 </div>
 
@@ -1269,7 +1259,7 @@ body.light-theme .agc-thumb{background:#eef1f7}
 
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="admin-app.js?v=grid-20260926-8"></script>
-<script src="admin-app-2.js?v=grid-20260926-8"></script>
+<script src="admin-app.js?v=secure-catalog-20260926-3"></script>
+<script src="admin-app-2.js?v=secure-catalog-20260926-3"></script>
 </body>
 </html>
