@@ -180,6 +180,7 @@ auth.onAuthStateChanged(user=>{
     if(user){
         state.currentUser=user;
         state.userRef=db.ref('users/'+user.uid);
+        state.userRef.update({lastLoginAt:Date.now(),authUid:user.uid,email:user.email||''}).catch(()=>{});
         state.userRef.on('value',snap=>{
             state.userData=snap.val();
             if(!state.userData){
@@ -280,9 +281,11 @@ async function handleAuthSubmit(e){
             if(!name){toast('أدخل اسمك','warn');btn.disabled=false;return;}
             const res=await auth.createUserWithEmailAndPassword(email,pass);
             await res.user.updateProfile({displayName:name});
+            const now=Date.now();
             await db.ref('users/'+res.user.uid).set({
-                email,name,isBanned:false,isBlocked:false,isVip:false,
-                vipExpireDate:0,expireAt:0,createdAt:Date.now()
+                uid:res.user.uid,authUid:res.user.uid,email,name,phone:'',role:'user',note:'',
+                isBanned:false,isBlocked:false,isVip:false,
+                vipExpireDate:0,expireAt:0,createdAt:now,updatedAt:now,lastLoginAt:now
             });
             await db.ref('notifications/'+res.user.uid).push({
                 title:'أهلاً بك في سيرفر الوحش 🐺',
@@ -1531,9 +1534,10 @@ async function requestVip(){
     const reference=$('#paymentReference')?.value.trim()||'';
     const note=$('#paymentNote')?.value.trim()||'';
     if(!method){toast('اختر طريقة الدفع أولاً','','warn');return;}
-    const request={uid:state.currentUser.uid,email:state.currentUser.email,name:state.userData?.name||'',status:'pending',paymentMethod:method,paymentReference:reference,paymentNote:note,createdAt:Date.now()};
+    const request={uid:state.currentUser.uid,userId:state.currentUser.uid,email:state.currentUser.email,name:state.userData?.name||'',status:'pending',paymentMethod:method,paymentReference:reference,paymentNote:note,createdAt:Date.now()};
     try{
-        await db.ref('vipRequests').push(request);
+        const requestRef=await db.ref('vipRequests').push(request);
+        await db.ref('users/'+state.currentUser.uid).update({lastVipRequestId:requestRef.key,updatedAt:Date.now()});
         const msg=encodeURIComponent(`مرحباً، أريد الاشتراك في VIP.\nالاسم: ${request.name||'—'}\nالبريد: ${request.email||'—'}\nطريقة الدفع: ${method}\nرقم العملية: ${reference||'—'}`);
         toast('تم تسجيل طلبك','ok');
         window.open(`https://wa.me/${num}?text=${msg}`,'_blank','noopener');

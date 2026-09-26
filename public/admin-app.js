@@ -890,12 +890,22 @@ let allUsers = [];
 function loadUsers(){
     db.ref('users').on('value', snap=>{
         allUsers = [];
-        snap.forEach(c=>allUsers.push({id:c.key,...c.val()}));
+        if(snap.exists()) snap.forEach(c=>allUsers.push({id:c.key,...(c.val()||{})}));
         window.__allUsers = allUsers;
         $('#statTotalUsers').textContent = allUsers.length.toLocaleString('ar-EG');
         renderUsers();
         fillNotifUserSelect();
     });
+    const syncUsers=async()=>{
+        try{
+            const raw=await fetch(`${db.ref('users').toString()}.json?adminSync=${Date.now()}`,{cache:'no-store'}).then(r=>r.json());
+            if(raw&&typeof raw==='object'){
+                allUsers=Object.entries(raw).map(([id,value])=>({id,...(value||{})}));
+                window.__allUsers=allUsers; $('#statTotalUsers').textContent=allUsers.length.toLocaleString('ar-EG'); renderUsers(); fillNotifUserSelect();
+            }
+        }catch(err){console.warn('[users] fallback sync failed',err)}
+    };
+    syncUsers(); setTimeout(syncUsers,1200);
 }
 
 function fillNotifUserSelect(){

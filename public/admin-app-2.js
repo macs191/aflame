@@ -584,6 +584,16 @@ function loadVipRequests(){
 
         renderVipRequests();
     });
+    const syncRequests=async()=>{
+        try{
+            const raw=await fetch(`${db.ref('vipRequests').toString()}.json?adminSync=${Date.now()}`,{cache:'no-store'}).then(r=>r.json());
+            if(raw&&typeof raw==='object'){
+                allVr=Object.entries(raw).map(([id,value])=>({id,...(value||{})})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+                window.__allVipRequests=allVr; renderVipRequests();
+            }
+        }catch(err){console.warn('[vipRequests] fallback sync failed',err)}
+    };
+    syncRequests(); setTimeout(syncRequests,1200);
 }
 
 function renderVipRequests(){
@@ -680,14 +690,15 @@ async function approveVipRequest(id){
     try{
         const now = Date.now();
         await db.ref('vipRequests/' + id).update({status:'approved', approvedAt: now, durationDays: days, reviewedAt: now});
-        if(r.uid){
-            const userSnap = await db.ref('users/' + r.uid).once('value');
+        const requestUid=r.uid||r.userId||r.authUid;
+        if(requestUid){
+            const userSnap = await db.ref('users/' + requestUid).once('value');
             const prev = userSnap.val() || {};
             const prevExp = userExpire(prev);
             const baseTime = prevExp > now ? prevExp : now;
             const newExp = baseTime + days * 86400000;
-            await db.ref('users/' + r.uid).update({isVip: true, expireAt: newExp, vipExpireDate: newExp, updatedAt: now});
-            await db.ref('notifications/' + r.uid).push({type:'vip',title:'تم تفعيل VIP',text:`تم قبول طلبك وتفعيل الاشتراك لمدة ${days} يوم.`,createdAt:now,read:false});
+            await db.ref('users/' + requestUid).update({isVip: true, expireAt: newExp, vipExpireDate: newExp, updatedAt: now,subscriptionStatus:'active'});
+            await db.ref('notifications/' + requestUid).push({type:'vip',title:'تم تفعيل VIP',text:`تم قبول طلبك وتفعيل الاشتراك لمدة ${days} يوم.`,createdAt:now,read:false});
         }
         closeModal('mVRDetails');
         logActivity(`قبول طلب VIP: ${r.name || r.email}`);
@@ -706,7 +717,8 @@ async function rejectVipRequest(id){
     try{
         const now = Date.now();
         await db.ref('vipRequests/' + id).update({status:'rejected', rejectedAt: now, reviewedAt: now, rejectReason: reason || 'لم يتم تحديد سبب'});
-        if(r.uid) await db.ref('notifications/' + r.uid).push({type:'vip',title:'تحديث طلب VIP',text:`تم رفض طلبك. ${reason||'يمكنك التواصل مع الإدارة لمزيد من التفاصيل.'}`,createdAt:now,read:false});
+        const requestUid=r.uid||r.userId||r.authUid;
+        if(requestUid) await db.ref('notifications/' + requestUid).push({type:'vip',title:'تحديث طلب VIP',text:`تم رفض طلبك. ${reason||'يمكنك التواصل مع الإدارة لمزيد من التفاصيل.'}`,createdAt:now,read:false});
         closeModal('mVRDetails');
         logActivity(`رفض طلب VIP: ${r.name || r.email}`);
         toast('تم الرفض','','ok');
