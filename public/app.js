@@ -341,8 +341,11 @@ function fetchAll(){
                 if(full.numChildren()>snap.numChildren()) source=full;
             }catch(e){}
         }
-        state.liveChannels=[];
-        if(source.exists()) source.forEach(c=>state.liveChannels.push({id:c.key,...c.val()}));
+        const incoming=[];
+        if(source.exists()) source.forEach(c=>incoming.push({id:c.key,...c.val()}));
+        // لا تسمح باستبدال جدول كامل بـ snapshot قديم من عنصر واحد.
+        if(incoming.length<state.liveChannels.length && state.liveChannels.length>1) return;
+        state.liveChannels=incoming;
         renderLiveTabs();
         renderLive();
         renderDynamicSections();

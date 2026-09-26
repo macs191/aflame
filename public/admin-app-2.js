@@ -95,8 +95,10 @@ function loadLiveChannels(){
                 if(full.numChildren()>snap.numChildren()) source=full;
             }catch(e){}
         }
-        allLiveChs = [];
-        if(source.exists()) source.forEach(c=>allLiveChs.push({id:c.key,...c.val()}));
+        const incoming=[];
+        if(source.exists()) source.forEach(c=>incoming.push({id:c.key,...c.val()}));
+        if(incoming.length<allLiveChs.length && allLiveChs.length>1) return;
+        allLiveChs=incoming;
         const vip = allLiveChs.filter(c=>c.isVip).length;
         $('#liveStatChannels').textContent = allLiveChs.length.toLocaleString('ar-EG');
         $('#livePanelCount').textContent = `${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
