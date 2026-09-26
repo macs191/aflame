@@ -344,11 +344,16 @@ function fetchAll(){
         }
         renderDynamicSections();
     });
-    const syncLiveChannels=async()=>{
+    const syncLiveChannels=async(attempt=0)=>{
         try{
-            const snap=await db.ref('liveChannels').once('value');
             const incoming=[];
-            if(snap.exists()) snap.forEach(c=>incoming.push({id:c.key,...c.val()}));
+            const rest=await fetch(`${db.ref('liveChannels').toString()}.json?fullSync=${Date.now()}`,{cache:'no-store'});
+            const raw=await rest.json();
+            Object.entries(raw||{}).forEach(([id,value])=>incoming.push({id,...value}));
+            if(incoming.length<=1 && attempt<5){
+                setTimeout(()=>syncLiveChannels(attempt+1),800);
+                return;
+            }
             state.liveChannels=incoming;
         }catch(e){console.warn('[liveChannels] full sync failed',e);return;}
         renderLiveTabs();

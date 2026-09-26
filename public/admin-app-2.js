@@ -87,11 +87,17 @@ window.delLiveCat = delLiveCat;
    LIVE CHANNELS
    ============================================================ */
 function loadLiveChannels(){
-    const fullSync=async()=>{
+    const fullSync=async(attempt=0)=>{
         try{
-            const snap=await db.ref('liveChannels').once('value');
             const incoming=[];
-            if(snap.exists()) snap.forEach(c=>incoming.push({id:c.key,...c.val()}));
+            const rest=await fetch(`${db.ref('liveChannels').toString()}.json?fullSync=${Date.now()}`,{cache:'no-store'});
+            const raw=await rest.json();
+            Object.entries(raw||{}).forEach(([id,value])=>incoming.push({id,...value}));
+            // لا نعتمد قناة واحدة فورًا؛ قد تكون قراءة Firebase الأولية متأخرة.
+            if(incoming.length<=1 && attempt<5){
+                setTimeout(()=>fullSync(attempt+1),800);
+                return;
+            }
             allLiveChs=incoming;
             $('#liveStatChannels').textContent=allLiveChs.length.toLocaleString('ar-EG');
             $('#livePanelCount').textContent=`${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
