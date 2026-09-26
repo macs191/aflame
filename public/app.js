@@ -18,32 +18,57 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 /* ---------- 2. STATE ---------- */
+function safeStorageGet(name,key,fallback=null){try{return window[name].getItem(key)??fallback;}catch(_){return fallback;}}
+function safeStorageSet(name,key,value){try{window[name].setItem(key,String(value));}catch(_){}}
+function safeStorageRemove(name,key){try{window[name].removeItem(key);}catch(_){}}
+function readStoredArray(key){
+    try{const value=safeStorageGet('localStorage',key,null);if(value===null)return [];const parsed=JSON.parse(value);return Array.isArray(parsed)?parsed:[];}
+    catch(_){safeStorageRemove('localStorage',key);return [];}
+}
+
 const state = {
-    currentUser:null, userData:null, authMode:'login',
+    currentUser:null, userData:null, authMode:'login', authReady:false,
+    contentReady:{vod:false,live:false,match:false}, pendingDeepLink:null,
     videos:[], categories:[], sections:[], liveChannels:[], liveCategories:[],
     matches:[], matchCategories:[],
     settings:{}, ads:{},
-    favorites: JSON.parse(localStorage.getItem('sw_favs')||'[]'),
-    history: JSON.parse(localStorage.getItem('sw_history')||'[]'),
+    favorites: readStoredArray('sw_favs'),
+    history: readStoredArray('sw_history'),
     achievements:{}, notifications:[], unreadNotifs:0,
     vipStatus:null, watchlists:[],
     currentItem:null, currentVideoEl:null, playerType:'vod',
     hls:null, dash:null, progressTimer:null, sleepTimer:null,
-    searchQuery:'', theme: localStorage.getItem('sw_theme')||'dark',
-    autoPlay: localStorage.getItem('sw_autoplay')!=='false',
+    searchQuery:'', theme: safeStorageGet('localStorage','sw_theme','dark'),
+    autoPlay: safeStorageGet('localStorage','sw_autoplay','true')!=='false',
     heroIndex:0, heroTimer:null, activeView:'home',
     activeLiveTab:'all', activeMatchTab:'all',
     browseType:'movies', browseVip:'all', browseCat:'all', browseSort:'newest',
     userRef:null, vipRef:null, notifRef:null, ratingRef:null, commentRef:null,
     voiceRecognition:null, voiceActive:false,
-    parentalPin: localStorage.getItem('sw_pin')||null,
-    downloadQueue: JSON.parse(localStorage.getItem('sw_dlq')||'[]')
+    parentalPin: safeStorageGet('localStorage','sw_pin',null),
+    downloadQueue: readStoredArray('sw_dlq')
 };
 
 /* ---------- 3. UTILS ---------- */
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const jsArg = value => esc(JSON.stringify(String(value??'')).replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029'));
+function safeHttpUrl(value){try{const u=new URL(String(value||''),location.href);return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password?u.href:'';}catch(_){return '';}}
+function sanitizeAdMarkup(markup){
+    const doc=new DOMParser().parseFromString(String(markup||''),'text/html');
+    const allowed=new Set(['A','B','STRONG','EM','I','SPAN','P','DIV','BR','UL','OL','LI','IMG']);
+    doc.body.querySelectorAll('*').forEach(el=>{
+        if(!allowed.has(el.tagName)){if(['SCRIPT','IFRAME','OBJECT','EMBED','SVG','MATH','STYLE','LINK','META','BASE','FORM'].includes(el.tagName)){el.remove();return;}el.replaceWith(...el.childNodes);return;}
+        const href=el.tagName==='A'?(el.getAttribute('href')||el.getAttribute('data-href')||''):'';
+        const src=el.tagName==='IMG'?(el.getAttribute('src')||''):'';
+        [...el.attributes].forEach(a=>el.removeAttribute(a.name));
+        if(el.tagName==='A'){const safeHref=safeHttpUrl(href);if(safeHref){el.setAttribute('href',safeHref);el.setAttribute('target','_blank');el.setAttribute('rel','noopener noreferrer');}else el.removeAttribute('href');}
+        if(el.tagName==='IMG'){const safeSrc=safeHttpUrl(src);if(safeSrc)el.setAttribute('src',safeSrc);else el.remove();}
+    });
+    return doc.body.innerHTML;
+}
+document.addEventListener('error',e=>{const im=e.target;if(im instanceof HTMLImageElement&&im.dataset.fallbackSrc&&!im.dataset.fallbackApplied){im.dataset.fallbackApplied='1';im.src=im.dataset.fallbackSrc;}},true);
 const debounce = (fn,ms=300)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}};
 const fmtDate = ts => ts?new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}):'—';
 const fmtTime = ts => ts?new Date(ts).toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}):'—';
@@ -62,7 +87,13 @@ const isVip = u => {
     if(e > 0) return e > Date.now();
     return u.isVip === true;
 };
-const isBanned = u => !!(u && (u.isBanned||u.isBlocked));
+const isBanned = u => !!(u && (u.isBanned===true||u.isBlocked===true));
+function requireActiveUser(){
+    if(!state.currentUser){toast('سجل دخول أولاً','warn');openAuthModal('login');return false;}
+    if(!state.userData){toast('جارٍ تحميل بيانات الحساب','warn');return false;}
+    if(isBanned(state.userData)){closePlayer();openModal('bannedModal');return false;}
+    return true;
+}
 const getUserLevel = u => {
     if(!u) return {key:'new',label:'زائر'};
     if(isVip(u)) return {key:'vip',label:'👑 VIP'};
@@ -172,6 +203,7 @@ function renderNavActions(){
 
 /* ---------- 7. AUTH ---------- */
 auth.onAuthStateChanged(user=>{
+    state.authReady=true; state.userData=null;
     if(state.userRef){state.userRef.off();state.userRef=null;}
     if(state.vipRef){state.vipRef.off();state.vipRef=null;}
     if(state.notifRef){state.notifRef.off();state.notifRef=null;}
@@ -180,23 +212,19 @@ auth.onAuthStateChanged(user=>{
     if(user){
         state.currentUser=user;
         state.userRef=db.ref('users/'+user.uid);
-        state.userRef.update({lastLoginAt:Date.now(),authUid:user.uid,email:user.email||''}).catch(()=>{});
+        state.userRef.update({lastLoginAt:Date.now()}).catch(()=>{});
         state.userRef.on('value',snap=>{
             state.userData=snap.val();
             if(!state.userData){
-                state.userRef.set({
-                    email:user.email,name:user.displayName||'عضو جديد',
-                    isBanned:false,isBlocked:false,isVip:false,
-                    vipExpireDate:0,expireAt:0,createdAt:Date.now()
-                });
+                state.userRef.set({uid:user.uid,authUid:user.uid,email:user.email||'',name:user.displayName||'عضو جديد',phone:'',role:'user',note:'',isBanned:false,isBlocked:false,isVip:false,subscriptionStatus:'inactive',vipExpireDate:0,expireAt:0,createdAt:Date.now(),updatedAt:Date.now(),lastLoginAt:Date.now()});
                 return;
             }
             if(isBanned(state.userData)){openModal('bannedModal');closePlayer();renderNavActions();return;}
             closeModal('bannedModal');
-            renderNavActions(); updateGuestWarn(); renderAll(); renderHero();
+            renderNavActions(); updateGuestWarn(); renderAll(); renderHero(); tryOpenPendingDeepLink();
         });
 
-        state.vipRef=db.ref('vipRequests').orderByChild('uid').equalTo(user.uid);
+        state.vipRef=db.ref('vipRequests/'+user.uid);
         state.vipRef.on('value',snap=>{
             let latest=null;
             if(snap.exists()){
@@ -230,7 +258,7 @@ auth.onAuthStateChanged(user=>{
         });
     }else{
         state.currentUser=null; state.userData=null; state.achievements={};
-        renderNavActions(); updateGuestWarn(); renderAll(); renderHero();
+        renderNavActions(); updateGuestWarn(); renderAll(); renderHero(); tryOpenPendingDeepLink();
     }
 });
 
@@ -310,13 +338,13 @@ async function handleForgotPass(e){
 }
 
 function logout(){
-    auth.signOut().then(()=>{toast('تم تسجيل الخروج','ok');closeModal('profileModal');});
+    auth.signOut().then(()=>{toast('تم تسجيل الخروج','ok');closeModal('profileModal');closeModal('bannedModal');});
 }
 
 /* ---------- 8. DATA FETCH ---------- */
 async function syncAllLiveChannels(){
     try{
-        const snap=await db.ref('liveChannels').once('value');
+        const snap=await db.ref('publicCatalog/liveChannels').once('value');
         const incoming=[];
         if(snap.exists()) snap.forEach(c=>incoming.push({id:c.key,...c.val()}));
         if(incoming.length>=state.liveChannels.length || state.liveChannels.length===0){
@@ -327,10 +355,11 @@ async function syncAllLiveChannels(){
     }catch(e){ console.warn('[liveChannels] full sync failed',e); return state.liveChannels.length; }
 }
 function fetchAll(){
-    db.ref('videos').on('value',snap=>{
+    db.ref('publicCatalog/videos').on('value',snap=>{
         state.videos=[];
         if(snap.exists()) snap.forEach(c=>state.videos.push({id:c.key,...c.val()}));
-        renderAll(); renderHero();
+        state.contentReady.vod=true;
+        renderAll(); renderHero(); tryOpenPendingDeepLink();
     });
     db.ref('categories').on('value',snap=>{
         state.categories=[];
@@ -347,45 +376,33 @@ function fetchAll(){
         }
         renderDynamicSections();
     });
-    const syncLiveChannels=async(attempt=0)=>{
-        try{
-            const incoming=[];
-            const rest=await fetch(`${db.ref('liveChannels').toString()}.json?fullSync=${Date.now()}`,{cache:'no-store'});
-            const raw=await rest.json();
-            Object.entries(raw||{}).forEach(([id,value])=>incoming.push({id,...value}));
-            if(incoming.length<=1 && attempt<5){
-                setTimeout(()=>syncLiveChannels(attempt+1),800);
-                return;
-            }
-            state.liveChannels=incoming;
-        }catch(e){console.warn('[liveChannels] full sync failed',e);return;}
-        renderLiveTabs();
-        renderLive();
-        renderDynamicSections();
-    };
-    db.ref('liveChannels').on('value',syncLiveChannels);
-    syncLiveChannels();
-    setTimeout(syncLiveChannels,900);
+    db.ref('publicCatalog/liveChannels').on('value',snap=>{
+        state.liveChannels=[];
+        if(snap.exists()) snap.forEach(c=>state.liveChannels.push({id:c.key,...c.val()}));
+        state.contentReady.live=true;
+        renderLiveTabs(); renderLive(); renderDynamicSections(); tryOpenPendingDeepLink();
+    });
     db.ref('liveCategories').on('value',snap=>{
         state.liveCategories=[];
         if(snap.exists()) snap.forEach(c=>state.liveCategories.push({id:c.key,...c.val()}));
         renderLiveTabs();
     });
-    db.ref('matches').on('value',snap=>{
+    db.ref('publicCatalog/matches').on('value',snap=>{
         state.matches=[];
         if(snap.exists()) snap.forEach(c=>state.matches.push({id:c.key,...c.val()}));
-        renderMatches();
+        state.contentReady.match=true;
+        renderMatches(); tryOpenPendingDeepLink();
     });
     db.ref('matchCategories').on('value',snap=>{
         state.matchCategories=[];
         if(snap.exists()) snap.forEach(c=>state.matchCategories.push({id:c.key,...c.val()}));
         renderMatchTabs();
     });
-    db.ref('settings').on('value',snap=>{
+    db.ref('publicSettings').on('value',snap=>{
         state.settings=snap.val()||{};
         applySettings();
     });
-    db.ref('ads').on('value',snap=>{
+    db.ref('publicAds').on('value',snap=>{
         state.ads=snap.val()||{};
         renderAds();
     });
@@ -418,20 +435,15 @@ function renderAds(){
     const ads=state.ads;
     const catalog=Array.isArray(ads.catalog)?ads.catalog:[];
     const pick=placement=>catalog.find(a=>a.active!==false&&a.placement===placement);
-    const markup=ad=>ad?(ad.type==='link'?`<a href="${esc(ad.content)}" target="_blank" rel="noopener noreferrer">${esc(ad.name||'فتح الإعلان')}</a>`:ad.content):'';
+    const markup=ad=>{if(!ad)return '';if(ad.type==='link'){const href=safeHttpUrl(ad.content);return href?`<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(ad.name||'فتح الإعلان')}</a>`:'';}return sanitizeAdMarkup(ad.content);};
     [['#adTop',markup(pick('top'))||ads.topBanner,'top'],['#adMid',markup(pick('mid'))||ads.midBanner,'mid'],['#adBottom',markup(pick('bottom'))||ads.bottomBanner,'bottom']].forEach(([sel,html,slot])=>{
         const el=$(sel);
-        if(el){el.innerHTML=html||'';el.classList.toggle('show',!!html);if(html) trackAd(pick(slot)?.id||'legacy-'+slot,el);}
+        if(el){el.innerHTML=sanitizeAdMarkup(html||'');el.classList.toggle('show',!!html);if(html) trackAd(pick(slot)?.id||'legacy-'+slot,el);}
     });
 }
 
 function trackAd(id,element){
-    if(!id||!element||element.dataset.adTracked) return;
-    element.dataset.adTracked='1';
-    const ref=db.ref('adStats/'+id);
-    const ecpm=Number((state.ads.catalog||[]).find(a=>a.id===id)?.ecpm)||0;
-    ref.transaction(x=>{x=x||{};x.impressions=(Number(x.impressions)||0)+1;x.revenue=(Number(x.revenue)||0)+ecpm/1000;return x;});
-    element.addEventListener('click',()=>ref.transaction(x=>{x=x||{};x.clicks=(Number(x.clicks)||0)+1;return x;}),{once:true});
+    // Client-generated analytics are forgeable; writes are reserved for a trusted server-side collector.
 }
 
 /* ---------- 9. HERO ---------- */
@@ -463,8 +475,8 @@ function renderHero(){
                 </div>
                 <p>${esc(it.description||'شاهد الآن على سيرفر الوحش بأفضل جودة.')}</p>
                 <div class="hero-slide-actions">
-                    <button class="btn btn-primary" onclick="openPlayer('${esc(it.id)}','vod')"><i class="fa-solid fa-play"></i> مشاهدة</button>
-                    <button class="btn btn-outline" onclick="showItemDetails('${esc(it.id)}')"><i class="fa-solid fa-circle-info"></i> التفاصيل</button>
+                    <button class="btn btn-primary" onclick="openPlayer(${jsArg(it.id)},'vod')"><i class="fa-solid fa-play"></i> مشاهدة</button>
+                    <button class="btn btn-outline" onclick="showItemDetails(${jsArg(it.id)})"><i class="fa-solid fa-circle-info"></i> التفاصيل</button>
                 </div>
             </div>
         </div>`;
@@ -510,7 +522,7 @@ function renderDynamicSections(){
         return `<section class="content-row" data-sec="${esc(s.id)}">
             <div class="row-header">
                 <div class="row-title"><i class="fa-solid ${s.icon||'fa-film'}"></i><h2>${esc(s.title||'قسم')}</h2></div>
-                <button class="row-action" onclick="openSectionDetail('${esc(s.id)}')"><span>الكل</span><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="row-action" onclick="openSectionDetail(${jsArg(s.id)})"><span>الكل</span><i class="fa-solid fa-chevron-left"></i></button>
             </div>
             <div class="row-scroll">
                 ${items.slice(0,20).map(it=>renderCard(it,'row-card '+cls)).join('')}
@@ -591,16 +603,16 @@ function getItemsForSection(s){
 function renderCard(item,extra=''){
     const isFav=state.favorites.includes(item.id);
     const ph='https://via.placeholder.com/400x580/141721/6b7280?text='+encodeURIComponent(item.title||'SW');
-    const img=item.poster||item.image||item.thumbnail||ph;
+    const img=safeHttpUrl(item.poster||item.image||item.thumbnail)||ph;
     const avg=item.ratingAvg?Number(item.ratingAvg).toFixed(1):null;
     const locked=item.isVip&&!isVip(state.userData);
 
     return `<div class="card ${item.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" data-id="${esc(item.id)}">
-        <button class="card-fav ${isFav?'active':''}" onclick="toggleFav(event,'${esc(item.id)}')">
+        <button class="card-fav ${isFav?'active':''}" onclick="toggleFav(event,${jsArg(item.id)})">
             <i class="fa-${isFav?'solid':'regular'} fa-heart"></i>
         </button>
-        <div class="card-thumb" onclick="openPlayer('${esc(item.id)}','vod')">
-            <img src="${esc(img)}" alt="${esc(item.title)}" loading="lazy" onerror="this.src='${ph}'">
+        <div class="card-thumb" onclick="openPlayer(${jsArg(item.id)},'vod')">
+            <img src="${esc(img)}" alt="${esc(item.title)}" loading="lazy" data-fallback-src="${esc(ph)}">
             <div class="card-overlay"><div class="card-play"><i class="fa-solid fa-play"></i></div></div>
             ${item.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i> VIP</div>':''}
             ${item.isNew?'<div class="card-badge new">جديد</div>':''}
@@ -653,12 +665,12 @@ function renderLive(){
 function liveCardHTML(c, extra=''){
     const name=c.name||c.title||'قناة';
     const fallback='https://via.placeholder.com/300x168/0f1117/ef4444?text='+encodeURIComponent(name);
-    const logo=c.logo||c.image||fallback;
+    const logo=safeHttpUrl(c.logo||c.image)||fallback;
     const locked=c.isVip&&!isVip(state.userData);
     const age=c.ageRating&&c.ageRating!=='عام'?`<span class="age-badge">${esc(c.ageRating)}</span>`:'';
-    return `<div class="card landscape ${c.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer('${esc(c.id)}','live')">
+    return `<div class="card landscape ${c.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer(${jsArg(c.id)},'live')">
         <div class="card-thumb">
-            <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'">
+            <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy" data-fallback-src="${esc(fallback)}">
             <div class="card-overlay"><div class="card-play"><i class="fa-solid fa-play"></i></div></div>
             <div class="card-badge live">مباشر</div>
             ${c.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i></div>':''}
@@ -708,7 +720,7 @@ function matchCardHTML(mt, extra=''){
     const badge=live?'<div class="match-live-badge"><span class="dot"></span> مباشر الآن</div>':
                  fin?'<div class="match-badge" style="background:var(--text-3)">انتهت</div>':
                  `<div class="match-badge">${esc(mt.time||mt.date||'قريباً')}</div>`;
-    return `<div class="match-card ${mt.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer('${esc(mt.id)}','match')">
+    return `<div class="match-card ${mt.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer(${jsArg(mt.id)},'match')">
         <div class="match-head">
             ${badge}
             ${mt.isVip?'<div class="card-badge vip" style="position:relative;top:0;right:0"><i class="fa-solid fa-crown"></i> VIP</div>':''}
@@ -716,7 +728,7 @@ function matchCardHTML(mt, extra=''){
         </div>
         <div class="match-teams">
             <div class="team">
-                <img src="${esc(mt.team1Logo||'https://via.placeholder.com/60')}" alt="" onerror="this.src='https://via.placeholder.com/60'">
+                <img src="${esc(mt.team1Logo||'https://via.placeholder.com/60')}" alt="" data-fallback-src="https://via.placeholder.com/60">
                 <span>${esc(mt.team1||'فريق 1')}</span>
             </div>
             <div class="match-vs">
@@ -724,7 +736,7 @@ function matchCardHTML(mt, extra=''){
                 ${mt.score1!==undefined?`<div class="match-score">${esc(mt.score1)} - ${esc(mt.score2||0)}</div>`:''}
             </div>
             <div class="team">
-                <img src="${esc(mt.team2Logo||'https://via.placeholder.com/60')}" alt="" onerror="this.src='https://via.placeholder.com/60'">
+                <img src="${esc(mt.team2Logo||'https://via.placeholder.com/60')}" alt="" data-fallback-src="https://via.placeholder.com/60">
                 <span>${esc(mt.team2||'فريق 2')}</span>
             </div>
         </div>
@@ -893,6 +905,8 @@ async function openPlayer(id,type='vod'){
 
     if(!item){toast('المحتوى غير موجود','err');return;}
     if(!state.currentUser){toast('سجل دخول للمشاهدة','warn');openAuthModal('login');return;}
+    if(!state.userData){toast('جارٍ تحميل بيانات الحساب','warn');return;}
+    if(isBanned(state.userData)){openModal('bannedModal');return;}
     if(item.ageRating==='18+' && sessionStorage.getItem('adult_content_confirmed')!=='1'){
         const ok=window.confirm('هذا المحتوى مصنف للكبار (+18). هل تريد المتابعة؟');
         if(!ok) return;
@@ -900,9 +914,15 @@ async function openPlayer(id,type='vod'){
     }
     if(item.isVip && !isVip(state.userData)){openSubModal();toast('هذا المحتوى لـ VIP','warn');return;}
 
-    if(type==='live' && item.id){
-        try{ db.ref('liveChannels/'+item.id+'/viewers').transaction(v=>(v||0)+1).catch(()=>{}); }catch(e){}
-    }
+    // Stream and download URLs live in protected RTDB records, not the public catalog.
+    const privatePath=type==='live'?'liveChannels/'+id:type==='match'?'matches/'+id:'videos/'+id;
+    try{
+        const privateSnap=await db.ref(privatePath).once('value');
+        if(!privateSnap.exists()){toast('المحتوى غير متاح','تعذر العثور على مصدر التشغيل.','err');return;}
+        item={...item,...privateSnap.val(),id};
+    }catch(err){toast('المشاهدة غير متاحة','تعذر التحقق من صلاحية المحتوى. أعد تسجيل الدخول أو تواصل مع الإدارة.','err');return;}
+
+    // Public-client view counters are forgeable; keep counts unchanged until a trusted collector exists.
 
     state.currentItem=item;
     state.playerType=type;
@@ -928,7 +948,6 @@ async function openPlayer(id,type='vod'){
     if(isVod){
         setupRating(item.id);
         setupComments(item.id);
-        db.ref('videos/'+id+'/views').transaction(v=>(v||0)+1);
         const h=state.history.find(x=>x.id===id);
         saveHistory(item, h&&h.progress<95?h.currentTime:0, 0);
     }
@@ -1028,9 +1047,10 @@ function renderPlayer(url,type='auto'){
     const u=String(url).trim();
     if(type==='embed'){
         const f=document.createElement('iframe');
-        if(/^\s*</.test(u)) f.srcdoc=u; else f.src=u;
+        if(/^\s*</.test(u)){f.sandbox='allow-scripts allow-forms allow-presentation';f.srcdoc=u;}
+        else {const src=safeHttpUrl(u);if(!src){showPlayerError('الرابط غير صالح');return;}f.sandbox='allow-scripts allow-forms allow-presentation';f.src=src;}
         f.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';
-        f.allowFullscreen=true; f.referrerPolicy='no-referrer-when-downgrade';
+        f.allowFullscreen=true; f.referrerPolicy='no-referrer';
         c.appendChild(f); return;
     }
     if(!/^https?:\/\//i.test(u)){
@@ -1162,7 +1182,8 @@ function attachProgressSaver(video){
 function startVideoAdCycle(video){
     stopVideoAdCycle();
     const ads=state.ads||{}, configured=(ads.catalog||[]).find(a=>a.active!==false&&a.placement==='video');
-    const html=configured?(configured.type==='link'?`<a href="${esc(configured.content)}" target="_blank" rel="noopener noreferrer">${esc(configured.name||'فتح الإعلان')}</a>`:configured.content):(ads.videoAd||'');
+    const link=configured?.type==='link'?safeHttpUrl(configured.content):'';
+    const html=configured?(configured.type==='link'?(link?`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(configured.name||'فتح الإعلان')}</a>`:''):sanitizeAdMarkup(configured.content)):sanitizeAdMarkup(ads.videoAd||'');
     const adId=configured?.id||'legacy-video';
     if(!html) return;
     const delay=Math.max(0,Number(ads.videoAdDelay)||120)*1000;
@@ -1334,7 +1355,7 @@ function openFreeDownloadModal(item,url){
             <h3>تحميل: ${esc(item.title||'')}</h3>
             <p>سيبدأ التحميل بعد انتهاء الإعلان</p>
         </div>
-        <div id="adContainer" class="ad-slot show" style="margin:14px 0;min-height:180px">${state.ads.downloadAd||'<div style="color:var(--text-3);padding:40px">مساحة إعلانية</div>'}</div>
+        <div id="adContainer" class="ad-slot show" style="margin:14px 0;min-height:180px">${sanitizeAdMarkup(state.ads.downloadAd||'<div>مساحة إعلانية</div>')}</div>
         <div id="dlTimerArea"></div>`;
     card.querySelector('[data-close]').onclick=()=>closeModal('dlModal');
     openModal('dlModal');
@@ -1392,17 +1413,10 @@ function setupRating(id){
     });
     s.querySelectorAll('i').forEach(st=>{
         st.onclick=async()=>{
-            if(!state.currentUser){toast('سجل دخول','warn');return;}
+            if(!requireActiveUser())return;
             const v=Number(st.dataset.v);
             try{
                 await db.ref(`ratings/${id}/${state.currentUser.uid}`).set({value:v,ts:Date.now()});
-                const sn=await db.ref('ratings/'+id).once('value');
-                let cc=0,ss=0;
-                sn.forEach(x=>{const vv=Number(x.val().value)||0;if(vv>0){cc++;ss+=vv;}});
-                if(cc>0){
-                    db.ref('videos/'+id+'/ratingAvg').set((ss/cc).toFixed(2));
-                    db.ref('videos/'+id+'/ratingCount').set(cc);
-                }
                 toast(`قيّمت بـ ${v} نجوم ⭐`,'ok');
                 checkAchievement('first_rating');
             }catch(e){toast('فشل التقييم','err');}
@@ -1435,7 +1449,7 @@ function setupComments(id){
                         <span class="ci-name">${esc(x.name||'مستخدم')}</span>
                         ${x.isVip?'<span class="ci-vip">👑 VIP</span>':''}
                         <span class="ci-time">${fmtRel(x.ts)}</span>
-                        ${owner?`<button class="ci-del" onclick="deleteComment('${esc(id)}','${esc(x.id)}')"><i class="fa-solid fa-trash"></i></button>`:''}
+                        ${owner?`<button class="ci-del" onclick="deleteComment(${jsArg(id)},${jsArg(x.id)})"><i class="fa-solid fa-trash"></i></button>`:''}
                     </div>
                     <div class="ci-text">${esc(x.text)}</div>
                 </div>
@@ -1445,7 +1459,7 @@ function setupComments(id){
 }
 
 async function sendComment(){
-    if(!state.currentUser){toast('سجل دخول','warn');return;}
+    if(!requireActiveUser())return;
     if(!state.currentItem) return;
     const inp=$('#commentInput');
     const txt=inp.value.trim();
@@ -1503,7 +1517,7 @@ function openSubModal(){
     const instructions=$('#paymentInstructions');
     const enabled=state.settings.paymentsEnabled !== false;
     if(instructions){
-        const text=state.settings.paymentInstructions||'سيتم التواصل معك عبر واتساب لتأكيد طريقة الدفع.';
+        const text=state.settings.paymentInstructions||'حوّل المبلغ إلى بيانات المحفظة أو الحساب التي تعرضها الإدارة، ثم أرسل رقم العملية وبيانات المرسل للمراجعة اليدوية.';
         instructions.innerHTML=`<strong><i class="fa-solid fa-circle-info"></i> تعليمات الدفع</strong><br>${esc(text)}${state.settings.vipPrice?`<br><span>السعر الشهري: ${esc(state.settings.vipPrice)}</span>`:''}`;
         instructions.style.display='block';
     }
@@ -1512,7 +1526,7 @@ function openSubModal(){
     const requestBtn=$('#btnRequestVip');
     if(requestBtn){
         requestBtn.disabled=!enabled||pending||active;
-        requestBtn.innerHTML=!enabled?'<i class="fa-solid fa-ban"></i> الطلبات متوقفة':active?'<i class="fa-solid fa-circle-check"></i> اشتراكك فعال':pending?'<i class="fa-solid fa-hourglass-half"></i> الطلب قيد المراجعة':'<i class="fa-brands fa-whatsapp"></i> إرسال طلب الاشتراك';
+        requestBtn.innerHTML=!enabled?'<i class="fa-solid fa-ban"></i> الطلبات متوقفة':active?'<i class="fa-solid fa-circle-check"></i> اشتراكك فعال':pending?'<i class="fa-solid fa-hourglass-half"></i> الطلب قيد المراجعة':'<i class="fa-brands fa-whatsapp"></i> إرسال طلب المراجعة اليدوي';
     }
     if(pending){
         box.innerHTML=`<div class="vip-status-card pending">
@@ -1526,21 +1540,25 @@ function openSubModal(){
 
 async function requestVip(){
     if(state.settings.paymentsEnabled === false){toast('طلبات الاشتراك متوقفة حالياً','','warn');return;}
-    if(!state.currentUser){openAuthModal('login');return;}
+    if(!requireActiveUser())return;
     if(isVip(state.userData)){toast('اشتراكك فعال بالفعل','','info');return;}
     if(state.vipStatus&&state.vipStatus.status==='pending'){toast('لديك طلب قيد المراجعة','','warn');return;}
-    const num=state.settings.whatsappNumber||'201000000000';
     const method=$('#paymentMethod')?.value||'';
+    const provider=$('#paymentProvider')?.value.trim()||'';
     const reference=$('#paymentReference')?.value.trim()||'';
+    const sender=$('#paymentSender')?.value.trim()||'';
     const note=$('#paymentNote')?.value.trim()||'';
-    if(!method){toast('اختر طريقة الدفع أولاً','','warn');return;}
-    const request={uid:state.currentUser.uid,userId:state.currentUser.uid,email:state.currentUser.email,name:state.userData?.name||'',status:'pending',paymentMethod:method,paymentReference:reference,paymentNote:note,createdAt:Date.now()};
+    if(!['wallet','paypal','bank','other'].includes(method)){toast('اختر طريقة الدفع أولاً','','warn');return;}
+    if(provider.length<2||provider.length>80||reference.length<3||reference.length>120||sender.length<5||sender.length>120||note.length>500){toast('بيانات التحويل غير مكتملة','أدخل اسم الوسيلة ورقم العملية ورقم هاتف/بريد المرسل.','warn');return;}
+    const request={uid:state.currentUser.uid,userId:state.currentUser.uid,email:state.currentUser.email||'',name:state.userData?.name||'',status:'pending',paymentMethod:method,paymentProvider:provider,paymentReference:reference,paymentSender:sender,paymentNote:note,createdAt:Date.now()};
     try{
-        const requestRef=await db.ref('vipRequests').push(request);
+        const requestRef=db.ref('vipRequests/'+state.currentUser.uid).push();
+        await requestRef.set(request);
         await db.ref('users/'+state.currentUser.uid).update({lastVipRequestId:requestRef.key,updatedAt:Date.now()});
-        const msg=encodeURIComponent(`مرحباً، أريد الاشتراك في VIP.\nالاسم: ${request.name||'—'}\nالبريد: ${request.email||'—'}\nطريقة الدفع: ${method}\nرقم العملية: ${reference||'—'}`);
-        toast('تم تسجيل طلبك','ok');
-        window.open(`https://wa.me/${num}?text=${msg}`,'_blank','noopener');
+        state.vipStatus={id:requestRef.key,...request};
+        ['paymentProvider','paymentReference','paymentSender','paymentNote'].forEach(id=>{const field=$('#'+id);if(field)field.value='';});
+        openSubModal();
+        toast('تم تسجيل طلب التحويل','سيُراجع المسؤول رقم العملية وبيانات المرسل يدوياً.','ok');
     }catch(e){toast('تعذر إرسال الطلب',e.message||'حاول مرة أخرى','err');return;}
 }
 
@@ -1629,7 +1647,7 @@ function checkAchievement(key){
 
 /* ---------- 26. WATCHLIST ---------- */
 function addToWatchlistUI(itemId){
-    if(!state.currentUser){toast('سجل دخول','warn');return;}
+    if(!requireActiveUser())return;
     if(state.watchlists.length===0){
         const name=prompt('اسم القائمة الجديدة:','قائمتي');
         if(!name) return;
@@ -1781,10 +1799,20 @@ function handleKeyboard(e){
 
 /* ---------- 29. URL HASH ---------- */
 function handleUrlHash(){
-    const h=location.hash;
-    if(h.startsWith('#watch=')){const id=h.replace('#watch=','');setTimeout(()=>openPlayer(id,'vod'),1000);}
-    else if(h.startsWith('#live=')){const id=h.replace('#live=','');setTimeout(()=>openPlayer(id,'live'),1000);}
-    else if(h.startsWith('#match=')){const id=h.replace('#match=','');setTimeout(()=>openPlayer(id,'match'),1000);}
+    const match=location.hash.match(/^#(watch|live|match)=([^&]+)$/);
+    if(!match){state.pendingDeepLink=null;return;}
+    let id;try{id=decodeURIComponent(match[2]);}catch(_){return;}
+    if(!id)return;
+    state.pendingDeepLink={id,type:match[1]==='watch'?'vod':match[1]};
+    tryOpenPendingDeepLink();
+}
+function tryOpenPendingDeepLink(){
+    const link=state.pendingDeepLink;if(!link||!state.authReady)return;
+    if(!state.contentReady[link.type])return;
+    if(state.currentUser&&!state.userData)return;
+    if(state.userData&&isBanned(state.userData)){state.pendingDeepLink=null;closePlayer();openModal('bannedModal');return;}
+    if(state.currentUser)state.pendingDeepLink=null;
+    openPlayer(link.id,link.type);
 }
 
 /* ---------- 30. EVENTS ---------- */
@@ -1823,7 +1851,7 @@ function initEvents(){
     $('#cfNo')?.addEventListener('click',()=>{closeModal('confirmModal');if(confirmResolver){confirmResolver(false);confirmResolver=null;}});
 
     $$('[data-close]').forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
-    $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('active');}));
+    $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(m.id!=='bannedModal'&&e.target===m)m.classList.remove('active');}));
 
     $('#voiceBtn')?.addEventListener('click',startVoiceAssistant);
     $('#voiceOverlay')?.addEventListener('click',e=>{if(e.target===$('#voiceOverlay'))stopVoiceAssistant();});
@@ -1842,6 +1870,7 @@ function initEvents(){
     onScroll();
     $('#backToTop')?.addEventListener('click',scrollToTop);
     window.addEventListener('hashchange',handleUrlHash);
+    handleUrlHash();
 
     const y=$('#yearSpan'); if(y) y.textContent=new Date().getFullYear();
 }

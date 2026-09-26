@@ -1,0 +1,14 @@
+# Node and tool-generated files
+**/node_modules/
+**/npm-debug.log*
+**/database-debug.log
+.firebase/
+.vercel/
+dist/
+
+# Private credentials and local environment
+.env
+.env.*
+!.env.example
+service-account*.json
+*-firebase-adminsdk-*.json

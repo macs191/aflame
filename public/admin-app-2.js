@@ -35,8 +35,8 @@ function loadLiveCategories(){
             <div class="dl-row simple" style="align-items:center">
                 <div class="dl-cell"><i class="fa-solid ${esc(r.icon||'fa-folder')}" style="color:var(--live)"></i><span class="v">${esc(r.name)}</span></div>
                 <div class="dl-actions">
-                    <button class="btn ghost sm" onclick="editLiveCat('${esc(r.id)}','${esc(r.name)}','${esc(r.icon||'')}')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn red sm" onclick="delLiveCat('${esc(r.id)}','${esc(r.name)}')"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn ghost sm" onclick="editLiveCat(${jsArg(r.id)},${jsArg(r.name)},${jsArg(r.icon||'')})"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn red sm" onclick="delLiveCat(${jsArg(r.id)},${jsArg(r.name)})"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>`).join('');
     });
@@ -87,29 +87,13 @@ window.delLiveCat = delLiveCat;
    LIVE CHANNELS
    ============================================================ */
 function loadLiveChannels(){
-    const fullSync=async(attempt=0)=>{
-        try{
-            const incoming=[];
-            const rest=await fetch(`${db.ref('liveChannels').toString()}.json?fullSync=${Date.now()}`,{cache:'no-store'});
-            const raw=await rest.json();
-            Object.entries(raw||{}).forEach(([id,value])=>incoming.push({id,...value}));
-            // لا نعتمد قناة واحدة فورًا؛ قد تكون قراءة Firebase الأولية متأخرة.
-            if(incoming.length<=1 && attempt<5){
-                setTimeout(()=>fullSync(attempt+1),800);
-                return;
-            }
-            allLiveChs=incoming;
-            $('#liveStatChannels').textContent=allLiveChs.length.toLocaleString('ar-EG');
-            $('#livePanelCount').textContent=`${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
-            $('#liveStatVip').textContent=allLiveChs.filter(c=>c.isVip).length.toLocaleString('ar-EG');
-            $('#statTotalLive').textContent=allLiveChs.length.toLocaleString('ar-EG');
-            renderLiveChannelsList();
-        }catch(e){console.warn('[admin liveChannels] full sync failed',e)}
-    };
-    // لا نستخدم snapshot المستمع في الرسم؛ القراءة الكاملة هي المصدر الوحيد للجدول.
-    db.ref('liveChannels').on('value',fullSync);
-    fullSync();
-    setTimeout(fullSync,900);
+    db.ref('liveChannels').on('value',snap=>{
+        allLiveChs=[];if(snap.exists())snap.forEach(c=>allLiveChs.push({id:c.key,...c.val()}));
+        $('#liveStatChannels').textContent=allLiveChs.length.toLocaleString('ar-EG');
+        $('#livePanelCount').textContent=`${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
+        $('#liveStatVip').textContent=allLiveChs.filter(c=>c.isVip).length.toLocaleString('ar-EG');
+        $('#statTotalLive').textContent=allLiveChs.length.toLocaleString('ar-EG');renderLiveChannelsList();
+    });
 }
 
 function renderLiveChannelsList(){
@@ -141,7 +125,7 @@ function renderLiveChannelsList(){
     }
     box.innerHTML = list.map(c=>`
         <div class="dl-row">
-            <img class="dl-thumb logo" src="${esc(c.logo||'https://via.placeholder.com/80x50/1f1f1f/ffffff?text=LIVE')}" onerror="this.src='https://via.placeholder.com/80x50/1f1f1f/ffffff?text=LIVE'">
+            <img class="dl-thumb logo" src="${esc(safeHttpUrl(c.logo)||'https://via.placeholder.com/80x50/1f1f1f/ffffff?text=LIVE')}" data-fallback-src="https://via.placeholder.com/80x50/1f1f1f/ffffff?text=LIVE">
             <div class="dl-cell"><span class="k">الاسم</span><span class="v">${esc(c.name||'قناة')}</span></div>
             <div class="dl-cell"><span class="k">التصنيف</span><span class="badge">${esc(c.category||'عام')}</span>${c.ageRating&&c.ageRating!=='عام'?` <span class="badge age">${esc(c.ageRating)}</span>`:''}</div>
             <div class="dl-cell"><span class="k">الشبكة</span><span class="v">${esc(c.network||'—')}</span></div>
@@ -149,9 +133,9 @@ function renderLiveChannelsList(){
             <div class="dl-cell"><span class="k">مشاهدون</span><span class="v"><i class="fa-regular fa-eye"></i> ${(c.viewers||0).toLocaleString('ar-EG')}</span></div>
             <div class="dl-cell"><span class="k">الترتيب</span><span class="v">${c.order||0}</span></div>
             <div class="dl-actions">
-                <button class="btn ghost sm" onclick="editLiveChannel('${esc(c.id)}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn ghost sm" onclick="window.testServerUrl('${esc((c.url||'').replace(/'/g,"\\'"))}',null)" title="اختبار"><i class="fa-solid fa-flask"></i></button>
-                <button class="btn red sm" onclick="delLiveChannel('${esc(c.id)}','${esc(c.name||'')}')"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn ghost sm" onclick="editLiveChannel(${jsArg(c.id)})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn ghost sm" onclick="window.testServerUrl(${jsArg(c.url||'')},null)" title="اختبار"><i class="fa-solid fa-flask"></i></button>
+                <button class="btn red sm" onclick="delLiveChannel(${jsArg(c.id)},${jsArg(c.name||'')})"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`).join('');
 }
@@ -203,9 +187,14 @@ $('#liveChForm')?.addEventListener('submit',async e=>{
         description: $('#liveChDescription').value.trim(),
         updatedAt: Date.now()
     };
+    const embedSnippet=data.type==='embed'&&/^\s*</.test(data.url)&&data.url.length<=20000&&/<(iframe|video|audio)\b/i.test(data.url);
+    if(!data.name||data.name.length>120||data.description.length>1000||data.category.length>120||(!safeHttpUrl(data.url)&&!embedSnippet)||!['عام','+13','+16','18+'].includes(data.ageRating)||!['auto','hls','dash','video','embed'].includes(data.type)||!Number.isInteger(data.order)||Math.abs(data.order)>100000){toast('تحقق من بيانات القناة','الاسم أو التصنيف أو الترتيب أو رابط HTTP/HTTPS غير صالح. يسمح بكود تضمين محدود في وضع Embed فقط.','err');return;}
+    if(data.logo&&!safeHttpUrl(data.logo)){toast('رابط الشعار غير صالح','','err');return;}
     try{
-        if(id) await db.ref('liveChannels/'+id).update(data);
-        else await db.ref('liveChannels').push({...data, viewers:0, createdAt:Date.now()});
+        const recordId=id||db.ref('liveChannels').push().key;
+        const old=id?((await db.ref('liveChannels/'+id).once('value')).val()||{}):{};
+        const full={...old,...data,...(!id?{viewers:0,createdAt:Date.now()}:{})};
+        await db.ref().update({['liveChannels/'+recordId]:data,['publicCatalog/liveChannels/'+recordId]:publicLiveProjection(full)});
         closeModal('mLiveChannel');
         logActivity(`${id?'تعديل':'إضافة'} قناة: ${data.name}`);
         toast('تم الحفظ', data.name, 'ok');
@@ -214,7 +203,7 @@ $('#liveChForm')?.addEventListener('submit',async e=>{
 async function delLiveChannel(id,name){
     const ok = await askConfirm({title:'حذف قناة',msg:`حذف "${name}"؟`,okText:'حذف'});
     if(!ok) return;
-    await db.ref('liveChannels/'+id).remove();
+    await db.ref().update({['liveChannels/'+id]:null,['publicCatalog/liveChannels/'+id]:null});
     logActivity(`حذف قناة: ${name}`);
     toast('تم الحذف',name,'ok');
 }
@@ -257,7 +246,7 @@ function loadMatchCategories(){
             <div class="dl-row simple" style="align-items:center">
                 <div class="dl-cell"><i class="fa-solid ${esc(r.icon||'fa-trophy')}" style="color:var(--success)"></i><span class="v">${esc(r.name)}</span></div>
                 <div class="dl-actions">
-                    <button class="btn red sm" onclick="delMatchCat('${esc(r.id)}','${esc(r.name)}')"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn red sm" onclick="delMatchCat(${jsArg(r.id)},${jsArg(r.name)})"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>`).join('');
     });
@@ -334,8 +323,8 @@ function renderMatchesList(){
             <div class="dl-cell"><span class="k">التصنيف</span><span class="badge">${esc(m.category||'عام')}</span></div>
             <div class="dl-cell"><span class="k">الحالة</span>${statusBadge}</div>
             <div class="dl-actions">
-                <button class="btn ghost sm" onclick="editMatch('${esc(m.id)}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn red sm" onclick="delMatch('${esc(m.id)}','${esc(m.team1||'')}','${esc(m.team2||'')}')"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn ghost sm" onclick="editMatch(${jsArg(m.id)})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn red sm" onclick="delMatch(${jsArg(m.id)},${jsArg(m.team1||'')},${jsArg(m.team2||'')})"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`;
     }).join('');
@@ -399,9 +388,13 @@ $('#matchForm')?.addEventListener('submit',async e=>{
         isVip: $('#matchIsVip').value === 'true',
         updatedAt: Date.now()
     };
+    const scores=[s1,s2].filter(v=>v!=='').map(Number);
+    if(!data.team1||data.team1.length>120||!data.team2||data.team2.length>120||data.category.length>120||!['live','upcoming','finished'].includes(data.status)||!/^\d{4}-\d{2}-\d{2}$/.test(data.date)||!/^\d{2}:\d{2}$/.test(data.time)||scores.some(v=>!Number.isInteger(v)||v<0||v>999)||[data.team1Logo,data.team2Logo,data.url].some(url=>url&&!safeHttpUrl(url))||data.channel.length>120){toast('تحقق من بيانات المباراة','أدخل الفريقين وتاريخ/وقت صحيحين وروابط http/https ونتيجة رقمية صالحة.','err');return;}
     try{
-        if(id) await db.ref('matches/'+id).update(data);
-        else await db.ref('matches').push({...data, views:0, createdAt:Date.now()});
+        const recordId=id||db.ref('matches').push().key;
+        const old=id?((await db.ref('matches/'+id).once('value')).val()||{}):{};
+        const full={...old,...data,...(!id?{views:0,createdAt:Date.now()}:{})};
+        await db.ref().update({['matches/'+recordId]:data,['publicCatalog/matches/'+recordId]:publicMatchProjection(full)});
         closeModal('mMatch');
         logActivity(`${id?'تعديل':'إضافة'} مباراة: ${data.team1} × ${data.team2}`);
         toast('تم الحفظ', `${data.team1} × ${data.team2}`,'ok');
@@ -410,7 +403,7 @@ $('#matchForm')?.addEventListener('submit',async e=>{
 async function delMatch(id,t1,t2){
     const ok = await askConfirm({title:'حذف مباراة',msg:`حذف "${t1} × ${t2}"؟`,okText:'حذف'});
     if(!ok) return;
-    await db.ref('matches/'+id).remove();
+    await db.ref().update({['matches/'+id]:null,['publicCatalog/matches/'+id]:null});
     logActivity(`حذف مباراة: ${t1} × ${t2}`);
     toast('تم الحذف','','ok');
 }
@@ -452,9 +445,9 @@ function renderSectionsList(){
             <div class="dl-cell"><span class="badge ${s.active!==false?'ok':'exp'}">${s.active!==false?'مفعّل':'معطّل'}</span></div>
             <div class="dl-cell"><span class="badge">${esc(s.filter||'all')}</span></div>
             <div class="dl-actions">
-                <button class="btn ghost sm" onclick="editSection('${esc(s.id)}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn gold sm" onclick="toggleSectionActive('${esc(s.id)}',${s.active !== false})"><i class="fa-solid fa-power-off"></i></button>
-                <button class="btn red sm" onclick="delSection('${esc(s.id)}','${esc(s.title||'')}')"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn ghost sm" onclick="editSection(${jsArg(s.id)})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn gold sm" onclick="toggleSectionActive(${jsArg(s.id)},${s.active !== false})"><i class="fa-solid fa-power-off"></i></button>
+                <button class="btn red sm" onclick="delSection(${jsArg(s.id)},${jsArg(s.title||'')})"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`).join('');
 }
@@ -475,7 +468,7 @@ $('#addSectionForm')?.addEventListener('submit',async e=>{
         active: true,
         createdAt: Date.now()
     };
-    if(!data.title){ toast('أدخل عنوان القسم','','warn'); return; }
+    if(!data.title||data.title.length>120||!/^fa-[a-z0-9-]{1,60}$/.test(data.icon)||!['all','vip','free'].includes(data.filter)||!['newest','views','rating','random'].includes(data.sort)||!['poster','landscape'].includes(data.style)||!Number.isInteger(data.limit)||data.limit<1||data.limit>50||data.categories.length>50||Math.abs(data.order)>100000){toast('تحقق من بيانات القسم','راجع العنوان والرمز والخيارات والحد الأقصى (1–50).','err');return;}
     try{
         await db.ref('sections').push(data);
         $('#addSectionForm').reset();
@@ -505,17 +498,10 @@ window.editSection = editSection;
 $('#sectionForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const id = $('#sectionId').value;
+    const data={title:$('#secEditTitle').value.trim(),icon:$('#secEditIcon').value.trim()||'fa-film',filter:$('#secEditFilter').value,sort:$('#secEditSort').value,limit:parseInt($('#secEditLimit').value,10)||20,style:$('#secEditStyle').value,order:parseInt($('#secEditOrder').value,10)||0,active:$('#secEditActive').value==='true'};
+    if(!data.title||data.title.length>120||!/^fa-[a-z0-9-]{1,60}$/.test(data.icon)||!['all','vip','free'].includes(data.filter)||!['newest','views','rating','random'].includes(data.sort)||!['poster','landscape'].includes(data.style)||data.limit<1||data.limit>50||Math.abs(data.order)>100000){toast('تحقق من بيانات القسم','راجع العنوان والرمز والخيارات والحد الأقصى (1–50).','err');return;}
     try{
-        await db.ref('sections/'+id).update({
-            title: $('#secEditTitle').value.trim(),
-            icon: $('#secEditIcon').value.trim() || 'fa-film',
-            filter: $('#secEditFilter').value,
-            sort: $('#secEditSort').value,
-            limit: parseInt($('#secEditLimit').value) || 20,
-            style: $('#secEditStyle').value,
-            order: parseInt($('#secEditOrder').value) || 0,
-            active: $('#secEditActive').value === 'true'
-        });
+        await db.ref('sections/'+id).update(data);
         closeModal('mSection');
         logActivity('تعديل قسم');
         toast('تم الحفظ','','ok');
@@ -546,7 +532,7 @@ let currentVrId = null;
 function loadVipRequests(){
     db.ref('vipRequests').on('value', snap=>{
         allVr = [];
-        if(snap.exists()) snap.forEach(c=>allVr.push({id:c.key, ...c.val()}));
+        if(snap.exists())snap.forEach(userNode=>userNode.forEach(c=>allVr.push({id:c.key,...c.val(),uid:c.val()?.uid||userNode.key})));
         allVr.sort((a,b)=>(b.createdAt||0) - (a.createdAt||0));
         window.__allVipRequests = allVr;
 
@@ -584,16 +570,6 @@ function loadVipRequests(){
 
         renderVipRequests();
     });
-    const syncRequests=async()=>{
-        try{
-            const raw=await fetch(`${db.ref('vipRequests').toString()}.json?adminSync=${Date.now()}`,{cache:'no-store'}).then(r=>r.json());
-            if(raw&&typeof raw==='object'){
-                allVr=Object.entries(raw).map(([id,value])=>({id,...(value||{})})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-                window.__allVipRequests=allVr; renderVipRequests();
-            }
-        }catch(err){console.warn('[vipRequests] fallback sync failed',err)}
-    };
-    syncRequests(); setTimeout(syncRequests,1200);
 }
 
 function renderVipRequests(){
@@ -616,7 +592,10 @@ function renderVipRequests(){
     }
     box.innerHTML = list.map(r=>{
         const status = r.status || 'pending';
-        const statusBadge = status === 'pending'
+        const canFinishGrant=status==='approved'&&r.entitlementStatus==='pending';
+        const statusBadge = canFinishGrant
+            ? `<span class="badge warn"><i class="fa-solid fa-hourglass-half"></i> موافق عليه؛ التفعيل معلّق</span>`
+            : status === 'pending'
             ? `<span class="badge warn"><i class="fa-solid fa-hourglass-half"></i> معلق</span>`
             : status === 'approved'
             ? `<span class="badge ok"><i class="fa-solid fa-circle-check"></i> مقبول</span>`
@@ -637,12 +616,12 @@ function renderVipRequests(){
                 ${r.approvedAt ? `<span><i class="fa-solid fa-check"></i> ${timeAgo(r.approvedAt)}</span>` : ''}
             </div>
             <div class="vr-actions">
-                <button class="btn ghost sm" onclick="openVrDetails('${esc(r.id)}')"><i class="fa-solid fa-eye"></i> تفاصيل</button>
-                ${status === 'pending' ? `
-                    <button class="btn green sm" onclick="approveVipRequest('${esc(r.id)}')"><i class="fa-solid fa-check"></i> قبول</button>
-                    <button class="btn red sm" onclick="rejectVipRequest('${esc(r.id)}')"><i class="fa-solid fa-xmark"></i> رفض</button>
+                <button class="btn ghost sm" onclick="openVrDetails(${jsArg(r.id)})"><i class="fa-solid fa-eye"></i> تفاصيل</button>
+                ${status === 'pending'||canFinishGrant ? `
+                    <button class="btn green sm" onclick="approveVipRequest(${jsArg(r.id)})"><i class="fa-solid fa-check"></i> ${canFinishGrant?'إكمال التفعيل':'قبول'}</button>
+                    ${status==='pending'?`<button class="btn red sm" onclick="rejectVipRequest(${jsArg(r.id)})"><i class="fa-solid fa-xmark"></i> رفض</button>`:''}
                 ` : ''}
-                <button class="btn wa sm" onclick="openVrWhatsApp('${esc(r.id)}')"><i class="fa-brands fa-whatsapp"></i></button>
+                <button class="btn wa sm" onclick="openVrWhatsApp(${jsArg(r.id)})"><i class="fa-brands fa-whatsapp"></i></button>
             </div>
         </div>`;
     }).join('');
@@ -665,11 +644,15 @@ function openVrDetails(id){
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">الحالة</span><strong style="color:${statusColor}">${statusText}</strong></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">التاريخ</span><strong>${fmtTime(r.createdAt)}</strong></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">طريقة الدفع</span><strong>${esc(r.paymentMethod||'—')}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">المحفظة/المزود</span><strong>${esc(r.paymentProvider||'—')}</strong></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">رقم العملية</span><strong>${esc(r.paymentReference||'—')}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">هاتف/بريد المرسل</span><strong>${esc(r.paymentSender||'—')}</strong></div>
             <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3);display:block;margin-bottom:4px">ملاحظة</span><span>${esc(r.paymentNote||'—')}</span></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text-3)">UID</span><code style="font-size:.7rem;color:var(--info)">${esc(r.uid||'—')}</code></div>
         </div>`;
-    $('#vrApproveBtn').style.display = status === 'pending' ? '' : 'none';
+    const canFinishGrant=status==='approved'&&r.entitlementStatus==='pending';
+    $('#vrApproveBtn').style.display = status === 'pending'||canFinishGrant ? '' : 'none';
+    $('#vrApproveBtn').innerHTML=`<i class="fa-solid fa-check"></i> ${canFinishGrant?'إكمال التفعيل':'قبول'}`;
     $('#vrRejectBtn').style.display = status === 'pending' ? '' : 'none';
     $('#vrApproveBtn').onclick = () => approveVipRequest(id);
     $('#vrRejectBtn').onclick = () => rejectVipRequest(id);
@@ -679,44 +662,49 @@ function openVrDetails(id){
 window.openVrDetails = openVrDetails;
 
 async function approveVipRequest(id){
-    const r = allVr.find(x => x.id === id);
-    if(!r) return;
-    if(r.status === 'approved'){ toast('مقبول بالفعل','','warn'); return; }
-    const daysStr = prompt('مدة الاشتراك بالأيام (افتراضي 30):', '30');
-    if(daysStr === null) return;
-    const days = Math.max(1, parseInt(daysStr) || 30);
-    const ok = await askConfirm({title:'قبول الطلب',msg:`ترقية ${r.name || r.email} لمدة ${days} يوم؟`,okText:'قبول',type:'green'});
-    if(!ok) return;
+    const r=allVr.find(x=>x.id===id);if(!r)return;
+    const requestRef=db.ref('vipRequests/'+r.uid+'/'+id);
     try{
-        const now = Date.now();
-        await db.ref('vipRequests/' + id).update({status:'approved', approvedAt: now, durationDays: days, reviewedAt: now});
-        const requestUid=r.uid||r.userId||r.authUid;
-        if(requestUid){
-            const userSnap = await db.ref('users/' + requestUid).once('value');
-            const prev = userSnap.val() || {};
-            const prevExp = userExpire(prev);
-            const baseTime = prevExp > now ? prevExp : now;
-            const newExp = baseTime + days * 86400000;
-            await db.ref('users/' + requestUid).update({isVip: true, expireAt: newExp, vipExpireDate: newExp, updatedAt: now,subscriptionStatus:'active'});
-            await db.ref('notifications/' + requestUid).push({type:'vip',title:'تم تفعيل VIP',text:`تم قبول طلبك وتفعيل الاشتراك لمدة ${days} يوم.`,createdAt:now,read:false});
+        const freshSnap=await requestRef.once('value');const fresh=freshSnap.val();
+        if(!fresh){toast('الطلب غير موجود','','err');return;}
+        const retry=fresh.status==='approved'&&fresh.entitlementStatus==='pending';
+        if(fresh.status!=='pending'&&!retry){toast('عولج هذا الطلب بالفعل','','warn');return;}
+        let days=retry?Number(fresh.durationDays):0;
+        if(!retry){const daysStr=prompt('مدة الاشتراك بالأيام (افتراضي 30):','30');if(daysStr===null)return;days=Math.min(3650,Math.max(1,parseInt(daysStr,10)||30));}
+        if(!Number.isFinite(days)||days<1||days>3650){toast('مدة الاشتراك غير صالحة','','err');return;}
+        const ok=await askConfirm({title:retry?'إكمال تفعيل VIP':'قبول الطلب',msg:`ترقية ${fresh.name||fresh.email} لمدة ${days} يوم؟`,okText:'قبول',type:'green'});if(!ok)return;
+        const now=Date.now();
+        if(!retry){
+            const claim=await requestRef.transaction(current=>{if(!current||(current.status||'pending')!=='pending')return;return {...current,status:'approved',approvedAt:now,durationDays:days,reviewedAt:now,entitlementStatus:'pending'};},undefined,false);
+            if(!claim.committed){toast('عولج الطلب في جلسة أخرى','','warn');return;}
         }
-        closeModal('mVRDetails');
-        logActivity(`قبول طلب VIP: ${r.name || r.email}`);
-        toast('تم القبول', `${days} يوم`,'ok');
-    }catch(err){ toast('خطأ', err.message, 'err'); }
+        const uid=fresh.uid||fresh.userId||fresh.authUid;if(!uid)throw new Error('طلب VIP لا يحتوي على UID صالح');
+        const userRef=db.ref('users/'+uid);
+        const grant=await userRef.transaction(prev=>{
+            prev=prev||{};const grants=prev.vipRequestGrants||{};if(grants[id])return;
+            const old=Number(userExpire(prev))||0;const expiry=Math.max(Date.now(),old)+days*86400000;
+            return {...prev,isVip:true,expireAt:expiry,vipExpireDate:expiry,updatedAt:Date.now(),subscriptionStatus:'active',vipRequestGrants:{...grants,[id]:true}};
+        },undefined,false);
+        let newlyGranted=grant.committed;
+        if(!newlyGranted){const check=await userRef.once('value');if(!(check.val()?.vipRequestGrants||{})[id])throw new Error('تعذر تثبيت الاشتراك؛ أعد المحاولة');}
+        await requestRef.update({entitlementStatus:'granted',grantedAt:Date.now()});
+        if(newlyGranted)await db.ref('notifications/'+uid).push({type:'vip',title:'تم تفعيل VIP',text:`تم قبول طلبك وتفعيل الاشتراك لمدة ${days} يوم.`,createdAt:Date.now(),read:false});
+        closeModal('mVRDetails');logActivity(`قبول طلب VIP: ${fresh.name||fresh.email}`);toast('تم القبول',`${days} يوم`,'ok');
+    }catch(err){toast('خطأ',err.message,'err');}
 }
 window.approveVipRequest = approveVipRequest;
 
 async function rejectVipRequest(id){
-    const r = allVr.find(x => x.id === id);
-    if(!r) return;
+    const r=allVr.find(x=>x.id===id);if(!r)return;
+    try{const current=(await db.ref('vipRequests/'+r.uid+'/'+id).once('value')).val();if(!current||(current.status||'pending')!=='pending'){toast('عولج هذا الطلب بالفعل','','warn');return;}}catch(e){toast('تعذر التحقق من الطلب',e.message,'err');return;}
     const reason = prompt('سبب الرفض (اختياري):', '');
     if(reason === null) return;
     const ok = await askConfirm({title:'رفض الطلب',msg:`رفض طلب ${r.name || r.email}؟`,okText:'رفض',type:'red'});
     if(!ok) return;
     try{
-        const now = Date.now();
-        await db.ref('vipRequests/' + id).update({status:'rejected', rejectedAt: now, reviewedAt: now, rejectReason: reason || 'لم يتم تحديد سبب'});
+        const now=Date.now();
+        const rejected=await db.ref('vipRequests/'+r.uid+'/'+id).transaction(current=>{if(!current||(current.status||'pending')!=='pending')return;return {...current,status:'rejected',rejectedAt:now,reviewedAt:now,rejectReason:reason||'لم يتم تحديد سبب'};},undefined,false);
+        if(!rejected.committed){toast('عولج الطلب في جلسة أخرى','','warn');return;}
         const requestUid=r.uid||r.userId||r.authUid;
         if(requestUid) await db.ref('notifications/' + requestUid).push({type:'vip',title:'تحديث طلب VIP',text:`تم رفض طلبك. ${reason||'يمكنك التواصل مع الإدارة لمزيد من التفاصيل.'}`,createdAt:now,read:false});
         closeModal('mVRDetails');
@@ -802,7 +790,7 @@ function renderCommentsList(){
                 <span style="font-size:.7rem;color:var(--text-3)"><i class="fa-solid fa-film"></i> ${esc(c.videoTitle)}</span>
             </div>
             <div class="dl-actions">
-                <button class="btn red sm" onclick="delComment('${esc(c.videoId)}','${esc(c.id)}')"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn red sm" onclick="delComment(${jsArg(c.videoId)},${jsArg(c.id)})"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`).join('');
 }
@@ -873,6 +861,11 @@ $('#filterRatingStars')?.addEventListener('change',renderRatingsList);
 /* ============================================================
    ADS
    ============================================================ */
+function publicAdsProjection(ads){
+    const result={};
+    ['topBanner','midBanner','bottomBanner','downloadAd','videoAd','videoAdDelay','videoAdInterval','videoAdDuration'].forEach(key=>{if(ads?.[key]!==undefined)result[key]=ads[key];});
+    return result;
+}
 function loadAds(){
     db.ref('ads').on('value', snap=>{
         const ads = snap.val() || {};
@@ -896,7 +889,7 @@ function loadAds(){
         window.__adsCatalog=list;
         const box=$('#adsCatalogList');
         if($('#adStatActive')) $('#adStatActive').textContent=list.filter(a=>a.active!==false).length.toLocaleString('ar-EG');
-        if(box) box.innerHTML=list.length?list.map(ad=>`<div class="dl-row"><div class="dl-cell"><span class="k">الإعلان</span><span class="v">${esc(ad.name||'إعلان')}</span></div><div class="dl-cell"><span class="k">المكان</span><span class="v">${esc(ad.placement||'—')}</span></div><div class="dl-cell"><span class="k">النوع</span><span class="v">${ad.type==='link'?'رابط':'Script'}</span></div><div class="dl-cell"><span class="k">الحالة</span><span class="badge ${ad.active===false?'block':'ok'}">${ad.active===false?'متوقف':'نشط'}</span></div><div class="dl-actions"><button class="btn ${ad.active===false?'green':'gold'} sm" onclick="toggleAd('${ad.id}',${ad.active===false})"><i class="fa-solid ${ad.active===false?'fa-play':'fa-pause'}"></i></button><button class="btn red sm" onclick="deleteAd('${ad.id}')"><i class="fa-solid fa-trash"></i></button></div></div>`).join(''):'<div class="empty"><i class="fa-solid fa-rectangle-ad"></i><p>لا توجد إعلانات مضافة</p></div>';
+        if(box) box.innerHTML=list.length?list.map(ad=>`<div class="dl-row"><div class="dl-cell"><span class="k">الإعلان</span><span class="v">${esc(ad.name||'إعلان')}</span></div><div class="dl-cell"><span class="k">المكان</span><span class="v">${esc(ad.placement||'—')}</span></div><div class="dl-cell"><span class="k">النوع</span><span class="v">${ad.type==='link'?'رابط':'Script'}</span></div><div class="dl-cell"><span class="k">الحالة</span><span class="badge ${ad.active===false?'block':'ok'}">${ad.active===false?'متوقف':'نشط'}</span></div><div class="dl-actions"><button class="btn ${ad.active===false?'green':'gold'} sm" onclick="toggleAd(${jsArg(ad.id)},${ad.active===false})"><i class="fa-solid ${ad.active===false?'fa-play':'fa-pause'}"></i></button><button class="btn red sm" onclick="deleteAd(${jsArg(ad.id)})"><i class="fa-solid fa-trash"></i></button></div></div>`).join(''):'<div class="empty"><i class="fa-solid fa-rectangle-ad"></i><p>لا توجد إعلانات مضافة</p></div>';
     });
     db.ref('adStats').on('value', snap=>{
         let impressions=0,clicks=0,revenue=0; if(snap.exists()) snap.forEach(c=>{const x=c.val()||{};impressions+=Number(x.impressions)||0;clicks+=Number(x.clicks)||0;revenue+=Number(x.revenue)||0;});
@@ -915,38 +908,44 @@ window.toggleAd=async(id,active)=>{await db.ref('adsCatalog/'+id+'/active').set(
 window.deleteAd=async id=>{if(await askConfirm({title:'حذف إعلان',msg:'سيتم حذف الإعلان وإعداداته نهائياً',ok:'حذف'})){await db.ref('adsCatalog/'+id).remove();toast('تم حذف الإعلان','','ok')}};
 
 $('#btnSaveAdTop')?.addEventListener('click',async()=>{
-    await db.ref('ads').child('topBanner').set($('#adTopHtml').value);
+    const value=$('#adTopHtml').value;
+    await db.ref().update({'ads/topBanner':value,'publicAds/topBanner':value});
     logActivity('حفظ إعلان علوي');
     toast('تم الحفظ','','ok');
 });
 $('#btnSaveAdMid')?.addEventListener('click',async()=>{
-    await db.ref('ads').child('midBanner').set($('#adMidHtml').value);
+    const value=$('#adMidHtml').value;
+    await db.ref().update({'ads/midBanner':value,'publicAds/midBanner':value});
     logActivity('حفظ إعلان وسطي');
     toast('تم الحفظ','','ok');
 });
 $('#btnSaveAdBottom')?.addEventListener('click',async()=>{
-    await db.ref('ads').child('bottomBanner').set($('#adBottomHtml').value);
+    const value=$('#adBottomHtml').value;
+    await db.ref().update({'ads/bottomBanner':value,'publicAds/bottomBanner':value});
     logActivity('حفظ إعلان سفلي');
     toast('تم الحفظ','','ok');
 });
 $('#btnSaveAdDownload')?.addEventListener('click',async()=>{
-    await db.ref('ads').child('downloadAd').set($('#adDownloadHtml').value);
+    const value=$('#adDownloadHtml').value;
+    await db.ref().update({'ads/downloadAd':value,'publicAds/downloadAd':value});
     logActivity('حفظ إعلان التحميل');
     toast('تم الحفظ','','ok');
 });
 $('#btnSaveAdVideo')?.addEventListener('click',async()=>{
-    await db.ref('ads').update({
+    const patch={
         videoAd:$('#adVideoHtml').value,
         videoAdDelay:Math.max(0,parseInt($('#adVideoDelay').value)||120),
         videoAdInterval:Math.max(30,parseInt($('#adVideoInterval').value)||300),
         videoAdDuration:Math.max(5,parseInt($('#adVideoDuration').value)||10)
-    });
+    };
+    const updates={};Object.entries(patch).forEach(([key,value])=>{updates['ads/'+key]=value;updates['publicAds/'+key]=value;});
+    await db.ref().update(updates);
     logActivity('حفظ إعلان الفيديو المجاني');
     toast('تم حفظ إعلان الفيديو','','ok');
 });
 $('#btnSaveAdPopup')?.addEventListener('click',async()=>{
-    await db.ref('settings/popupBanner').set($('#adPopupHtml').value);
-    await db.ref('settings/popupEnabled').set($('#adPopupEnabled').checked);
+    const banner=$('#adPopupHtml').value,enabled=$('#adPopupEnabled').checked;
+    await db.ref().update({'settings/popupBanner':banner,'settings/popupEnabled':enabled,'publicSettings/popupBanner':banner,'publicSettings/popupEnabled':enabled});
     logActivity('حفظ الإعلان المنبثق');
     toast('تم الحفظ','','ok');
 });
@@ -1048,6 +1047,7 @@ let m3uPlayerHls = null;
 $('#m3uFile')?.addEventListener('change', e=>{
     const f = e.target.files[0];
     if(!f) return;
+    if(f.size>5*1024*1024){toast('الملف أكبر من الحد','الحد الأقصى 5 ميغابايت','err');e.target.value='';return;}
     const r = new FileReader();
     r.onload = ev => {
         $('#m3uText').value = ev.target.result;
@@ -1073,8 +1073,9 @@ document.addEventListener('click', e => {
 });
 
 function parseM3U(){
-    let text = $('#m3uText').value || '';
-    text = text.replace(/\r/g, '\n').trim();
+    let text=$('#m3uText').value||'';
+    if(new Blob([text]).size>5*1024*1024){parsedM3U=[];$('#m3uText').value='';toast('ملف M3U كبير جداً','الحد الأقصى 5 ميغابايت','err');return;}
+    text=text.replace(/\r/g,'\n').trim();
     if(!text){
         parsedM3U = [];
         $('#m3uPreview').style.display = 'none';
@@ -1136,10 +1137,12 @@ function parseM3U(){
     if(current && current.url) out.push(current);
 
     const oldMap = new Map(parsedM3U.map(c => [c.url, c]));
+    if(out.length>2000){parsedM3U=[];toast('قائمة كبيرة جداً','الحد الأقصى 2000 قناة في كل استيراد','err');return;}
     parsedM3U = out
-        .filter(c => c.url && c.url.startsWith('http'))
+        .filter(c=>{const url=safeHttpUrl(c.url);return !!url&&url.length<=4096&&!!String(c.name||'').trim()&&String(c.name).length<=120&&String(c.category||'').length<=120&&String(c.logo||'').length<=2048&&(!c.logo||!!safeHttpUrl(c.logo))&&String(c.tvgId||'').length<=180;})
         .map(c => {
             const old = oldMap.get(c.url);
+            c={...c,url:safeHttpUrl(c.url),logo:c.logo?safeHttpUrl(c.logo):'',name:String(c.name).trim(),category:String(c.category||'عام').trim()||'عام'};
             if(old && old.tested){
                 return {...c, status:old.status, reason:old.reason, tested:true};
             }
@@ -1155,13 +1158,16 @@ function updateM3UCounter(){
     const all = parsedM3U.length;
     const work = parsedM3U.filter(c => c.status === 'working').length;
     const fail = parsedM3U.filter(c => c.status === 'broken').length;
+    const unverified=parsedM3U.filter(c=>c.status==='unverified').length;
     const unt = parsedM3U.filter(c => c.status === 'untested' || c.status === 'testing').length;
     $('#m3uCntAll').textContent = all;
     $('#m3uCntWork').textContent = work;
     $('#m3uCntFail').textContent = fail;
+    $('#m3uCntUnverified').textContent=unverified;
     $('#m3uCntUntested').textContent = unt;
     $('#m3uStatWork').textContent = work;
     $('#m3uStatFail').textContent = fail;
+    $('#m3uStatUnverified').textContent=unverified;
     $('#m3uStatRemain').textContent = unt;
 }
 
@@ -1176,6 +1182,7 @@ function renderM3UPreview(){
     let list = parsedM3U;
     if(m3uCurrentTab === 'working') list = parsedM3U.filter(c => c.status === 'working');
     if(m3uCurrentTab === 'broken') list = parsedM3U.filter(c => c.status === 'broken');
+    if(m3uCurrentTab==='unverified')list=parsedM3U.filter(c=>c.status==='unverified');
     if(m3uCurrentTab === 'untested') list = parsedM3U.filter(c => c.status === 'untested' || c.status === 'testing');
     if(!list.length){
         preview.innerHTML = `<div style="text-align:center;color:var(--text-3);padding:20px"><i class="fa-solid fa-inbox" style="font-size:2rem;opacity:.4;display:block;margin-bottom:8px"></i><p style="font-weight:700">لا توجد قنوات</p></div>`;
@@ -1187,7 +1194,7 @@ function renderM3UPreview(){
         const isTesting = c.status === 'testing';
         return `
         <div class="m3u-channel-row ${c.status}">
-            ${c.logo ? `<img class="m3u-ch-logo" src="${esc(c.logo)}" onerror="this.style.display='none'">` : `<div class="m3u-ch-logo" style="display:flex;align-items:center;justify-content:center;color:var(--text-3)"><i class="fa-solid fa-tv"></i></div>`}
+            ${c.logo ? `<img class="m3u-ch-logo" src="${esc(c.logo)}" data-fallback-src="">` : `<div class="m3u-ch-logo" style="display:flex;align-items:center;justify-content:center;color:var(--text-3)"><i class="fa-solid fa-tv"></i></div>`}
             <div class="m3u-ch-info">
                 <div class="m3u-ch-name">
                     <span style="overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</span>
@@ -1221,63 +1228,39 @@ function getM3UStatusInfo(status){
         case 'working': return {icon:'fa-circle-check', label:'يعمل'};
         case 'broken': return {icon:'fa-circle-xmark', label:'معطل'};
         case 'testing': return {icon:'fa-circle-notch', label:'اختبار'};
-        default: return {icon:'fa-clock', label:'لم يُختبَر'};
+        case 'unverified': return {icon:'fa-circle-question', label:'تعذر التحقق'};
+        default: return {icon:'fa-clock', label:'لم يُختَبَر'};
     }
 }
 
 async function testChannel(url){
-    return new Promise(resolve => {
-        if(!url || !/^https?:\/\//i.test(url)) return resolve({ok:false, reason:'invalid_url'});
-        if(/youtube\.com|youtu\.be|twitch\.tv/i.test(url)) return resolve({ok:true, reason:'embed_page'});
-        if(/\.(mp4|mkv|webm|mov|ts|flv|m4v)(\?|$)/i.test(url)){
-            fetch(url, {method:'HEAD', mode:'no-cors', cache:'no-store'})
-                .then(() => resolve({ok:true, reason:'reachable'}))
-                .catch(() => resolve({ok:false, reason:'network_error'}));
-            return;
-        }
-        if(/\.m3u8(\?|$)/i.test(url) || /m3u8/i.test(url)){
-            if(!window.Hls || !Hls.isSupported()){
-                fetch(url, {method:'HEAD', mode:'no-cors', cache:'no-store'})
-                    .then(() => resolve({ok:true, reason:'no_hls_lib'}))
-                    .catch(() => resolve({ok:false, reason:'no_hls_lib'}));
-                return;
-            }
-            const video = document.createElement('video');
-            video.muted = true;
-            video.preload = 'none';
-            let hls;
-            let finished = false;
-            const finish = (ok, reason) => {
-                if(finished) return;
-                finished = true;
-                try{ if(hls) hls.destroy(); }catch(e){}
-                resolve({ok, reason});
-            };
-            try{
-                hls = new Hls({
-                    enableWorker: true,
-                    lowLatencyMode: false,
-                    manifestLoadingTimeOut: 6000,
-                    manifestLoadingMaxRetry: 0,
-                    levelLoadingTimeOut: 6000,
-                    levelLoadingMaxRetry: 0,
-                    fragLoadingTimeOut: 6000,
-                    fragLoadingMaxRetry: 0
-                });
-                hls.on(Hls.Events.MANIFEST_PARSED, () => finish(true, 'manifest_ok'));
-                hls.on(Hls.Events.ERROR, (evt, data) => {
-                    if(data.fatal) finish(false, data.details || data.type || 'fatal_error');
-                });
-                hls.loadSource(url);
-                hls.attachMedia(video);
-            }catch(err){ finish(false, err.message || 'load_error'); }
-            setTimeout(() => finish(false, 'timeout'), 7000);
-            return;
-        }
-        fetch(url, {method:'HEAD', mode:'no-cors', cache:'no-store'})
-            .then(() => resolve({ok:true, reason:'reachable'}))
-            .catch(() => resolve({ok:false, reason:'network_error'}));
+    const safeUrl=safeHttpUrl(url);
+    if(!safeUrl)return {ok:false,verified:true,reason:'invalid_url'};
+    if(/youtube\.com|youtu\.be|twitch\.tv/i.test(safeUrl))return {ok:false,verified:false,reason:'probe_unsupported'};
+    if(/\.(mp4|webm|mov|m4v)(\?|$)/i.test(safeUrl))return new Promise(resolve=>{
+        const video=document.createElement('video');video.muted=true;video.preload='metadata';let done=false;
+        const finish=(ok,verified,reason)=>{if(done)return;done=true;clearTimeout(timer);video.removeAttribute('src');video.load();resolve({ok,verified,reason});};
+        const timer=setTimeout(()=>finish(false,false,'timeout'),7000);
+        video.onloadedmetadata=()=>finish(true,true,'media_metadata');video.onerror=()=>finish(false,true,'media_error');video.src=safeUrl;video.load();
     });
+    if(/\.m3u8(\?|$)/i.test(safeUrl)||/m3u8/i.test(safeUrl)){
+        if(!window.Hls||!Hls.isSupported())return {ok:false,verified:false,reason:'hls_unavailable'};
+        return new Promise(resolve=>{
+            const video=document.createElement('video');video.muted=true;video.preload='none';let hls,done=false;
+            const finish=(ok,verified,reason)=>{if(done)return;done=true;clearTimeout(timer);try{if(hls)hls.destroy();}catch(_){}resolve({ok,verified,reason});};
+            const timer=setTimeout(()=>finish(false,false,'timeout'),7000);
+            try{
+                hls=new Hls({enableWorker:true,lowLatencyMode:false,manifestLoadingTimeOut:6000,manifestLoadingMaxRetry:0,levelLoadingTimeOut:6000,levelLoadingMaxRetry:0,fragLoadingTimeOut:6000,fragLoadingMaxRetry:0});
+                hls.on(Hls.Events.MANIFEST_PARSED,()=>finish(true,true,'manifest_ok'));
+                hls.on(Hls.Events.ERROR,(evt,data)=>{if(data.fatal)finish(false,data.response?.code>=400||data.details==='manifestLoadError',data.details||data.type||'fatal_error');});
+                hls.loadSource(safeUrl);hls.attachMedia(video);
+            }catch(err){finish(false,false,err.message||'load_error');}
+        });
+    }
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),7000);
+    try{const response=await fetch(safeUrl,{method:'HEAD',mode:'cors',cache:'no-store',signal:ctrl.signal});return {ok:response.ok,verified:true,reason:response.ok?'http_ok':`http_${response.status}`};}
+    catch(_){return {ok:false,verified:false,reason:ctrl.signal.aborted?'timeout':'cors_or_network_unverifiable'};}
+    finally{clearTimeout(timer);}
 }
 
 async function testOneChannel(idx){
@@ -1286,9 +1269,9 @@ async function testOneChannel(idx){
     c.status = 'testing';
     renderM3UPreview();
     const result = await testChannel(c.url);
-    c.status = result.ok ? 'working' : 'broken';
+    c.status=result.ok?'working':result.verified?'broken':'unverified';
     c.reason = result.reason || '';
-    c.tested = true;
+    c.tested = !!result.verified;
     updateM3UCounter();
     renderM3UPreview();
 }
@@ -1299,9 +1282,10 @@ $('#m3uTestBtn')?.addEventListener('click', async () => {
     m3uTesting = true;
     m3uStopFlag = false;
     const total = parsedM3U.length;
-    let done = 0, work = 0, fail = 0;
+    let done=0,work=0,fail=0,unverified=0;
 
     $('#m3uProgressWrap').style.display = 'block';
+    const stopBtn=$('#m3uStopBtn');if(stopBtn){stopBtn.style.display='inline-flex';stopBtn.disabled=false;stopBtn.innerHTML='<i class="fa-solid fa-stop"></i> إيقاف';}
     $('#m3uProgressBar').style.width = '0%';
     $('#m3uProgressCount').textContent = `0 / ${total}`;
     $('#m3uProgressLabel').innerHTML = `<i class="fa-solid fa-flask"></i> جارٍ الاختبار...`;
@@ -1325,32 +1309,43 @@ $('#m3uTestBtn')?.addEventListener('click', async () => {
             c.status = 'testing';
             if(done % 3 === 0) renderM3UPreview();
             const result = await testChannel(c.url);
-            c.status = result.ok ? 'working' : 'broken';
+            c.status=result.ok?'working':result.verified?'broken':'unverified';
             c.reason = result.reason || '';
-            c.tested = true;
+            c.tested=!!result.verified;
             done++;
-            if(result.ok) work++; else fail++;
+            if(result.ok)work++;else if(result.verified)fail++;else unverified++;
             $('#m3uProgressBar').style.width = ((done/total)*100).toFixed(1) + '%';
             $('#m3uProgressCount').textContent = `${done} / ${total}`;
             $('#m3uStatWork').textContent = work;
             $('#m3uStatFail').textContent = fail;
+            $('#m3uStatUnverified').textContent=unverified;
             $('#m3uStatRemain').textContent = total - done;
         }
     };
 
     await Promise.all(Array.from({length: Math.min(CONCURRENCY, total)}, worker));
 
+    const stopped=m3uStopFlag;
     m3uTesting = false;
     testBtn.disabled = false;
     testBtn.innerHTML = oldHtml;
+    if(stopBtn)stopBtn.style.display='none';
     updateM3UCounter();
     renderM3UPreview();
-    $('#m3uProgressLabel').innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--success)"></i> اكتمل`;
-    toast('تم الاختبار', `يعمل: ${work} • معطل: ${fail}`,'ok');
+    $('#m3uProgressLabel').innerHTML=stopped?'<i class="fa-solid fa-circle-stop" style="color:var(--warning)"></i> أُوقف الاختبار':'<i class="fa-solid fa-circle-check" style="color:var(--success)"></i> اكتمل';
+    toast(stopped?'أُوقف الاختبار':'تم الاختبار',`تم فحص ${done} من ${total} • يعمل: ${work} • معطل مؤكّد: ${fail} • تعذر التحقق: ${unverified}`,stopped?'warn':'ok');
 
+    if(stopped)return;
     m3uCurrentTab = 'working';
     $$('.m3u-tab').forEach(t => t.classList.toggle('active', t.dataset.m3uTab === 'working'));
     renderM3UPreview();
+});
+
+$('#m3uStopBtn')?.addEventListener('click',()=>{
+    if(!m3uTesting)return;
+    m3uStopFlag=true;
+    const btn=$('#m3uStopBtn');if(btn){btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-hourglass-half"></i> جارٍ الإيقاف...';}
+    $('#m3uProgressLabel').innerHTML='<i class="fa-solid fa-circle-stop" style="color:var(--warning)"></i> جارٍ إيقاف الاختبارات الحالية...';
 });
 
 function playM3uPreview(idx){
@@ -1399,9 +1394,10 @@ window.closeM3uPlayer = closeM3uPlayer;
 
 async function importM3UChannels(list, label){
     if(!list.length){ toast('لا توجد قنوات','','warn'); return; }
+    if(list.length>2000){toast('قائمة كبيرة جداً','الحد الأقصى 2000 قناة لكل استيراد.','err');return;}
     const isVip = $('#m3uVip').value === 'true';
     const ageRating = $('#m3uAgeRating').value || 'عام';
-    const network = $('#m3uNetwork').value.trim() || 'شبكة القنوات';
+    const network = ($('#m3uNetwork').value.trim() || 'شبكة القنوات').slice(0,120);
     const autoCat = $('#m3uAutoCat').value === 'true';
     const ok = await askConfirm({
         title:`استيراد ${label}`,
@@ -1431,7 +1427,7 @@ async function importM3UChannels(list, label){
         const now = Date.now();
         list.forEach((c, i) => {
             const key = db.ref('liveChannels').push().key;
-            updates[`liveChannels/${key}`] = {
+            const record={
                 name: c.name,
                 category: c.category || 'عام',
                 logo: c.logo || '',
@@ -1445,6 +1441,8 @@ async function importM3UChannels(list, label){
                 testStatus: c.status || 'untested',
                 createdAt: now
             };
+            updates[`liveChannels/${key}`]=record;
+            updates[`publicCatalog/liveChannels/${key}`]=publicLiveProjection(record);
         });
         const entries = Object.entries(updates);
         for(let i = 0; i < entries.length; i += 300){
@@ -1516,11 +1514,16 @@ function loadSettings(){
         if($('#settingPaymentsEnabled')) $('#settingPaymentsEnabled').value = s.paymentsEnabled === false ? 'false' : 'true';
     });
 }
+function publicSettingsProjection(settings){
+    const result={};
+    ['siteName','tickerText','accentColor','vipColor','paymentInstructions','vipPrice','paymentsEnabled','popupBanner','popupEnabled'].forEach(key=>{if(settings?.[key]!==undefined)result[key]=settings[key];});
+    return result;
+}
 $('#btnSaveSettings')?.addEventListener('click',async()=>{
     try{
         const snap = await db.ref('settings').once('value');
         const prev = snap.val() || {};
-        await db.ref('settings').set({
+        const next={
             ...prev,
             siteName: $('#settingSiteName').value.trim(),
             tickerText: $('#settingTickerText').value.trim(),
@@ -1532,7 +1535,8 @@ $('#btnSaveSettings')?.addEventListener('click',async()=>{
             vipPrice: $('#settingVipPrice').value.trim(),
             paymentsEnabled: $('#settingPaymentsEnabled').value === 'true',
             updatedAt: Date.now()
-        });
+        };
+        await db.ref().update({settings:next,publicSettings:publicSettingsProjection(next)});
         logActivity('تحديث الإعدادات');
         toast('تم الحفظ','','ok');
     }catch(err){ toast('خطأ',err.message,'err'); }
@@ -1541,7 +1545,10 @@ $('#btnSaveSettings')?.addEventListener('click',async()=>{
 /* ============================================================
    BOOT
    ============================================================ */
-window.addEventListener('DOMContentLoaded',()=>{
+let adminBooted=false;
+window.addEventListener('taghub:admin-unlocked',()=>{
+    if(adminBooted)return;
+    adminBooted=true;
     loadCategories();
     loadLiveCategories();
     loadLiveChannels();
@@ -1558,4 +1565,4 @@ window.addEventListener('DOMContentLoaded',()=>{
     loadSettings();
     if(window.initViewToggles) initViewToggles();
     setTimeout(renderTopViewedChart, 800);
-});
+},{once:true});

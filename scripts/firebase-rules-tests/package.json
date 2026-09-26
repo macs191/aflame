@@ -1,0 +1,17 @@
+{
+  "name": "taghub-firebase-rules-tests",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only database --project demo-taghub --config ../../firebase.json \"vitest run\""
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.10.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.31.0",
+    "vitest": "^5.0.2"
+  }
+}

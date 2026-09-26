@@ -1,0 +1,13 @@
+{
+  "name": "taghub-firebase-admin-tools",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "grant-admin": "node grant-admin.cjs",
+    "migrate": "node migrate-database.cjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  }
+}

@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=grid-20260926-8">
+<link rel="stylesheet" href="style.css?v=secure-catalog-20260926-2">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -47,7 +47,7 @@
     <div class="search-box" id="desktopSearch">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" id="searchInput" placeholder="ابحث...">
-        <button class="search-clear" id="searchClear"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="search-clear" id="searchClear" aria-label="مسح البحث"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="nav-actions" id="navActions"></div>
 </nav>
@@ -57,7 +57,7 @@
     <div class="search-box">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" id="mobileSearchInput" placeholder="ابحث...">
-        <button class="search-clear" id="mobileSearchClear"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="search-clear" id="mobileSearchClear" aria-label="مسح البحث"><i class="fa-solid fa-xmark"></i></button>
     </div>
 </div>
 
@@ -143,10 +143,10 @@
             <div><h3>سيرفر الوحش 🐺</h3><p>منصة البث المتكاملة</p></div>
         </div>
         <div class="footer-links">
-            <a onclick="toast('قريباً','info')">عن المنصة</a>
-            <a onclick="toast('قريباً','info')">اتصل بنا</a>
-            <a onclick="toast('قريباً','info')">DMCA</a>
-            <a onclick="toast('قريباً','info')">الشروط</a>
+            <button type="button" onclick="toast('قريباً','info')">عن المنصة</button>
+            <button type="button" onclick="toast('قريباً','info')">اتصل بنا</button>
+            <button type="button" onclick="toast('قريباً','info')">DMCA</button>
+            <button type="button" onclick="toast('قريباً','info')">الشروط</button>
         </div>
         <div class="footer-copy">© <span id="yearSpan"></span> سيرفر الوحش - جميع الحقوق محفوظة</div>
     </div>
@@ -267,7 +267,7 @@
                 <h4><i class="fa-solid fa-comments"></i> التعليقات (<span id="commentsCount">0</span>)</h4>
                 <div class="comment-form">
                     <input type="text" id="commentInput" placeholder="اكتب تعليقك..." maxlength="300">
-                    <button id="commentSendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+                    <button type="button" id="commentSendBtn" aria-label="إرسال التعليق"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
                 <div class="comments-list" id="commentsList"></div>
             </div>
@@ -279,7 +279,7 @@
 <div id="authModal" class="modal">
     <div class="modal-card">
         <div class="auth-glow auth-glow-one"></div><div class="auth-glow auth-glow-two"></div>
-        <button class="modal-close" data-close="authModal"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" aria-label="إغلاق" data-close="authModal"><i class="fa-solid fa-xmark"></i></button>
         <div class="auth-orbit"><span></span><span></span><span></span><svg class="auth-logo" viewBox="0 0 64 64"><path fill="#e50914" d="M32 4C20 4 12 10 12 18c0 3 .8 5.5 2 7.7C10 28 8 32 8 38c0 12 10 22 24 22s24-10 24-22c0-6-2-10-6-12.3 1.2-2.2 2-4.7 2-7.7 0-8-8-14-20-14zm-10 22a3 3 0 113 3 3 3 0 01-3-3zm20 0a3 3 0 113 3 3 3 0 01-3-3zm-10 6l3 4 3-4h-6zm-5 8c1.5 3 5 5 8 5s6.5-2 8-5h-16z"/></svg></div>
         <div class="auth-kicker"><i class="fa-solid fa-sparkles"></i> تجربة مشاهدة استثنائية</div>
         <h3 class="modal-title" id="authTitle">تسجيل الدخول</h3>
@@ -287,15 +287,15 @@
         <div class="auth-benefits"><span><i class="fa-solid fa-bolt"></i> سريع</span><span><i class="fa-solid fa-shield-halved"></i> آمن</span><span><i class="fa-solid fa-cloud"></i> متزامن</span></div>
         <form id="authForm">
             <div class="form-group" id="nameGroup" style="display:none">
-                <label>الاسم</label>
+                <label for="authName">الاسم</label>
                 <input type="text" id="authName" class="form-control" placeholder="اسمك الكامل">
             </div>
             <div class="form-group">
-                <label>البريد الإلكتروني</label>
+                <label for="authEmail">البريد الإلكتروني</label>
                 <input type="email" id="authEmail" class="form-control" required placeholder="example@mail.com">
             </div>
             <div class="form-group">
-                <label>كلمة المرور</label>
+                <label for="authPassword">كلمة المرور</label>
                 <div class="password-wrap"><input type="password" id="authPassword" class="form-control" required minlength="6" placeholder="••••••••"><button type="button" class="password-toggle" id="passwordToggle" aria-label="إظهار كلمة المرور"><i class="fa-solid fa-eye"></i></button></div>
             </div>
             <button type="submit" id="authSubmitBtn" class="btn btn-primary btn-block">دخول</button>
@@ -310,7 +310,7 @@
 <!-- PROFILE MODAL -->
 <div id="profileModal" class="modal">
     <div class="modal-card">
-        <button class="modal-close" data-close="profileModal"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" aria-label="إغلاق" data-close="profileModal"><i class="fa-solid fa-xmark"></i></button>
         <div class="profile-head">
             <div class="profile-avatar" id="profileAvatar">?</div>
             <h3 id="profileName">---</h3>
@@ -334,7 +334,7 @@
 <!-- VIP MODAL -->
 <div id="subModal" class="modal">
     <div class="modal-card">
-        <button class="modal-close" data-close="subModal"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" aria-label="إغلاق" data-close="subModal"><i class="fa-solid fa-xmark"></i></button>
         <div class="vip-hero">
             <div class="vip-terminal"><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span><b>VIP_ACCESS // ENCRYPTED</b></div>
             <div class="vip-icon"><i class="fa-solid fa-crown"></i></div>
@@ -349,32 +349,42 @@
             <li><i class="fa-solid fa-headset"></i> دعم أولوية</li>
         </ul>
         <div id="paymentInstructions" class="vip-status-card" style="display:none;text-align:right"></div>
+        <p class="payment-manual-note">هذا النموذج يرسل طلب مراجعة يدوي فقط؛ لا تتم داخله أي عملية دفع إلكتروني. لا تكتب رقم البطاقة أو الرقم السري أو رمز OTP.</p>
         <div class="form-group" style="margin-top:12px">
             <label for="paymentMethod">طريقة الدفع</label>
             <select id="paymentMethod" class="form-control">
                 <option value="">اختر طريقة الدفع</option>
-                <option value="تحويل بنكي">تحويل بنكي</option>
-                <option value="محفظة إلكترونية">محفظة إلكترونية</option>
-                <option value="واتساب">واتساب</option>
+                <option value="wallet">محفظة إلكترونية (تحويل يدوي)</option>
+                <option value="paypal">PayPal (تحويل يدوي)</option>
+                <option value="bank">تحويل بنكي</option>
+                <option value="other">وسيلة أخرى (يدوي)</option>
             </select>
         </div>
         <div class="form-group">
-            <label for="paymentReference">رقم العملية أو اسم المحول</label>
-            <input id="paymentReference" class="form-control" maxlength="120" placeholder="اختياري">
+            <label for="paymentProvider">اسم المحفظة / البنك / حساب PayPal</label>
+            <input id="paymentProvider" class="form-control" maxlength="80" required autocomplete="off" placeholder="مثال: Vodafone Cash أو PayPal">
+        </div>
+        <div class="form-group">
+            <label for="paymentReference">رقم العملية / مرجع التحويل</label>
+            <input id="paymentReference" class="form-control" maxlength="120" required autocomplete="off" placeholder="أدخل رقم العملية كما يظهر في إيصال التحويل">
+        </div>
+        <div class="form-group">
+            <label for="paymentSender">رقم الهاتف أو البريد الذي تم التحويل منه</label>
+            <input id="paymentSender" class="form-control" maxlength="120" required autocomplete="off" placeholder="رقم هاتف المحفظة أو بريد PayPal">
         </div>
         <div class="form-group">
             <label for="paymentNote">ملاحظة للإدارة</label>
             <textarea id="paymentNote" class="form-control" rows="2" maxlength="500" placeholder="تفاصيل إضافية عن الدفع"></textarea>
         </div>
         <div id="subModalStatusBox"></div>
-        <button class="btn btn-whatsapp btn-block" id="btnRequestVip"><i class="fa-brands fa-whatsapp"></i> اطلب عبر واتساب</button>
+        <button class="btn btn-primary btn-block" id="btnRequestVip"><i class="fa-solid fa-receipt"></i> أرسل طلب المراجعة اليدوي</button>
     </div>
 </div>
 
 <!-- NOTIFICATIONS MODAL -->
 <div id="notifModal" class="modal">
     <div class="modal-card">
-        <button class="modal-close" data-close="notifModal"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" aria-label="إغلاق" data-close="notifModal"><i class="fa-solid fa-xmark"></i></button>
         <h3 class="modal-title"><i class="fa-solid fa-bell"></i> الإشعارات</h3>
         <div id="notifList" class="notif-list"></div>
     </div>
@@ -383,7 +393,7 @@
 <!-- SECTION DETAIL MODAL -->
 <div id="sectionModal" class="modal">
     <div class="modal-card large">
-        <button class="modal-close" data-close="sectionModal"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" aria-label="إغلاق" data-close="sectionModal"><i class="fa-solid fa-xmark"></i></button>
         <div class="section-detail-head">
             <h2 id="sectionDetailTitle">قسم</h2>
             <p id="sectionDetailCount"></p>
@@ -411,10 +421,10 @@
 </div>
 
 <!-- BANNED MODAL -->
-<div id="bannedModal" class="modal">
+<div id="bannedModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="bannedTitle">
     <div class="modal-card text-center">
         <div class="banned-icon"><i class="fa-solid fa-user-slash"></i></div>
-        <h3>حسابك محظور</h3>
+        <h3 id="bannedTitle">حسابك محظور</h3>
         <p>تم حظر حسابك من قبل الإدارة.</p>
         <button class="btn btn-outline btn-block" onclick="logout()">خروج</button>
     </div>
@@ -423,7 +433,7 @@
 <!-- POPUP BANNER -->
 <div id="popupBannerModal" class="modal">
     <div class="modal-card text-center">
-        <button class="modal-close" data-close="popupBannerModal"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" aria-label="إغلاق" data-close="popupBannerModal"><i class="fa-solid fa-xmark"></i></button>
         <div class="popup-icon"><i class="fa-solid fa-bullhorn"></i></div>
         <p id="popupBannerText"></p>
     </div>
@@ -431,6 +441,6 @@
 
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="app.js?v=grid-20260926-8"></script>
+<script src="app.js?v=secure-catalog-20260926-3"></script>
 </body>
 </html>

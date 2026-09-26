@@ -14,12 +14,39 @@ const firebaseConfig = {
     appId:"1:608379006778:web:51fe8032d09fbd5b556a03"
 };
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
 const db = firebase.database();
 
 /* ---------- GLOBAL HELPERS ---------- */
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const jsArg = value => esc(JSON.stringify(String(value??'')).replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029'));
+function safeHttpUrl(value){try{const u=new URL(String(value||''),location.href);return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password?u.href:'';}catch(_){return '';}}
+function readStoredArray(key){try{const v=localStorage.getItem(key);if(v===null)return [];const x=JSON.parse(v);return Array.isArray(x)?x:[];}catch(_){try{localStorage.removeItem(key);}catch(__){}return [];}}
+function validMediaPayload(data){
+    const ages=new Set(['عام','+13','+16','18+']),types=new Set(['url','hls','dash','video','embed']);
+    if(!data.title||data.title.length>200||!data.category||data.category.length>120||data.description.length>5000||!ages.has(data.ageRating))return false;
+    if([data.thumbnailUrl,data.downloadUrl,data.adDownloadUrl].some(url=>url&&!safeHttpUrl(url)))return false;
+    if(data.servers.length>20)return false;
+    return data.servers.every(server=>server.name&&server.name.length<=80&&types.has(server.type)&&((server.type==='embed'&&server.script&&server.script.length<=20000)||(server.type!=='embed'&&server.url&&server.url.length<=4096&&safeHttpUrl(server.url))));
+}
+function publicVideoProjection(data){
+    const out={};
+    ['title','category','isVip','ageRating','thumbnailUrl','description','views','ratingAvg','ratingCount','featured','year','type','seriesId','episode','season','createdAt','updatedAt','poster','image','thumbnail'].forEach(k=>{if(data[k]!==undefined)out[k]=data[k];});
+    return out;
+}
+function publicLiveProjection(data){
+    const out={};
+    ['name','category','logo','isVip','ageRating','type','order','description','network','viewers','createdAt','updatedAt'].forEach(k=>{if(data[k]!==undefined)out[k]=data[k];});
+    return out;
+}
+function publicMatchProjection(data){
+    const out={};
+    ['category','status','date','time','team1','team1Logo','team2','team2Logo','score1','score2','channel','isVip','createdAt','updatedAt'].forEach(k=>{if(data[k]!==undefined)out[k]=data[k];});
+    return out;
+}
+document.addEventListener('error',e=>{const im=e.target;if(im instanceof HTMLImageElement&&im.dataset.fallbackSrc&&!im.dataset.fallbackApplied){im.dataset.fallbackApplied='1';im.src=im.dataset.fallbackSrc;}},true);
 const debounce = (fn,ms=220)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}) : '—';
 const fmtTime = ts => ts ? new Date(ts).toLocaleString('ar-EG',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
@@ -123,132 +150,41 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---------- LOGIN ---------- */
-const DEFAULT_PIN = '171002';
-let pinValue = '';
-let failCount = parseInt(sessionStorage.getItem('adm_fails')||'0',10) || 0;
-let lockUntil = parseInt(sessionStorage.getItem('adm_lock')||'0',10) || 0;
-const isAuthed = ()=> sessionStorage.getItem('adm_authed') === '1';
-const pinInput = $('#pinReal');
-const pinWrap = $('#pinWrap');
-
-/* هل الرمز يُخزَّن مُشفَّراً (SHA-256) مع رجوع آمن للسياقات غير الآمنة */
-async function sha256(str){
+let adminUnlocked=false;
+const isAuthed = ()=> adminUnlocked;
+function authErrorMessage(err){
+    const messages={'auth/invalid-credential':'بيانات الدخول غير صحيحة.','auth/user-not-found':'لا يوجد حساب بهذا البريد.','auth/wrong-password':'كلمة المرور غير صحيحة.','auth/too-many-requests':'محاولات كثيرة؛ انتظر قليلاً ثم أعد المحاولة.','auth/network-request-failed':'تعذر الاتصال بخدمة تسجيل الدخول.'};
+    return messages[err?.code]||'تعذر تسجيل الدخول. تحقق من البيانات وإعداد Firebase Auth.';
+}
+function showAdminLogin(message=''){
+    adminUnlocked=false;
+    $('#loginOverlay').classList.remove('hidden');
+    $('#loginErr').textContent=message;
+}
+function unlockAdmin(user){
+    if(adminUnlocked)return;
+    adminUnlocked=true;
+    $('#loginErr').textContent='';
+    $('#loginOverlay').classList.add('hidden');
+    window.dispatchEvent(new Event('taghub:admin-unlocked'));
+    logActivity('تسجيل دخول للوحة');
+    toast('مرحباً بك','تم التحقق من حساب الإدارة','ok');
+}
+auth.onAuthStateChanged(async user=>{
+    if(!user){showAdminLogin($('#loginErr').textContent);return;}
     try{
-        if(window.crypto && crypto.subtle && window.isSecureContext){
-            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-            return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
-        }
-    }catch(_){}
-    let h = 5381;
-    for(let i=0;i<str.length;i++) h = ((h<<5)+h) + str.charCodeAt(i);
-    return 'fb' + (h>>>0).toString(16);
-}
-
-function setPinDisabled(disabled){
-    if(pinInput) pinInput.disabled = disabled;
-    const btn = $('#pinBtn');
-    if(btn) btn.disabled = disabled;
-}
-
-function showLock(){
-    const left = Math.ceil((lockUntil - Date.now())/1000);
-    if(left <= 0){
-        failCount = 0; lockUntil = 0;
-        sessionStorage.removeItem('adm_fails'); sessionStorage.removeItem('adm_lock');
-        setPinDisabled(false);
-        const err = $('#pinErr'); if(err) err.textContent = '';
-        renderPinDots();
-        return;
-    }
-    setPinDisabled(true);
-    const err = $('#pinErr');
-    if(err) err.textContent = `🔒 محظور مؤقتاً، حاول بعد ${left} ثانية`;
-    setTimeout(showLock, 1000);
-}
-
-function renderPinDots(){
-    $$('#pinWrap .pin-dot').forEach((d,i)=>{
-        d.classList.toggle('filled', i < pinValue.length);
-        d.classList.toggle('active', i === pinValue.length && pinValue.length < 6);
-        d.textContent = i < pinValue.length ? '●' : '';
-    });
-}
-pinWrap.addEventListener('click', () => pinInput.focus());
-$('#loginOverlay').addEventListener('click', e => {
-    if(e.target.closest('button')) return;
-    if(e.target.closest('input')) return;
-    pinInput.focus();
+        const token=await user.getIdTokenResult(true);
+        if(token.claims.admin!==true){await auth.signOut();showAdminLogin('هذا الحساب غير مخوّل لإدارة الموقع.');return;}
+        unlockAdmin(user);
+    }catch(err){await auth.signOut().catch(()=>{});showAdminLogin('تعذر التحقق من صلاحية المدير؛ لم تُحمّل بيانات اللوحة.');}
 });
-pinInput.addEventListener('input', () => {
-    pinValue = pinInput.value.replace(/\D/g,'').slice(0,6);
-    pinInput.value = pinValue;
-    renderPinDots();
-    if(pinValue.length === 6) setTimeout(verifyPin, 200);
+$('#adminLoginForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const btn=$('#adminLoginBtn');btn.disabled=true;$('#loginErr').textContent='';
+    try{await auth.signInWithEmailAndPassword($('#adminEmail').value.trim(),$('#adminPassword').value);}
+    catch(err){$('#loginErr').textContent=authErrorMessage(err);}
+    finally{btn.disabled=false;}
 });
-pinInput.addEventListener('paste', () => {
-    setTimeout(() => {
-        pinValue = pinInput.value.replace(/\D/g,'').slice(0,6);
-        pinInput.value = pinValue;
-        renderPinDots();
-        if(pinValue.length === 6) setTimeout(verifyPin, 200);
-    }, 10);
-});
-pinInput.addEventListener('keydown', e => { if(e.key === 'Enter') verifyPin(); });
-
-async function verifyPin(){
-    if(lockUntil > Date.now()){ showLock(); return; }
-    $('#pinErr').textContent = '';
-    let stored = {};
-    try{
-        const snap = await db.ref('adminPin').once('value');
-        stored = snap.val() || {};
-    }catch(_){}
-    const enteredHash = await sha256(pinValue);
-    let ok = false, migrate = false;
-    if(stored && stored.hash){
-        ok = enteredHash === stored.hash;
-    }else if(stored && stored.pin){
-        ok = pinValue === String(stored.pin);
-        migrate = ok;
-    }else{
-        ok = enteredHash === await sha256(DEFAULT_PIN);
-        migrate = ok;
-    }
-    if(ok){
-        failCount = 0;
-        sessionStorage.removeItem('adm_fails');
-        sessionStorage.setItem('adm_authed','1');
-        if(migrate){ try{ await db.ref('adminPin').set({hash:enteredHash, updatedAt:Date.now()}); }catch(_){} }
-        $('#loginOverlay').classList.add('hidden');
-        logActivity('تسجيل دخول للوحة');
-        toast('مرحباً بك 👋','تم الدخول بنجاح','ok');
-    }else{
-        failCount++;
-        sessionStorage.setItem('adm_fails', String(failCount));
-        if(failCount >= 5){
-            lockUntil = Date.now() + 30000;
-            sessionStorage.setItem('adm_lock', String(lockUntil));
-            pinValue = ''; pinInput.value = ''; renderPinDots(); showLock();
-            return;
-        }
-        $('#pinErr').textContent = `❌ رمز غير صحيح (${failCount}/5)`;
-        pinValue = '';
-        pinInput.value = '';
-        renderPinDots();
-        pinInput.focus();
-    }
-}
-$('#pinBtn').addEventListener('click', e => { e.stopPropagation(); verifyPin(); });
-function bootLogin(){
-    if(isAuthed()) $('#loginOverlay').classList.add('hidden');
-    else{
-        $('#loginOverlay').classList.remove('hidden');
-        if(lockUntil > Date.now()) showLock();
-        else setTimeout(() => pinInput.focus(), 300);
-    }
-    renderPinDots();
-}
-bootLogin();
 
 /* قفل تلقائي عند عدم النشاط (30 دقيقة) */
 let idleTimer = null;
@@ -260,10 +196,7 @@ function resetIdle(){
 ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev, resetIdle, {passive:true}));
 resetIdle();
 
-function logout(){
-    sessionStorage.removeItem('adm_authed');
-    location.reload();
-}
+async function logout(){adminUnlocked=false;await auth.signOut().catch(()=>{});location.reload();}
 $('#btnLogout').addEventListener('click',async()=>{
     const ok = await askConfirm({title:'تسجيل الخروج',msg:'قفل اللوحة والخروج؟',okText:'خروج'});
     if(ok) logout();
@@ -304,13 +237,13 @@ $('#btnExportJSON')?.addEventListener('click',()=>exportBackup());
 
 /* ---------- ACTIVITY LOG ---------- */
 function logActivity(text){
-    const list = JSON.parse(localStorage.getItem('adm_log')||'[]');
+    const list = readStoredArray('adm_log');
     list.unshift({t:Date.now(),text});
     localStorage.setItem('adm_log', JSON.stringify(list.slice(0,30)));
     renderActivity();
 }
 function renderActivity(){
-    const list = JSON.parse(localStorage.getItem('adm_log')||'[]');
+    const list = readStoredArray('adm_log');
     const box = $('#activityList');
     if(!box) return;
     if(!list.length){
@@ -382,7 +315,8 @@ fillServers('#editServers',[]);
 
 /* ---------- TEST SERVER URL ---------- */
 async function testServerUrl(url, btnEl){
-    if(!url) return;
+    url=safeHttpUrl(url);
+    if(!url){toast('رابط غير صالح','استخدم رابط HTTP أو HTTPS فقط.','err');return;}
     if(btnEl) btnEl.classList.add('testing');
     $('#testResultUrl').textContent = url;
     $('#testResultBody').innerHTML = '<div style="text-align:center;padding:20px"><p style="color:var(--text-3);font-size:.8rem">جاري الاختبار...</p></div>';
@@ -400,22 +334,25 @@ async function testServerUrl(url, btnEl){
     try{
         const ctrl = new AbortController();
         const timer = setTimeout(()=>ctrl.abort(), 8000);
-        const res = await fetch(url, { method:'HEAD', mode:'no-cors', signal: ctrl.signal, cache:'no-store' });
+        const res = await fetch(url, { method:'HEAD', mode:'cors', signal: ctrl.signal, cache:'no-store' });
         clearTimeout(timer);
         const elapsed = Math.round(performance.now() - start);
-        result.status = res.status === 0 ? 'OK (opaque)' : res.status;
+        result.status = res.status;
         result.latency = elapsed + ' ms';
-        result.reachable = true;
+        result.reachable = res.ok;
+        result.verifiable = true;
     }catch(err){
+        clearTimeout(timer);
         const elapsed = Math.round(performance.now() - start);
-        result.reachable = false;
+        result.reachable = null;
+        result.verifiable = false;
         result.latency = elapsed + ' ms';
-        result.error = err.name === 'AbortError' ? 'انتهت مهلة الاتصال (8 ثواني)' : err.message;
+        result.error = err.name === 'AbortError' ? 'انتهت المهلة؛ تعذر تأكيد حالة الخادم' : 'تعذر التحقق من المتصفح (قد تكون قيود CORS هي السبب)';
     }
 
     if(btnEl) btnEl.classList.remove('testing');
 
-    const reachText = result.reachable ? '✓ الرابط قابل للوصول' : '✗ تعذّر الوصول';
+    const reachText=result.reachable===true?'✓ تأكد وصول الخادم':result.reachable===false?'✗ أعاد الخادم حالة HTTP غير ناجحة':'؟ تعذر التحقق من المتصفح';
     $('#testResultBody').innerHTML = `
         <div style="margin-bottom:12px">
             <div style="font-size:.85rem;font-weight:800;color:${result.reachable?'var(--success)':'var(--danger)'}">${reachText}</div>
@@ -429,7 +366,7 @@ async function testServerUrl(url, btnEl){
             ${result.error ? `<div style="color:var(--danger);margin-top:6px">${esc(result.error)}</div>`:''}
         </div>
         <div style="margin-top:10px">
-            <a href="${esc(url)}" target="_blank" class="btn ghost sm" style="width:100%;justify-content:center">
+            <a href="${esc(safeHttpUrl(url))}" rel="noopener noreferrer" target="_blank" class="btn ghost sm" style="width:100%;justify-content:center">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الرابط
             </a>
         </div>`;
@@ -556,8 +493,8 @@ function loadCategories(){
                     <div class="dl-cell"><i class="fa-solid fa-folder" style="color:var(--accent)"></i><span class="v">${esc(r.name)}</span></div>
                     <div class="dl-cell"><span class="badge ${r.type==='VIP'?'vip':''}">${esc(r.type||'عام')}</span></div>
                     <div class="dl-actions">
-                        <button class="btn ghost sm" onclick="editCat('${esc(r.id)}','${esc(r.name)}','${esc(r.type||'عام')}')"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn red sm" onclick="delCat('${esc(r.id)}','${esc(r.name)}')"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn ghost sm" onclick="editCat(${jsArg(r.id)},${jsArg(r.name)},${jsArg(r.type||'عام')})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn red sm" onclick="delCat(${jsArg(r.id)},${jsArg(r.name)})"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>`).join('') || `<div class="empty"><i class="fa-solid fa-folder-open"></i><p>لا توجد تصنيفات</p></div>`;
         }
@@ -633,7 +570,9 @@ $('#addForm')?.addEventListener('submit',async e=>{
         createdAt: Date.now()
     };
     try{
-        await db.ref('videos').push(data);
+        if(!validMediaPayload(data)){toast('تحقق من بيانات المحتوى','الحقول أو الروابط أو عدد السيرفرات غير صالح.','err');return;}
+        const id=db.ref('videosPrivate').push().key;
+        await db.ref().update({['videosPrivate/'+id]:data,['publicCatalog/videos/'+id]:publicVideoProjection(data)});
         logActivity(`إضافة محتوى: ${data.title}`);
         toast('تم النشر',data.title,'ok');
         resetAddForm();
@@ -647,7 +586,7 @@ $('#addForm')?.addEventListener('submit',async e=>{
 });
 
 function loadMedia(){
-    db.ref('videos').on('value', snap=>{
+    db.ref('videosPrivate').on('value', snap=>{
         allItems = [];
         snap.forEach(c=>allItems.push({id:c.key,...c.val()}));
         const total = allItems.length;
@@ -689,15 +628,15 @@ function renderMedia(){
         const hasDl = !!(i.downloadUrl || i.adDownloadUrl);
         return `
         <div class="dl-row">
-            <img class="dl-thumb" src="${esc(i.thumbnailUrl||'https://via.placeholder.com/160x90/1f1f1f/ffffff?text=Media')}" onerror="this.src='https://via.placeholder.com/160x90/1f1f1f/ffffff?text=Media'">
+            <img class="dl-thumb" src="${esc(safeHttpUrl(i.thumbnailUrl)||'https://via.placeholder.com/160x90/1f1f1f/ffffff?text=Media')}" data-fallback-src="https://via.placeholder.com/160x90/1f1f1f/ffffff?text=Media">
             <div class="dl-cell"><span class="k">العنوان</span><span class="v">${esc(i.title||'بدون عنوان')}</span></div>
             <div class="dl-cell"><span class="k">التصنيف</span><span class="badge">${esc(i.category||'عام')}</span></div>
             <div class="dl-cell"><span class="k">النوع</span>${i.isVip?'<span class="badge vip"><i class="fa-solid fa-crown"></i> VIP</span>':'<span class="badge">مجاني</span>'}</div>
             <div class="dl-cell"><span class="k">التحميل</span>${hasDl?'<span class="badge ok"><i class="fa-solid fa-download"></i> متاح</span>':'<span class="badge exp">—</span>'}</div>
             <div class="dl-cell"><span class="k">مشاهدات</span><span class="v"><i class="fa-regular fa-eye"></i> ${(i.views||0).toLocaleString('ar-EG')}</span></div>
             <div class="dl-actions">
-                <button class="btn ghost sm" onclick="editItem('${esc(i.id)}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn red sm" onclick="delItem('${esc(i.id)}','${esc(i.title||'')}')"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn ghost sm" onclick="editItem(${jsArg(i.id)})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn red sm" onclick="delItem(${jsArg(i.id)},${jsArg(i.title||'')})"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`;
     }).join('');
@@ -706,10 +645,10 @@ $('#qMedia')?.addEventListener('input',debounce(renderMedia,220));
 $('#filterVip')?.addEventListener('change',renderMedia);
 
 function adminCardGrid(list, kind){
-    const btn=(fn,id,title,icon,color)=>`<button class="btn ${color} sm" onclick="${fn}('${esc(id)}'${fn==='delItem'||fn==='delLiveChannel'?`,'${esc(title)}'`:''})"><i class="fa-solid ${icon}"></i></button>`;
+    const btn=(fn,id,title,icon,color)=>`<button class="btn ${color} sm" onclick="${fn}(${jsArg(id)}${fn==='delItem'||fn==='delLiveChannel'?`,${jsArg(title)}`:''})"><i class="fa-solid ${icon}"></i></button>`;
     return `<div class="admin-grid">`+list.map(i=>{
         const title=i.title||i.name||'بدون عنوان';
-        const img=kind==='live'?(i.logo||i.image||i.poster):(i.thumbnailUrl||i.image||i.thumbnail||i.poster);
+        const img=safeHttpUrl(kind==='live'?(i.logo||i.image||i.poster):(i.thumbnailUrl||i.image||i.thumbnail||i.poster));
         const ph='https://via.placeholder.com/300x450/141826/6b7280?text='+encodeURIComponent(title);
         const vip=!!i.isVip;
         const meta = kind==='live'
@@ -719,7 +658,7 @@ function adminCardGrid(list, kind){
         const del=kind==='live'?`delLiveChannel`:`delItem`;
         return `<div class="admin-grid-card ${vip?'is-vip':''} ${kind}">
             <div class="agc-thumb">
-                <img src="${esc(img||ph)}" alt="" loading="lazy" onerror="this.src='${ph}'">
+                <img src="${esc(img||ph)}" alt="" loading="lazy" data-fallback-src="${esc(ph)}">
                 ${vip?'<span class="agc-badge vip"><i class="fa-solid fa-crown"></i> VIP</span>':'<span class="agc-badge free">مجاني</span>'}
             </div>
             <div class="agc-body">
@@ -755,7 +694,7 @@ function initViewToggles(){
 window.initViewToggles = initViewToggles;
 
 async function editItem(id){
-    const snap = await db.ref('videos/'+id).once('value');
+    const snap = await db.ref('videosPrivate/'+id).once('value');
     if(!snap.exists()) return toast('غير موجود','','err');
     const item = snap.val();
     $('#editId').value = id;
@@ -775,18 +714,16 @@ window.editItem = editItem;
 $('#editForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const id = $('#editId').value;
+    const data={
+        title:$('#editTitle').value.trim(),category:$('#editCategory').value,isVip:$('#editIsVip').value==='true',
+        ageRating:$('#editAgeRating').value||'عام',thumbnailUrl:$('#editThumbnail').value.trim(),description:$('#editDescription').value.trim(),
+        servers:collectServers('#editServers'),downloadUrl:$('#editDownloadUrl').value.trim(),adDownloadUrl:$('#editAdDownloadUrl').value.trim()
+    };
+    if(!validMediaPayload(data)){toast('تحقق من بيانات المحتوى','الحقول أو الروابط أو عدد السيرفرات غير صالح.','err');return;}
     try{
-        await db.ref('videos/'+id).update({
-            title: $('#editTitle').value.trim(),
-            category: $('#editCategory').value,
-            isVip: $('#editIsVip').value === 'true',
-            ageRating: $('#editAgeRating').value || 'عام',
-            thumbnailUrl: $('#editThumbnail').value.trim(),
-            description: $('#editDescription').value.trim(),
-            servers: collectServers('#editServers'),
-            downloadUrl: $('#editDownloadUrl').value.trim(),
-            adDownloadUrl: $('#editAdDownloadUrl').value.trim()
-        });
+        const old=(await db.ref('videosPrivate/'+id).once('value')).val()||{};
+        const merged={...old,...data};
+        await db.ref().update({['videosPrivate/'+id]:data,['publicCatalog/videos/'+id]:publicVideoProjection(merged)});
         closeModal('mEdit');
         logActivity('تعديل محتوى');
         toast('تم الحفظ','','ok');
@@ -795,7 +732,7 @@ $('#editForm')?.addEventListener('submit',async e=>{
 async function delItem(id,title){
     const ok = await askConfirm({title:'حذف المحتوى',msg:`سيتم حذف "${title}" نهائياً.`,okText:'حذف'});
     if(!ok) return;
-    await db.ref('videos/'+id).remove();
+    await db.ref().update({['videosPrivate/'+id]:null,['publicCatalog/videos/'+id]:null});
     logActivity(`حذف محتوى: ${title}`);
     toast('تم الحذف',title,'ok');
 }
@@ -896,16 +833,6 @@ function loadUsers(){
         renderUsers();
         fillNotifUserSelect();
     });
-    const syncUsers=async()=>{
-        try{
-            const raw=await fetch(`${db.ref('users').toString()}.json?adminSync=${Date.now()}`,{cache:'no-store'}).then(r=>r.json());
-            if(raw&&typeof raw==='object'){
-                allUsers=Object.entries(raw).map(([id,value])=>({id,...(value||{})}));
-                window.__allUsers=allUsers; $('#statTotalUsers').textContent=allUsers.length.toLocaleString('ar-EG'); renderUsers(); fillNotifUserSelect();
-            }
-        }catch(err){console.warn('[users] fallback sync failed',err)}
-    };
-    syncUsers(); setTimeout(syncUsers,1200);
 }
 
 function fillNotifUserSelect(){
@@ -959,20 +886,20 @@ function renderUsers(){
         return `
         <article class="user-card ${vip?'is-vip':''} ${banned?'is-banned':''}">
             <div class="user-card-head"><div class="user-avatar">${esc((u.name||u.email||'م').slice(0,1).toUpperCase())}</div><div><h3>${esc(u.name||'مستخدم')}</h3><small>${esc(u.email||'—')}</small></div>${vip?'<span class="badge vip"><i class="fa-solid fa-crown"></i> VIP</span>':'<span class="badge">عادي</span>'}</div>
-            <div class="user-card-meta"><span><b>UID</b>${esc(u.id)}</span><span><b>الهاتف</b>${esc(u.phone||'—')}</span><span><b>الانتهاء</b>${exp?fmtDate(exp):'—'}</span><span><b>الدخول</b>${u.lastLogin?fmtDate(u.lastLogin):'—'}</span></div>
+            <div class="user-card-meta"><span><b>UID</b>${esc(u.id)}</span><span><b>الهاتف</b>${esc(u.phone||'—')}</span><span><b>الانتهاء</b>${exp?fmtDate(exp):'—'}</span><span><b>الدخول</b>${(u.lastLoginAt||u.lastLogin)?fmtDate(u.lastLoginAt||u.lastLogin):'—'}</span></div>
             <div class="user-card-status">${statusBadge}<span class="remaining">${days}</span></div>
             <div class="dl-actions">
-                <button class="btn info sm" onclick="showUserDetails('${esc(u.id)}')" title="كل البيانات والسجل"><i class="fa-solid fa-database"></i></button>
-                <button class="btn ghost sm" onclick="editUser('${esc(u.id)}')"><i class="fa-solid fa-user-pen"></i></button>
-                <button class="btn ${banned?'green':'gold'} sm" onclick="toggleBan('${esc(u.id)}',${!banned})"><i class="fa-solid ${banned?'fa-lock-open':'fa-ban'}"></i></button>
-                <button class="btn red sm" onclick="delUser('${esc(u.id)}','${esc(u.name||'')}')"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn info sm" onclick="showUserDetails(${jsArg(u.id)})" title="كل البيانات والسجل"><i class="fa-solid fa-database"></i></button>
+                <button class="btn ghost sm" onclick="editUser(${jsArg(u.id)})"><i class="fa-solid fa-user-pen"></i></button>
+                <button class="btn ${banned?'green':'gold'} sm" onclick="toggleBan(${jsArg(u.id)},${!banned})"><i class="fa-solid ${banned?'fa-lock-open':'fa-ban'}"></i></button>
+                <button class="btn red sm" onclick="delUser(${jsArg(u.id)},${jsArg(u.name||'')})"><i class="fa-solid fa-trash"></i></button>
             </div>
         </article>`;
     }).join('');
 }
 $('#qUser')?.addEventListener('input',debounce(renderUsers,220));
 $('#filterUserStatus')?.addEventListener('change',renderUsers);
-$('#btnNewUser')?.addEventListener('click',()=>openUserModal());
+$('#btnNewUser')?.addEventListener('click',()=>toast('أنشئ الحساب من صفحة التسجيل أولاً','ثم افتح ملفه هنا للتعديل ومنح الاشتراك.','info'));
 
 function openUserModal(){
     $('#userForm').reset();
@@ -1000,7 +927,7 @@ window.editUser = editUser;
 async function showUserDetails(id){
     try{
         const [user,watchlists,notifications,requests]=await Promise.all([
-            db.ref('users/'+id).once('value'),db.ref('watchlists/'+id).once('value'),db.ref('notifications/'+id).once('value'),db.ref('vipRequests').orderByChild('uid').equalTo(id).once('value')
+            db.ref('users/'+id).once('value'),db.ref('watchlists/'+id).once('value'),db.ref('notifications/'+id).once('value'),db.ref('vipRequests/'+id).once('value')
         ]);
         const data=user.val()||{};
         const record={profile:data,watchlists:watchlists.val()||{},notifications:notifications.val()||{},vipRequests:requests.val()||{}};
@@ -1016,6 +943,7 @@ window.showUserDetails=showUserDetails;
 $('#userForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const id = $('#userId').value;
+    if(!id){toast('إنشاء الحساب غير متاح من لوحة الإدارة','أنشئ حساب الدخول عبر التسجيل، ثم عدّل بياناته هنا.','warn');return;}
     const name = $('#userName').value.trim();
     const email = $('#userEmail').value.trim();
     const phone = $('#userPhone').value.trim();
@@ -1023,25 +951,20 @@ $('#userForm')?.addEventListener('submit',async e=>{
     const role = $('#userRole').value || 'user';
     const blocked = $('#userBlocked').value === 'true';
     const note = $('#userNote').value.trim();
-    const val = parseInt($('#subValue').value) || 1;
-    const unit = $('#subUnit').value;
-    let addMs = 0;
-    if(unit === 'days') addMs = val * 86400000;
-    else if(unit === 'months') addMs = val * 30 * 86400000;
-    else if(unit === 'years') addMs = val * 365 * 86400000;
-    const now = Date.now();
-    let baseTime = now;
-    if(id){
-        const snap = await db.ref('users/'+id).once('value');
-        const prev = snap.val() || {};
-        const prevExp = userExpire(prev);
-        if(prevExp > now) baseTime = prevExp;
-    }
-    const expireAt = baseTime + addMs;
-    const payload = {name, email, phone, isVip, expireAt, vipExpireDate: expireAt, role, note, isBlocked:blocked, isBanned:blocked, updatedAt: now};
+    const val=Math.max(1,parseInt($('#subValue').value,10)||1);
+    const unit=$('#subUnit').value;
+    const extendVip=$('#extendVipOnSave')?.checked===true;
+    const durationMs=unit==='days'?val*86400000:unit==='years'?val*365*86400000:val*30*86400000;
+    const now=Date.now();
+    let prev={},prevExp=0;
+    if(id){const snap=await db.ref('users/'+id).once('value');prev=snap.val()||{};prevExp=Number(userExpire(prev))||0;}
+    const keepsExistingVip=!!id&&userIsVipNow(prev)&&(!prevExp||prevExp>now);
+    if(isVip&&!extendVip&&!keepsExistingVip){toast('حدد تمديداً صريحاً قبل تفعيل VIP','','warn');return;}
+    const expireAt=isVip?(extendVip?Math.max(now,prevExp)+durationMs:prevExp):0;
+    const payload={name,email,phone,isVip,expireAt,vipExpireDate:expireAt,subscriptionStatus:isVip?'active':'inactive',role,note,isBlocked:blocked,isBanned:blocked,updatedAt:now};
     try{
         if(id) await db.ref('users/'+id).update(payload);
-        else await db.ref('users').push({...payload, isBlocked:false, isBanned:false, createdAt:now, note:'ملف إداري؛ يجب إنشاء الحساب من صفحة التسجيل'});
+        else await db.ref('users').push({...payload, createdAt:now, note:'ملف إداري؛ يجب إنشاء الحساب من صفحة التسجيل'});
         closeModal('mUser');
         logActivity(id?`تعديل مستخدم: ${name}`:`إضافة مستخدم: ${name}`);
         toast('تم الحفظ', name, 'ok');
@@ -1054,11 +977,25 @@ async function toggleBan(id, status){
 }
 window.toggleBan = toggleBan;
 async function delUser(id,name){
-    const ok = await askConfirm({title:'حذف حساب',msg:`حذف "${name}"؟`,okText:'حذف'});
+    const ok=await askConfirm({title:'حذف بيانات المستخدم',msg:`سيتم حذف ملف ${name||'المستخدم'} وقوائمه وإشعاراته وطلباته وتعليقاته وتقييماته. لن تُحذف هوية Firebase Authentication من هذه الواجهة. متابعة؟`,okText:'حذف البيانات',type:'red'});
     if(!ok) return;
-    await db.ref('users/'+id).remove();
-    logActivity(`حذف مستخدم: ${name}`);
-    toast('تم الحذف',name,'ok');
+    try{
+        const [commentsSnap,ratingsSnap]=await Promise.all([db.ref('comments').once('value'),db.ref('ratings').once('value')]);
+        const updates={};
+        [`users/${id}`,`watchlists/${id}`,`notifications/${id}`,`achievements/${id}`].forEach(path=>updates[path]=null);
+        updates[`vipRequests/${id}`]=null;
+        if(commentsSnap.exists())commentsSnap.forEach(item=>item.forEach(comment=>{if((comment.val()||{}).uid===id)updates[`comments/${item.key}/${comment.key}`]=null;}));
+        if(ratingsSnap.exists())ratingsSnap.forEach(item=>{
+            const vals=[];item.forEach(rating=>{if(rating.key===id)updates[`ratings/${item.key}/${id}`]=null;else{const v=Number((rating.val()||{}).value);if(Number.isFinite(v)&&v>0)vals.push(v);}});
+            updates[`videosPrivate/${item.key}/ratingCount`]=vals.length||null;
+            updates[`videosPrivate/${item.key}/ratingAvg`]=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2):null;
+            updates[`publicCatalog/videos/${item.key}/ratingCount`]=vals.length||null;
+            updates[`publicCatalog/videos/${item.key}/ratingAvg`]=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2):null;
+        });
+        await db.ref().update(updates);
+        logActivity(`حذف بيانات مستخدم: ${name}`);
+        toast('تم حذف بيانات الحساب','قد تبقى هوية تسجيل الدخول لدى Firebase Authentication.','ok');
+    }catch(err){toast('تعذر حذف البيانات بأمان',err.message,'err');}
 }
 window.delUser = delUser;
 
@@ -1066,16 +1003,9 @@ window.delUser = delUser;
 $('#btnExportUsersCSV')?.addEventListener('click', () => {
     if(!allUsers.length){ toast('لا يوجد مستخدمون','','warn'); return; }
     const headers = ['ID','الاسم','البريد','النوع','تاريخ الانتهاء','محظور','تاريخ التسجيل'];
-    const rows = allUsers.map(u => [
-        u.id,
-        (u.name||'').replace(/"/g,'""'),
-        (u.email||'').replace(/"/g,'""'),
-        userIsVipNow(u) ? 'VIP' : 'عادي',
-        userExpire(u) ? new Date(userExpire(u)).toISOString().slice(0,10) : '',
-        userIsBanned(u) ? 'نعم' : 'لا',
-        u.createdAt ? new Date(u.createdAt).toISOString().slice(0,10) : ''
-    ]);
-    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const rows=allUsers.map(u=>[u.id,u.name||'',u.email||'',userIsVipNow(u)?'VIP':'عادي',userExpire(u)?new Date(userExpire(u)).toISOString().slice(0,10):'',userIsBanned(u)?'نعم':'لا',u.createdAt?new Date(u.createdAt).toISOString().slice(0,10):'']);
+    const csvCell=value=>{let s=String(value??'');if(/^[\u0000-\u0020]*[=+@-]/.test(s))s="'"+s;return `"${s.replace(/"/g,'""')}"`;};
+    const csv='\uFEFF'+[headers,...rows].map(r=>r.map(csvCell).join(',')).join('\n');
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1100,7 +1030,8 @@ $('#btnExportMediaCSV')?.addEventListener('click', () => {
         i.downloadUrl||'',
         i.adDownloadUrl||''
     ]);
-    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const csvCell=value=>{let s=String(value??'');if(/^[\u0000-\u0020]*[=+@-]/.test(s))s="'"+s;return `"${s.replace(/"/g,'""')}"`;};
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(csvCell).join(',')).join('\n');
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1139,34 +1070,27 @@ $('#jsonFileInput')?.addEventListener('change', async e=>{
     try{
         const text = await f.text();
         const data = JSON.parse(text);
+        if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('ملف النسخة غير صالح');
+        const catalog={...(data.publicCatalog||{})};
+        for(const [legacy,privateKey] of [['videos','videosPrivate'],['liveChannels','liveChannels'],['matches','matches']]){
+            const records={...(data[privateKey]||{}),...(data[legacy]||{})};
+            if(Object.keys(records).length){
+                data[privateKey]=records;
+            }
+            if(legacy!==privateKey)delete data[legacy];
+        }
+        for(const kind of ['videos','liveChannels','matches']){
+            const source={...(catalog[kind]||{}),...(data[kind==='videos'?'videosPrivate':kind]||{})};
+            if(Object.keys(source).length){catalog[kind]={};for(const [id,record] of Object.entries(source))catalog[kind][id]=kind==='videos'?publicVideoProjection(record||{}):kind==='liveChannels'?publicLiveProjection(record||{}):publicMatchProjection(record||{});}
+        }
+        data.publicCatalog=catalog;
+        if(data.settings&&typeof data.settings==='object')data.publicSettings=publicSettingsProjection(data.settings);
+        if(data.ads&&typeof data.ads==='object')data.publicAds=publicAdsProjection(data.ads);
         await db.ref().update(data);
         logActivity('استيراد نسخة احتياطية');
         toast('تم الاستيراد','','ok');
     }catch(err){ toast('خطأ',err.message,'err'); }
     e.target.value = '';
-});
-
-/* ---------- CHANGE PIN ---------- */
-$('#btnChangePin')?.addEventListener('click',()=>{ $('#pinForm').reset(); openModal('mPin'); });
-$('#pinForm')?.addEventListener('submit',async e=>{
-    e.preventDefault();
-    const oldP = $('#pinOld').value.trim();
-    const newP = $('#pinNew').value.trim();
-    if(!/^\d{4,6}$/.test(newP)) return toast('خطأ','يجب أن يكون 4-6 أرقام','err');
-    let stored = {};
-    try{ const snap = await db.ref('adminPin').once('value'); stored = snap.val() || {}; }catch(_){}
-    let oldOk = false;
-    const oldHash = await sha256(oldP);
-    if(stored && stored.hash) oldOk = oldHash === stored.hash;
-    else if(stored && stored.pin) oldOk = oldP === String(stored.pin);
-    else oldOk = oldHash === await sha256(DEFAULT_PIN);
-    if(!oldOk) return toast('خطأ','الرمز الحالي غير صحيح','err');
-    try{
-        await db.ref('adminPin').set({hash:await sha256(newP), updatedAt:Date.now()});
-        closeModal('mPin');
-        logActivity('تغيير رمز الدخول');
-        toast('تم التغيير','','ok');
-    }catch(err){ toast('خطأ',err.message,'err'); }
 });
 
 /* ---------- QUICK BUTTONS ---------- */
