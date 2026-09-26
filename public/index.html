@@ -191,6 +191,7 @@
     <header class="player-page-header">
         <button class="pp-back" onclick="closePlayer()"><i class="fa-solid fa-arrow-right"></i></button>
         <h3 id="ppTitle">---</h3>
+        <button class="pp-icon" id="ppAutoBtn" onclick="toggleAutoPlay()" title="التشغيل التلقائي"><i class="fa-solid fa-forward-step"></i></button>
         <button class="pp-icon" onclick="shareCurrent()"><i class="fa-solid fa-share-nodes"></i></button>
     </header>
     <div class="player-page-body">
@@ -275,9 +276,13 @@
 <!-- ========== AUTH MODAL ============ -->
 <div id="authModal" class="modal">
     <div class="modal-card">
+        <div class="auth-glow auth-glow-one"></div><div class="auth-glow auth-glow-two"></div>
         <button class="modal-close" data-close="authModal"><i class="fa-solid fa-xmark"></i></button>
-        <svg class="auth-logo" viewBox="0 0 64 64"><path fill="#e50914" d="M32 4C20 4 12 10 12 18c0 3 .8 5.5 2 7.7C10 28 8 32 8 38c0 12 10 22 24 22s24-10 24-22c0-6-2-10-6-12.3 1.2-2.2 2-4.7 2-7.7 0-8-8-14-20-14zm-10 22a3 3 0 113 3 3 3 0 01-3-3zm20 0a3 3 0 113 3 3 3 0 01-3-3zm-10 6l3 4 3-4h-6zm-5 8c1.5 3 5 5 8 5s6.5-2 8-5h-16z"/></svg>
+        <div class="auth-orbit"><span></span><span></span><span></span><svg class="auth-logo" viewBox="0 0 64 64"><path fill="#e50914" d="M32 4C20 4 12 10 12 18c0 3 .8 5.5 2 7.7C10 28 8 32 8 38c0 12 10 22 24 22s24-10 24-22c0-6-2-10-6-12.3 1.2-2.2 2-4.7 2-7.7 0-8-8-14-20-14zm-10 22a3 3 0 113 3 3 3 0 01-3-3zm20 0a3 3 0 113 3 3 3 0 01-3-3zm-10 6l3 4 3-4h-6zm-5 8c1.5 3 5 5 8 5s6.5-2 8-5h-16z"/></svg></div>
+        <div class="auth-kicker"><i class="fa-solid fa-sparkles"></i> تجربة مشاهدة استثنائية</div>
         <h3 class="modal-title" id="authTitle">تسجيل الدخول</h3>
+        <p class="auth-subtitle" id="authSubtitle">ادخل إلى عالمك الخاص واستكمل رحلتك من حيث توقفت.</p>
+        <div class="auth-benefits"><span><i class="fa-solid fa-bolt"></i> سريع</span><span><i class="fa-solid fa-shield-halved"></i> آمن</span><span><i class="fa-solid fa-cloud"></i> متزامن</span></div>
         <form id="authForm">
             <div class="form-group" id="nameGroup" style="display:none">
                 <label>الاسم</label>
@@ -289,7 +294,7 @@
             </div>
             <div class="form-group">
                 <label>كلمة المرور</label>
-                <input type="password" id="authPassword" class="form-control" required minlength="6" placeholder="••••••••">
+                <div class="password-wrap"><input type="password" id="authPassword" class="form-control" required minlength="6" placeholder="••••••••"><button type="button" class="password-toggle" id="passwordToggle" aria-label="إظهار كلمة المرور"><i class="fa-solid fa-eye"></i></button></div>
             </div>
             <button type="submit" id="authSubmitBtn" class="btn btn-primary btn-block">دخول</button>
         </form>
@@ -340,6 +345,24 @@
             <li><i class="fa-solid fa-ban"></i> بدون إعلانات</li>
             <li><i class="fa-solid fa-headset"></i> دعم أولوية</li>
         </ul>
+        <div id="paymentInstructions" class="vip-status-card" style="display:none;text-align:right"></div>
+        <div class="form-group" style="margin-top:12px">
+            <label for="paymentMethod">طريقة الدفع</label>
+            <select id="paymentMethod" class="form-control">
+                <option value="">اختر طريقة الدفع</option>
+                <option value="تحويل بنكي">تحويل بنكي</option>
+                <option value="محفظة إلكترونية">محفظة إلكترونية</option>
+                <option value="واتساب">واتساب</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="paymentReference">رقم العملية أو اسم المحول</label>
+            <input id="paymentReference" class="form-control" maxlength="120" placeholder="اختياري">
+        </div>
+        <div class="form-group">
+            <label for="paymentNote">ملاحظة للإدارة</label>
+            <textarea id="paymentNote" class="form-control" rows="2" maxlength="500" placeholder="تفاصيل إضافية عن الدفع"></textarea>
+        </div>
         <div id="subModalStatusBox"></div>
         <button class="btn btn-whatsapp btn-block" id="btnRequestVip"><i class="fa-brands fa-whatsapp"></i> اطلب عبر واتساب</button>
     </div>

@@ -562,6 +562,9 @@ body.light-theme .agc-thumb{background:#eef1f7}
                     <div class="fg"><label><i class="fa-solid fa-gem"></i> نوع الوصول</label>
                         <select id="addIsVip"><option value="false">مجاني</option><option value="true">👑 VIP</option></select>
                     </div>
+                    <div class="fg"><label><i class="fa-solid fa-user-shield"></i> التصنيف العمري</label>
+                        <select id="addAgeRating"><option value="عام">عام</option><option value="+13">+13</option><option value="+16">+16</option><option value="18+">18+ للكبار</option></select>
+                    </div>
                     <div class="fg"><label><i class="fa-solid fa-image"></i> رابط البوستر</label>
                         <div class="input-copy-wrap">
                             <input type="url" id="addThumbnail">
@@ -687,6 +690,7 @@ body.light-theme .agc-thumb{background:#eef1f7}
                     <option value="vip">VIP فقط</option>
                     <option value="free">مجاني فقط</option>
                 </select>
+                <select id="filterLiveAge"><option value="all">كل الأعمار</option><option value="عام">عام</option><option value="+13">+13</option><option value="+16">+16</option><option value="18+">18+ للكبار</option></select>
                 <div class="view-toggle" data-key="admin_live_view" data-render="renderLiveChannelsList">
                     <button type="button" class="vt-btn active" data-view="list" title="قائمة"><i class="fa-solid fa-list"></i></button>
                     <button type="button" class="vt-btn" data-view="grid" title="شبكة كروت"><i class="fa-solid fa-table-cells-large"></i></button>
@@ -919,6 +923,9 @@ body.light-theme .agc-thumb{background:#eef1f7}
                 <div class="fg"><label><i class="fa-solid fa-crown"></i> لون VIP</label><input type="color" id="settingVipColor" value="#f59e0b"></div>
                 <div class="fg full"><label><i class="fa-brands fa-whatsapp" style="color:#25D366"></i> رابط واتساب كامل</label><input type="url" id="settingWhatsappLink" placeholder="https://wa.me/201234567890"></div>
                 <div class="fg full"><label><i class="fa-solid fa-phone"></i> أو رقم فقط</label><input type="text" id="settingWhatsappNumber" placeholder="201234567890"></div>
+                <div class="fg full"><label><i class="fa-solid fa-credit-card"></i> تعليمات الدفع</label><textarea id="settingPaymentInstructions" rows="3" placeholder="أدخل طرق الدفع والحسابات المتاحة للمشتركين"></textarea></div>
+                <div class="fg"><label><i class="fa-solid fa-money-bill"></i> سعر VIP الشهري</label><input type="text" id="settingVipPrice" placeholder="مثال: 50 جنيه"></div>
+                <div class="fg"><label><i class="fa-solid fa-toggle-on"></i> تفعيل طلبات الدفع</label><select id="settingPaymentsEnabled"><option value="true">مفعلة</option><option value="false">متوقفة</option></select></div>
             </div>
             <button class="btn green block" id="btnSaveSettings" style="margin-top:14px"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
         </div>
@@ -963,6 +970,7 @@ body.light-theme .agc-thumb{background:#eef1f7}
                 <div class="fg"><label>العنوان</label><input type="text" id="editTitle" required></div>
                 <div class="fg"><label>التصنيف</label><select id="editCategory"></select></div>
                 <div class="fg"><label>نوع الوصول</label><select id="editIsVip"><option value="false">مجاني</option><option value="true">VIP</option></select></div>
+                <div class="fg"><label>التصنيف العمري</label><select id="editAgeRating"><option value="عام">عام</option><option value="+13">+13</option><option value="+16">+16</option><option value="18+">18+ للكبار</option></select></div>
                 <div class="fg"><label>رابط البوستر</label><div class="input-copy-wrap"><input type="url" id="editThumbnail"><button type="button" class="copy-btn" data-copy-target="editThumbnail"><i class="fa-solid fa-copy"></i></button></div></div>
                 <div class="fg full"><label>الوصف</label><textarea id="editDescription"></textarea></div>
             </div>
@@ -990,6 +998,8 @@ body.light-theme .agc-thumb{background:#eef1f7}
                 <div class="fg full"><label>شعار القناة</label><div class="input-copy-wrap"><input type="url" id="liveChLogo"><button type="button" class="copy-btn" data-copy-target="liveChLogo"><i class="fa-solid fa-copy"></i></button></div></div>
                 <div class="fg full"><label>رابط البث</label><div class="input-copy-wrap"><input type="text" id="liveChUrl" required><button type="button" class="copy-btn" data-copy-target="liveChUrl"><i class="fa-solid fa-copy"></i></button><button type="button" class="copy-btn" id="liveChTestBtn"><i class="fa-solid fa-flask"></i></button></div></div>
                 <div class="fg"><label>نوع الوصول</label><select id="liveChIsVip"><option value="false">مجاني</option><option value="true">VIP</option></select></div>
+                <div class="fg"><label>التصنيف العمري</label><select id="liveChAgeRating"><option value="عام">عام</option><option value="+13">+13</option><option value="+16">+16</option><option value="18+">18+ للكبار</option></select></div>
+                <div class="fg"><label>نوع الرابط</label><select id="liveChType"><option value="auto">تلقائي</option><option value="hls">HLS / M3U8</option><option value="dash">MPEG-DASH / MPD</option><option value="video">فيديو</option><option value="embed">Embed</option></select></div>
                 <div class="fg"><label>الترتيب</label><input type="number" id="liveChOrder" value="0"></div>
                 <div class="fg full"><label>الوصف</label><textarea id="liveChDescription"></textarea></div>
             </div>
@@ -1058,7 +1068,7 @@ body.light-theme .agc-thumb{background:#eef1f7}
             <div class="form-grid">
                 <div class="fg"><label>الاسم</label><input type="text" id="userName" required></div>
                 <div class="fg"><label>البريد</label><input type="email" id="userEmail" required></div>
-                <div class="fg"><label>كلمة المرور</label><input type="text" id="userPassword"></div>
+                <div class="fg"><label>رقم الهاتف</label><input type="text" id="userPhone" inputmode="tel"></div>
                 <div class="fg"><label>النوع</label><select id="userIsVip"><option value="false">عادي</option><option value="true">VIP</option></select></div>
                 <div class="fg"><label>مدة التمديد</label><input type="number" id="subValue" value="1" min="1"></div>
                 <div class="fg"><label>الوحدة</label><select id="subUnit"><option value="days">أيام</option><option value="months" selected>أشهر</option><option value="years">سنوات</option></select></div>
@@ -1109,8 +1119,10 @@ body.light-theme .agc-thumb{background:#eef1f7}
         <div class="modal-head live"><div class="mi"><i class="fa-solid fa-file-import"></i></div><div class="mh-text"><h3>استيراد قنوات M3U</h3><p>اختبار تلقائي لفرز الشغالة</p></div><button class="modal-close" data-close="mM3U"><i class="fa-solid fa-xmark"></i></button></div>
         <div class="fg"><label>تحميل ملف</label><input type="file" id="m3uFile" accept=".m3u,.m3u8,text/plain"></div>
         <div class="fg" style="margin-top:10px"><label>أو الصق المحتوى</label><textarea id="m3uText" placeholder="#EXTM3U..." style="min-height:140px;font-family:monospace;font-size:.72rem"></textarea></div>
-        <div class="form-grid" style="margin-top:10px">
+            <div class="form-grid" style="margin-top:10px">
+            <div class="fg"><label>اسم الشبكة</label><input type="text" id="m3uNetwork" placeholder="مثال: شبكة الرياضة 2026"></div>
             <div class="fg"><label>نوع الوصول</label><select id="m3uVip"><option value="false">مجاني</option><option value="true">VIP</option></select></div>
+            <div class="fg"><label>التصنيف العمري</label><select id="m3uAgeRating"><option value="عام">عام</option><option value="+13">+13</option><option value="+16">+16</option><option value="18+">18+ للكبار</option></select></div>
             <div class="fg"><label>إنشاء تصنيفات</label><select id="m3uAutoCat"><option value="true">نعم</option><option value="false">لا</option></select></div>
         </div>
         <div id="m3uProgressWrap" style="display:none;margin-top:12px;background:#0a0a10;border:1px solid var(--border);border-radius:12px;padding:12px">

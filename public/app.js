@@ -114,6 +114,7 @@ function clearHistory(){
 }
 window.scrollToTop=scrollToTop;
 window.clearHistory=clearHistory;
+window.toggleAutoPlay=toggleAutoPlay;
 
 /* ---------- 5. THEME ---------- */
 function applyTheme(){
@@ -126,6 +127,17 @@ function toggleTheme(){
     localStorage.setItem('sw_theme',state.theme);
     applyTheme();
     toast(state.theme==='dark'?'🌙 الوضع الليلي':'☀️ الوضع النهاري','ok');
+}
+function toggleAutoPlay(){
+    state.autoPlay=!state.autoPlay;
+    localStorage.setItem('sw_autoplay',String(state.autoPlay));
+    updateAutoPlayButton();
+    toast(state.autoPlay?'التشغيل التلقائي مفعل':'التشغيل التلقائي متوقف','ok');
+}
+function updateAutoPlayButton(){
+    const b=$('#ppAutoBtn'); if(!b) return;
+    b.classList.toggle('active',state.autoPlay);
+    b.title=state.autoPlay?'التشغيل التلقائي مفعل':'التشغيل التلقائي متوقف';
 }
 
 /* ---------- 6. NAV ACTIONS ---------- */
@@ -234,7 +246,23 @@ function openAuthModal(mode='login'){
     $('#authSubmitBtn').textContent=l?'دخول':'إنشاء حساب';
     $('#authToggleText').textContent=l?'ليس لديك حساب؟':'لديك حساب بالفعل؟';
     $('#authToggleBtn').textContent=l?'إنشاء حساب':'تسجيل الدخول';
+    $('#authSubtitle').textContent=l?'ادخل إلى عالمك الخاص واستكمل رحلتك من حيث توقفت.':'أنشئ حسابك خلال ثوانٍ واحصل على تجربة مشاهدة متزامنة وآمنة.';
     openModal('authModal');
+}
+
+function authErrorMessage(err){
+    const code=err?.code||'';
+    const messages={
+        'auth/invalid-credential':'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+        'auth/wrong-password':'كلمة المرور غير صحيحة.',
+        'auth/user-not-found':'لا يوجد حساب بهذا البريد الإلكتروني.',
+        'auth/email-already-in-use':'هذا البريد مستخدم بالفعل.',
+        'auth/weak-password':'كلمة المرور ضعيفة. استخدم 6 أحرف على الأقل.',
+        'auth/invalid-email':'صيغة البريد الإلكتروني غير صحيحة.',
+        'auth/too-many-requests':'محاولات كثيرة. حاول مرة أخرى بعد قليل.',
+        'auth/network-request-failed':'تعذر الاتصال. تحقق من الإنترنت وحاول مرة أخرى.'
+    };
+    return messages[code]||'حدث خطأ غير متوقع. حاول مرة أخرى.';
 }
 
 async function handleAuthSubmit(e){
@@ -247,7 +275,7 @@ async function handleAuthSubmit(e){
     try{
         if(state.authMode==='login'){
             await auth.signInWithEmailAndPassword(email,pass);
-            toast('تم تسجيل الدخول ✅','ok');
+            toast('تم تسجيل الدخول','أهلًا بك من جديد ✅','ok');
         }else{
             if(!name){toast('أدخل اسمك','warn');btn.disabled=false;return;}
             const res=await auth.createUserWithEmailAndPassword(email,pass);
@@ -261,12 +289,12 @@ async function handleAuthSubmit(e){
                 text:'استمتع بالمشاهدة. ترقّ VIP لفتح كل المميز!',
                 type:'welcome',read:false,createdAt:Date.now()
             });
-            toast('تم إنشاء الحساب ✅','ok');
+            toast('تم إنشاء الحساب','مرحبًا بك في سيرفر الوحش 🐺','ok');
         }
         closeModal('authModal');
         $('#authForm').reset();
     }catch(err){
-        toast(err.message,'err','خطأ');
+        toast('تعذر إتمام العملية',authErrorMessage(err),'err');
     }finally{btn.disabled=false;}
 }
 
@@ -274,8 +302,8 @@ async function handleForgotPass(e){
     e.preventDefault();
     const email=$('#authEmail').value.trim();
     if(!email){toast('اكتب بريدك أولاً','warn');return;}
-    try{await auth.sendPasswordResetEmail(email);toast('تم إرسال الرابط','ok');}
-    catch(err){toast(err.message,'err');}
+    try{await auth.sendPasswordResetEmail(email);toast('تم إرسال رابط الاستعادة','تحقق من بريدك الإلكتروني','ok');}
+    catch(err){toast('تعذر إرسال الرابط',authErrorMessage(err),'err');}
 }
 
 function logout(){
@@ -533,6 +561,7 @@ function renderCard(item,extra=''){
             ${item.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i> VIP</div>':''}
             ${item.isNew?'<div class="card-badge new">جديد</div>':''}
             ${item.category?`<div class="card-badge cat">${esc(item.category)}</div>`:''}
+            ${item.ageRating&&item.ageRating!=='عام'?`<span class="age-badge">${esc(item.ageRating)}</span>`:''}
             ${item.episode?`<div class="card-badge episode">حلقة ${esc(item.episode)}</div>`:''}
             ${locked?'<div class="card-lock"><i class="fa-solid fa-lock"></i><span>VIP</span></div>':''}
         </div>
@@ -552,6 +581,8 @@ function renderLiveTabs(){
     let h='<button class="row-action active" data-lt="all">الكل</button>';
     h+='<button class="row-action" data-lt="__vip"><i class="fa-solid fa-crown"></i> VIP</button>';
     h+='<button class="row-action" data-lt="__free"><i class="fa-solid fa-tower-broadcast"></i> مجاني</button>';
+    h+='<button class="row-action" data-lt="__adult"><i class="fa-solid fa-user-shield"></i> +18</button>';
+    [...new Set(state.liveChannels.map(c=>c.network).filter(Boolean))].forEach(n=>{h+=`<button class="row-action" data-lt="__network:${esc(n)}"><i class="fa-solid fa-sitemap"></i> ${esc(n)}</button>`;});
     state.liveCategories.forEach(c=>{if(c.name) h+=`<button class="row-action" data-lt="${esc(c.name)}">${esc(c.name)}</button>`;});
     t.innerHTML=h;
     $$('#liveTabs .row-action').forEach(b=>b.onclick=()=>{
@@ -567,6 +598,8 @@ function renderLive(){
     let ch=state.liveChannels.slice();
     if(state.activeLiveTab==='__vip') ch=ch.filter(c=>c.isVip);
     else if(state.activeLiveTab==='__free') ch=ch.filter(c=>!c.isVip);
+    else if(state.activeLiveTab==='__adult') ch=ch.filter(c=>c.ageRating==='18+');
+    else if(state.activeLiveTab.startsWith('__network:')) ch=ch.filter(c=>c.network===state.activeLiveTab.slice(11));
     else if(state.activeLiveTab!=='all') ch=ch.filter(c=>c.category===state.activeLiveTab);
     ch.sort((a,b)=>(a.order||0)-(b.order||0));
     if(ch.length===0){g.innerHTML='<div class="empty-state"><i class="fa-solid fa-tower-broadcast"></i><h3>لا توجد قنوات</h3></div>';return;}
@@ -577,17 +610,19 @@ function liveCardHTML(c, extra=''){
     const name=c.name||c.title||'قناة';
     const logo=c.logo||c.image||'https://via.placeholder.com/300x168/0f1117/ef4444?text='+encodeURIComponent(name);
     const locked=c.isVip&&!isVip(state.userData);
+    const age=c.ageRating&&c.ageRating!=='عام'?`<span class="age-badge">${esc(c.ageRating)}</span>`:'';
     return `<div class="card landscape ${c.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer('${esc(c.id)}','live')">
         <div class="card-thumb">
             <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy">
             <div class="card-badge live">مباشر</div>
             ${c.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i></div>':''}
+            ${age}
             ${(c.viewers>0)?`<div class="card-badge viewers"><i class="fa-solid fa-eye"></i> ${Number(c.viewers).toLocaleString('ar-EG')}</div>`:''}
             ${locked?'<div class="card-lock"><i class="fa-solid fa-lock"></i><span>VIP</span></div>':''}
         </div>
         <div class="card-info">
             <div class="card-title">${esc(name)}</div>
-            <div class="card-meta"><span><i class="fa-solid fa-tv"></i> ${esc(c.category||'بث')}</span></div>
+            <div class="card-meta"><span><i class="fa-solid fa-tv"></i> ${esc(c.category||'بث')}</span>${c.network?`<span><i class="fa-solid fa-sitemap"></i> ${esc(c.network)}</span>`:''}</div>
         </div>
     </div>`;
 }
@@ -812,6 +847,11 @@ async function openPlayer(id,type='vod'){
 
     if(!item){toast('المحتوى غير موجود','err');return;}
     if(!state.currentUser){toast('سجل دخول للمشاهدة','warn');openAuthModal('login');return;}
+    if(item.ageRating==='18+' && sessionStorage.getItem('adult_content_confirmed')!=='1'){
+        const ok=window.confirm('هذا المحتوى مصنف للكبار (+18). هل تريد المتابعة؟');
+        if(!ok) return;
+        sessionStorage.setItem('adult_content_confirmed','1');
+    }
     if(item.isVip && !isVip(state.userData)){openSubModal();toast('هذا المحتوى لـ VIP','warn');return;}
 
     if(type==='live' && item.id){
@@ -821,13 +861,13 @@ async function openPlayer(id,type='vod'){
     state.currentItem=item;
     state.playerType=type;
 
-    const title=item.title||`${item.team1||''} vs ${item.team2||''}`||item.name||'عرض';
+    const title=item.title||item.name||((item.team1||item.team2)?`${item.team1||''} vs ${item.team2||''}`:'عرض');
     $('#ppTitle').textContent=title;
     $('#ppTitleBig').textContent=title;
     $('#ppViews').textContent=(item.views||0)+1;
     $('#ppCategory').innerHTML=`<i class="fa-solid fa-folder"></i> ${esc(item.category||(type==='live'?'بث مباشر':type==='match'?'مباراة':'عام'))}`;
     $('#ppYear').textContent=item.year?'📅 '+item.year:'';
-    $('#ppBadges').innerHTML=item.isVip?'<span class="card-badge vip" style="position:static;display:inline-flex"><i class="fa-solid fa-crown"></i> VIP</span>':'';
+    $('#ppBadges').innerHTML=(item.isVip?'<span class="card-badge vip" style="position:static;display:inline-flex"><i class="fa-solid fa-crown"></i> VIP</span> ':'')+(item.ageRating&&item.ageRating!=='عام'?`<span class="age-badge" style="position:static;display:inline-flex">${esc(item.ageRating)}</span>`:'');
 
     // Show/hide blocks based on type
     const isVod=type==='vod';
@@ -859,6 +899,7 @@ async function openPlayer(id,type='vod'){
     $('#ppAddListBtn').onclick=()=>addToWatchlistUI(item.id);
 
     updatePlayerFavBtn();
+    updateAutoPlayButton();
 
     // Show page
     $('#playerPage').classList.add('active');
@@ -892,8 +933,8 @@ function setupServers(item){
     grid.innerHTML='';
 
     let servers=[];
-    if(Array.isArray(item.servers)&&item.servers.length>0) servers=item.servers.filter(s=>s&&(s.url||s.link));
-    else if(item.url||item.streamUrl||item.link) servers=[{name:'السيرفر الرئيسي',url:item.url||item.streamUrl||item.link,type:item.streamType||'auto'}];
+    if(Array.isArray(item.servers)&&item.servers.length>0) servers=item.servers.filter(s=>s&&(s.url||s.link||s.script));
+    else if(item.url||item.streamUrl||item.link) servers=[{name:'السيرفر الرئيسي',url:item.url||item.streamUrl||item.link,type:item.type||item.streamType||'auto'}];
 
     if(servers.length===0){
         if(block) block.style.display='none';
@@ -908,11 +949,26 @@ function setupServers(item){
         b.onclick=()=>{
             $$('#serversGrid .server-btn').forEach(x=>x.classList.remove('active'));
             b.classList.add('active');
-            renderPlayer(s.url,s.type||'auto');
+            renderPlayer(s.url||s.link||s.script,s.type|| (s.script?'embed':'auto'));
         };
         grid.appendChild(b);
     });
-    renderPlayer(servers[0].url,servers[0].type||'auto');
+    renderPlayer(servers[0].url||servers[0].link||servers[0].script,servers[0].type|| (servers[0].script?'embed':'auto'));
+}
+
+function inferMediaType(raw,type='auto'){
+    if(type&&type!=='url'&&type!=='auto') return type;
+    const u=String(raw||'').toLowerCase();
+    if(/\.m3u8(?:$|[?#])|format(?:=|%3d)hls|mime(?:=|%3d).*mpegurl/.test(u)) return 'hls';
+    if(/\.mpd(?:$|[?#])|format(?:=|%3d)dash/.test(u)) return 'dash';
+    if(/\.(mp4|webm|ogg|mov|mkv)(?:$|[?#])/.test(u)) return 'video';
+    return 'auto';
+}
+
+function showPlayerError(message, retry){
+    const c=$('#playerContainer'); if(!c) return;
+    c.innerHTML=`<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i><strong>${esc(message)}</strong><small>قد يكون الرابط منتهي الصلاحية أو يمنع التشغيل من هذا النطاق.</small>${retry?'<button class="btn btn-primary sm" id="playerRetry"><i class="fa-solid fa-rotate-right"></i> إعادة المحاولة</button>':''}</div>`;
+    if(retry) $('#playerRetry').onclick=retry;
 }
 
 function renderPlayer(url,type='auto'){
@@ -924,14 +980,22 @@ function renderPlayer(url,type='auto'){
         return;
     }
     const u=String(url).trim();
+    if(type==='embed'){
+        const f=document.createElement('iframe');
+        if(/^\s*</.test(u)) f.srcdoc=u; else f.src=u;
+        f.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';
+        f.allowFullscreen=true; f.referrerPolicy='no-referrer-when-downgrade';
+        c.appendChild(f); return;
+    }
     if(!/^https?:\/\//i.test(u)){
-        c.innerHTML='<div class="player-error"><i class="fa-solid fa-link-slash"></i><p>رابط غير صالح</p></div>';
+        showPlayerError('الرابط غير صالح');
         return;
     }
 
-    const isHls=u.includes('.m3u8')||type==='hls';
-    const isDash=u.includes('.mpd')||type==='dash';
-    const isVid=u.match(/\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i)||type==='video';
+    const mediaType=inferMediaType(u,type);
+    const isHls=mediaType==='hls';
+    const isDash=mediaType==='dash';
+    const isVid=mediaType==='video';
 
     if(isHls){
         const v=document.createElement('video');
@@ -941,14 +1005,19 @@ function renderPlayer(url,type='auto'){
         state.currentVideoEl=v;
         attachToolbar(c,v); attachProgressSaver(v);
         if(typeof Hls!=='undefined'&&Hls.isSupported()){
-            state.hls=new Hls({enableWorker:true});
+            state.hls=new Hls({enableWorker:true,lowLatencyMode:true,backBufferLength:90,capLevelToPlayerSize:true});
             state.hls.loadSource(u);
             state.hls.attachMedia(v);
             state.hls.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));
-            state.hls.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal)c.innerHTML='<div class="player-error"><i class="fa-solid fa-circle-exclamation"></i><p>خطأ في HLS</p></div>';});
+            state.hls.on(Hls.Events.ERROR,(_,d)=>{
+                if(!d.fatal) return;
+                if(d.type===Hls.ErrorTypes.NETWORK_ERROR) state.hls.startLoad();
+                else if(d.type===Hls.ErrorTypes.MEDIA_ERROR) state.hls.recoverMediaError();
+                else showPlayerError('تعذر تشغيل بث HLS',()=>renderPlayer(u,'hls'));
+            });
         }else if(v.canPlayType('application/vnd.apple.mpegurl')){
             v.src=u; v.play().catch(()=>{});
-        }
+        }else showPlayerError('المتصفح لا يدعم HLS',()=>renderPlayer(u,'hls'));
     }else if(isDash){
         const v=document.createElement('video');
         v.controls=true; v.autoplay=true; v.playsInline=true;
@@ -959,7 +1028,8 @@ function renderPlayer(url,type='auto'){
         if(typeof dashjs!=='undefined'){
             state.dash=dashjs.MediaPlayer().create();
             state.dash.initialize(v,u,true);
-        }
+            state.dash.on(dashjs.MediaPlayer.events.ERROR,()=>showPlayerError('تعذر تشغيل بث MPEG-DASH',()=>renderPlayer(u,'dash')));
+        }else showPlayerError('مكتبة MPEG-DASH غير متاحة',()=>renderPlayer(u,'dash'));
     }else if(isVid){
         const v=document.createElement('video');
         v.controls=true; v.autoplay=true; v.playsInline=true;
@@ -973,6 +1043,7 @@ function renderPlayer(url,type='auto'){
         f.src=u;
         f.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';
         f.allowFullscreen=true;
+        f.referrerPolicy='no-referrer-when-downgrade';
         c.appendChild(f);
     }
 }
@@ -1317,7 +1388,21 @@ function openProfileModal(){
 /* ---------- 22. VIP ---------- */
 function openSubModal(){
     const box=$('#subModalStatusBox');
-    if(state.vipStatus&&state.vipStatus.status==='pending'){
+    const instructions=$('#paymentInstructions');
+    const enabled=state.settings.paymentsEnabled !== false;
+    if(instructions){
+        const text=state.settings.paymentInstructions||'سيتم التواصل معك عبر واتساب لتأكيد طريقة الدفع.';
+        instructions.innerHTML=`<strong><i class="fa-solid fa-circle-info"></i> تعليمات الدفع</strong><br>${esc(text)}${state.settings.vipPrice?`<br><span>السعر الشهري: ${esc(state.settings.vipPrice)}</span>`:''}`;
+        instructions.style.display='block';
+    }
+    const pending=state.vipStatus&&state.vipStatus.status==='pending';
+    const active=state.userData&&isVip(state.userData);
+    const requestBtn=$('#btnRequestVip');
+    if(requestBtn){
+        requestBtn.disabled=!enabled||pending||active;
+        requestBtn.innerHTML=!enabled?'<i class="fa-solid fa-ban"></i> الطلبات متوقفة':active?'<i class="fa-solid fa-circle-check"></i> اشتراكك فعال':pending?'<i class="fa-solid fa-hourglass-half"></i> الطلب قيد المراجعة':'<i class="fa-brands fa-whatsapp"></i> إرسال طلب الاشتراك';
+    }
+    if(pending){
         box.innerHTML=`<div class="vip-status-card pending">
             <div class="vsc-icon"><i class="fa-solid fa-hourglass-half"></i></div>
             <div><div class="vsc-title">طلبك قيد المراجعة</div>
@@ -1328,21 +1413,22 @@ function openSubModal(){
 }
 
 async function requestVip(){
+    if(state.settings.paymentsEnabled === false){toast('طلبات الاشتراك متوقفة حالياً','','warn');return;}
+    if(!state.currentUser){openAuthModal('login');return;}
+    if(isVip(state.userData)){toast('اشتراكك فعال بالفعل','','info');return;}
+    if(state.vipStatus&&state.vipStatus.status==='pending'){toast('لديك طلب قيد المراجعة','','warn');return;}
     const num=state.settings.whatsappNumber||'201000000000';
-    const msg=encodeURIComponent(`مرحباً، أريد الاشتراك في VIP.\nالبريد: ${state.currentUser?.email||'—'}`);
-    if(state.currentUser){
-        try{
-            await db.ref('vipRequests').push({
-                uid:state.currentUser.uid,
-                email:state.currentUser.email,
-                name:state.userData?.name||'',
-                status:'pending',
-                createdAt:Date.now()
-            });
-            toast('تم تسجيل طلبك','ok');
-        }catch(e){console.error(e);}
-    }
-    window.open(`https://wa.me/${num}?text=${msg}`,'_blank');
+    const method=$('#paymentMethod')?.value||'';
+    const reference=$('#paymentReference')?.value.trim()||'';
+    const note=$('#paymentNote')?.value.trim()||'';
+    if(!method){toast('اختر طريقة الدفع أولاً','','warn');return;}
+    const request={uid:state.currentUser.uid,email:state.currentUser.email,name:state.userData?.name||'',status:'pending',paymentMethod:method,paymentReference:reference,paymentNote:note,createdAt:Date.now()};
+    try{
+        await db.ref('vipRequests').push(request);
+        const msg=encodeURIComponent(`مرحباً، أريد الاشتراك في VIP.\nالاسم: ${request.name||'—'}\nالبريد: ${request.email||'—'}\nطريقة الدفع: ${method}\nرقم العملية: ${reference||'—'}`);
+        toast('تم تسجيل طلبك','ok');
+        window.open(`https://wa.me/${num}?text=${msg}`,'_blank','noopener');
+    }catch(e){toast('تعذر إرسال الطلب',e.message||'حاول مرة أخرى','err');return;}
 }
 
 /* ---------- 23. NOTIFICATIONS ---------- */
@@ -1607,6 +1693,13 @@ function initEvents(){
     $('#mobileSearchClear')?.addEventListener('click',()=>{msi.value='';state.searchQuery='';renderAll();renderHero();closeModal('sectionModal');});
 
     $('#authForm')?.addEventListener('submit',handleAuthSubmit);
+    $('#passwordToggle')?.addEventListener('click',()=>{
+        const input=$('#authPassword'), icon=$('#passwordToggle i');
+        const visible=input.type==='text';
+        input.type=visible?'password':'text';
+        icon.className=`fa-solid fa-${visible?'eye':'eye-slash'}`;
+        $('#passwordToggle').setAttribute('aria-label',visible?'إظهار كلمة المرور':'إخفاء كلمة المرور');
+    });
     $('#authToggleBtn')?.addEventListener('click',e=>{e.preventDefault();openAuthModal(state.authMode==='login'?'register':'login');});
     $('#forgotPassLink')?.addEventListener('click',handleForgotPass);
     $('#btnRequestVip')?.addEventListener('click',requestVip);

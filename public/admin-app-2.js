@@ -102,12 +102,14 @@ function renderLiveChannelsList(){
     const q = ($('#qLive').value||'').toLowerCase().trim();
     const f = $('#filterLiveCat').value;
     const ft = ($('#filterLiveType')?.value) || 'all';
+    const fa = ($('#filterLiveAge')?.value) || 'all';
     const box = $('#liveChannelsList');
     if(!box) return;
     let list = allLiveChs.filter(c=>{
         if(f !== 'all' && c.category !== f) return false;
         if(ft === 'vip' && !c.isVip) return false;
         if(ft === 'free' && c.isVip) return false;
+        if(fa !== 'all' && (c.ageRating||'عام') !== fa) return false;
         if(q){
             const n = (c.name||'').toLowerCase();
             const cat = (c.category||'').toLowerCase();
@@ -127,7 +129,8 @@ function renderLiveChannelsList(){
         <div class="dl-row">
             <img class="dl-thumb logo" src="${esc(c.logo||'https://via.placeholder.com/80x50/1f1f1f/ffffff?text=LIVE')}" onerror="this.src='https://via.placeholder.com/80x50/1f1f1f/ffffff?text=LIVE'">
             <div class="dl-cell"><span class="k">الاسم</span><span class="v">${esc(c.name||'قناة')}</span></div>
-            <div class="dl-cell"><span class="k">التصنيف</span><span class="badge">${esc(c.category||'عام')}</span></div>
+            <div class="dl-cell"><span class="k">التصنيف</span><span class="badge">${esc(c.category||'عام')}</span>${c.ageRating&&c.ageRating!=='عام'?` <span class="badge age">${esc(c.ageRating)}</span>`:''}</div>
+            <div class="dl-cell"><span class="k">الشبكة</span><span class="v">${esc(c.network||'—')}</span></div>
             <div class="dl-cell"><span class="k">النوع</span>${c.isVip ? '<span class="badge vip"><i class="fa-solid fa-crown"></i> VIP</span>' : '<span class="badge live"><i class="fa-solid fa-tower-broadcast"></i> مباشر</span>'}</div>
             <div class="dl-cell"><span class="k">مشاهدون</span><span class="v"><i class="fa-regular fa-eye"></i> ${(c.viewers||0).toLocaleString('ar-EG')}</span></div>
             <div class="dl-cell"><span class="k">الترتيب</span><span class="v">${c.order||0}</span></div>
@@ -141,6 +144,7 @@ function renderLiveChannelsList(){
 $('#qLive')?.addEventListener('input',debounce(renderLiveChannelsList,220));
 $('#filterLiveCat')?.addEventListener('change',renderLiveChannelsList);
 $('#filterLiveType')?.addEventListener('change',renderLiveChannelsList);
+$('#filterLiveAge')?.addEventListener('change',renderLiveChannelsList);
 $('#btnNewLiveChannel')?.addEventListener('click',()=>openLiveChannelModal());
 
 function openLiveChannelModal(ch = null){
@@ -154,6 +158,8 @@ function openLiveChannelModal(ch = null){
         $('#liveChLogo').value = ch.logo || '';
         $('#liveChUrl').value = ch.url || ch.streamUrl || '';
         $('#liveChIsVip').value = ch.isVip ? 'true' : 'false';
+        $('#liveChAgeRating').value = ch.ageRating || 'عام';
+        $('#liveChType').value = ch.type || 'auto';
         $('#liveChOrder').value = ch.order || 0;
         $('#liveChDescription').value = ch.description || '';
     }else{
@@ -177,6 +183,8 @@ $('#liveChForm')?.addEventListener('submit',async e=>{
         logo: $('#liveChLogo').value.trim(),
         url: $('#liveChUrl').value.trim(),
         isVip: $('#liveChIsVip').value === 'true',
+        ageRating: $('#liveChAgeRating').value || 'عام',
+        type: $('#liveChType').value || 'auto',
         order: parseInt($('#liveChOrder').value) || 0,
         description: $('#liveChDescription').value.trim(),
         updatedAt: Date.now()
@@ -632,6 +640,9 @@ function openVrDetails(id){
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">البريد</span><strong>${esc(r.email||'—')}</strong></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">الحالة</span><strong style="color:${statusColor}">${statusText}</strong></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">التاريخ</span><strong>${fmtTime(r.createdAt)}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">طريقة الدفع</span><strong>${esc(r.paymentMethod||'—')}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3)">رقم العملية</span><strong>${esc(r.paymentReference||'—')}</strong></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-3);display:block;margin-bottom:4px">ملاحظة</span><span>${esc(r.paymentNote||'—')}</span></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text-3)">UID</span><code style="font-size:.7rem;color:var(--info)">${esc(r.uid||'—')}</code></div>
         </div>`;
     $('#vrApproveBtn').style.display = status === 'pending' ? '' : 'none';
@@ -654,7 +665,7 @@ async function approveVipRequest(id){
     if(!ok) return;
     try{
         const now = Date.now();
-        await db.ref('vipRequests/' + id).update({status:'approved', approvedAt: now, durationDays: days});
+        await db.ref('vipRequests/' + id).update({status:'approved', approvedAt: now, durationDays: days, reviewedAt: now});
         if(r.uid){
             const userSnap = await db.ref('users/' + r.uid).once('value');
             const prev = userSnap.val() || {};
@@ -662,6 +673,7 @@ async function approveVipRequest(id){
             const baseTime = prevExp > now ? prevExp : now;
             const newExp = baseTime + days * 86400000;
             await db.ref('users/' + r.uid).update({isVip: true, expireAt: newExp, vipExpireDate: newExp, updatedAt: now});
+            await db.ref('notifications/' + r.uid).push({type:'vip',title:'تم تفعيل VIP',text:`تم قبول طلبك وتفعيل الاشتراك لمدة ${days} يوم.`,createdAt:now,read:false});
         }
         closeModal('mVRDetails');
         logActivity(`قبول طلب VIP: ${r.name || r.email}`);
@@ -679,7 +691,8 @@ async function rejectVipRequest(id){
     if(!ok) return;
     try{
         const now = Date.now();
-        await db.ref('vipRequests/' + id).update({status:'rejected', rejectedAt: now, rejectReason: reason || 'لم يتم تحديد سبب'});
+        await db.ref('vipRequests/' + id).update({status:'rejected', rejectedAt: now, reviewedAt: now, rejectReason: reason || 'لم يتم تحديد سبب'});
+        if(r.uid) await db.ref('notifications/' + r.uid).push({type:'vip',title:'تحديث طلب VIP',text:`تم رفض طلبك. ${reason||'يمكنك التواصل مع الإدارة لمزيد من التفاصيل.'}`,createdAt:now,read:false});
         closeModal('mVRDetails');
         logActivity(`رفض طلب VIP: ${r.name || r.email}`);
         toast('تم الرفض','','ok');
@@ -1326,6 +1339,8 @@ window.closeM3uPlayer = closeM3uPlayer;
 async function importM3UChannels(list, label){
     if(!list.length){ toast('لا توجد قنوات','','warn'); return; }
     const isVip = $('#m3uVip').value === 'true';
+    const ageRating = $('#m3uAgeRating').value || 'عام';
+    const network = $('#m3uNetwork').value.trim() || 'شبكة القنوات';
     const autoCat = $('#m3uAutoCat').value === 'true';
     const ok = await askConfirm({
         title:`استيراد ${label}`,
@@ -1360,7 +1375,10 @@ async function importM3UChannels(list, label){
                 category: c.category || 'عام',
                 logo: c.logo || '',
                 url: c.url,
+                network,
                 isVip,
+                ageRating,
+                type: /m3u8/i.test(c.url) ? 'hls' : /\.mpd(?:$|[?#])/i.test(c.url) ? 'dash' : 'auto',
                 viewers: 0,
                 order: i,
                 testStatus: c.status || 'untested',
@@ -1432,6 +1450,9 @@ function loadSettings(){
         if(s.vipColor) $('#settingVipColor').value = s.vipColor;
         if(s.whatsappLink) $('#settingWhatsappLink').value = s.whatsappLink;
         if(s.whatsappNumber) $('#settingWhatsappNumber').value = s.whatsappNumber;
+        if($('#settingPaymentInstructions')) $('#settingPaymentInstructions').value = s.paymentInstructions || '';
+        if($('#settingVipPrice')) $('#settingVipPrice').value = s.vipPrice || '';
+        if($('#settingPaymentsEnabled')) $('#settingPaymentsEnabled').value = s.paymentsEnabled === false ? 'false' : 'true';
     });
 }
 $('#btnSaveSettings')?.addEventListener('click',async()=>{
@@ -1446,6 +1467,9 @@ $('#btnSaveSettings')?.addEventListener('click',async()=>{
             vipColor: $('#settingVipColor').value,
             whatsappLink: $('#settingWhatsappLink').value.trim(),
             whatsappNumber: $('#settingWhatsappNumber').value.trim().replace(/\D/g,''),
+            paymentInstructions: $('#settingPaymentInstructions').value.trim(),
+            vipPrice: $('#settingVipPrice').value.trim(),
+            paymentsEnabled: $('#settingPaymentsEnabled').value === 'true',
             updatedAt: Date.now()
         });
         logActivity('تحديث الإعدادات');

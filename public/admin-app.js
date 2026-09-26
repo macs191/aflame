@@ -337,6 +337,9 @@ function serverRow(name='', val='', type='url'){
         <input class="srv-name" placeholder="اسم السيرفر" value="${esc(name)}">
         <select class="srv-type">
             <option value="url" ${type==='url'?'selected':''}>رابط</option>
+            <option value="hls" ${type==='hls'?'selected':''}>HLS / M3U8</option>
+            <option value="dash" ${type==='dash'?'selected':''}>MPEG-DASH / MPD</option>
+            <option value="video" ${type==='video'?'selected':''}>فيديو مباشر</option>
             <option value="embed" ${type==='embed'?'selected':''}>كود HTML</option>
         </select>
         <input class="srv-val" placeholder="الرابط أو كود iframe" value="${esc(val)}">
@@ -357,7 +360,7 @@ function collectServers(sel){
         const type = r.querySelector('.srv-type').value;
         const val = r.querySelector('.srv-val').value.trim();
         if(!name || !val) return;
-        out.push(type === 'embed' ? {name, script: val} : {name, url: val});
+        out.push(type === 'embed' ? {name, script: val, type} : {name, url: val, type});
     });
     return out;
 }
@@ -367,7 +370,7 @@ function fillServers(sel, servers){
     box.innerHTML = '';
     (servers||[]).forEach(s=>{
         const val = s.url || s.script || '';
-        const type = (s.script) ? 'embed' : 'url';
+        const type = s.type || (s.script ? 'embed' : 'url');
         box.appendChild(serverRow(s.name || 'سيرفر', val, type));
     });
     if(box.children.length === 0) box.appendChild(serverRow('سيرفر رئيسي'));
@@ -620,6 +623,7 @@ $('#addForm')?.addEventListener('submit',async e=>{
         title: $('#addTitle').value.trim(),
         category: $('#addCategory').value,
         isVip: $('#addIsVip').value === 'true',
+        ageRating: $('#addAgeRating').value || 'عام',
         thumbnailUrl: $('#addThumbnail').value.trim(),
         description: $('#addDescription').value.trim(),
         servers: collectServers('#addServers'),
@@ -757,6 +761,7 @@ async function editItem(id){
     $('#editTitle').value = item.title || '';
     $('#editCategory').value = item.category || 'عام';
     $('#editIsVip').value = item.isVip ? 'true' : 'false';
+    $('#editAgeRating').value = item.ageRating || 'عام';
     $('#editThumbnail').value = item.thumbnailUrl || '';
     $('#editDescription').value = item.description || '';
     $('#editDownloadUrl').value = item.downloadUrl || '';
@@ -774,6 +779,7 @@ $('#editForm')?.addEventListener('submit',async e=>{
             title: $('#editTitle').value.trim(),
             category: $('#editCategory').value,
             isVip: $('#editIsVip').value === 'true',
+            ageRating: $('#editAgeRating').value || 'عام',
             thumbnailUrl: $('#editThumbnail').value.trim(),
             description: $('#editDescription').value.trim(),
             servers: collectServers('#editServers'),
@@ -971,7 +977,7 @@ async function editUser(id){
     $('#userId').value = id;
     $('#userName').value = u.name || '';
     $('#userEmail').value = u.email || '';
-    $('#userPassword').value = u.password || '';
+    $('#userPhone').value = u.phone || '';
     $('#userIsVip').value = userIsVipNow(u) ? 'true' : 'false';
     $('#userModalTitle').textContent = 'تعديل المستخدم';
     openModal('mUser');
@@ -983,7 +989,7 @@ $('#userForm')?.addEventListener('submit',async e=>{
     const id = $('#userId').value;
     const name = $('#userName').value.trim();
     const email = $('#userEmail').value.trim();
-    const password = $('#userPassword').value.trim();
+    const phone = $('#userPhone').value.trim();
     const isVip = $('#userIsVip').value === 'true';
     const val = parseInt($('#subValue').value) || 1;
     const unit = $('#subUnit').value;
@@ -1000,10 +1006,10 @@ $('#userForm')?.addEventListener('submit',async e=>{
         if(prevExp > now) baseTime = prevExp;
     }
     const expireAt = baseTime + addMs;
-    const payload = {name, email, password, isVip, expireAt, vipExpireDate: expireAt, updatedAt: now};
+    const payload = {name, email, phone, isVip, expireAt, vipExpireDate: expireAt, updatedAt: now};
     try{
         if(id) await db.ref('users/'+id).update(payload);
-        else await db.ref('users').push({...payload, isBlocked:false, isBanned:false, createdAt:now});
+        else await db.ref('users').push({...payload, isBlocked:false, isBanned:false, createdAt:now, note:'ملف إداري؛ يجب إنشاء الحساب من صفحة التسجيل'});
         closeModal('mUser');
         logActivity(id?`تعديل مستخدم: ${name}`:`إضافة مستخدم: ${name}`);
         toast('تم الحفظ', name, 'ok');
