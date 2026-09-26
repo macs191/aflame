@@ -344,27 +344,20 @@ function fetchAll(){
         }
         renderDynamicSections();
     });
-    db.ref('liveChannels').on('value',async snap=>{
-        // بعض جلسات Firebase قد تبدأ بـ snapshot جزئي قديم؛ لا نرسمه كأنه الجدول الكامل.
-        let source=snap;
-        if(snap.numChildren()<=1){
-            try{
-                const full=await db.ref('liveChannels').once('value');
-                if(full.numChildren()>snap.numChildren()) source=full;
-            }catch(e){}
-        }
-        const incoming=[];
-        if(source.exists()) source.forEach(c=>incoming.push({id:c.key,...c.val()}));
-        // لا تسمح باستبدال جدول كامل بـ snapshot قديم من عنصر واحد.
-        if(incoming.length<state.liveChannels.length && state.liveChannels.length>1) return;
-        state.liveChannels=incoming;
+    const syncLiveChannels=async()=>{
+        try{
+            const snap=await db.ref('liveChannels').once('value');
+            const incoming=[];
+            if(snap.exists()) snap.forEach(c=>incoming.push({id:c.key,...c.val()}));
+            state.liveChannels=incoming;
+        }catch(e){console.warn('[liveChannels] full sync failed',e);return;}
         renderLiveTabs();
         renderLive();
         renderDynamicSections();
-    });
-    // القراءة الكاملة هي المصدر الموثوق، حتى لو وصل مستمع realtime بحالة أولية ناقصة.
-    syncAllLiveChannels();
-    setTimeout(syncAllLiveChannels,900);
+    };
+    db.ref('liveChannels').on('value',syncLiveChannels);
+    syncLiveChannels();
+    setTimeout(syncLiveChannels,900);
     db.ref('liveCategories').on('value',snap=>{
         state.liveCategories=[];
         if(snap.exists()) snap.forEach(c=>state.liveCategories.push({id:c.key,...c.val()}));

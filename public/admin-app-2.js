@@ -87,41 +87,21 @@ window.delLiveCat = delLiveCat;
    LIVE CHANNELS
    ============================================================ */
 function loadLiveChannels(){
-    db.ref('liveChannels').on('value', async snap=>{
-        let source=snap;
-        if(snap.numChildren()<=1){
-            try{
-                const full=await db.ref('liveChannels').once('value');
-                if(full.numChildren()>snap.numChildren()) source=full;
-            }catch(e){}
-        }
-        const incoming=[];
-        if(source.exists()) source.forEach(c=>incoming.push({id:c.key,...c.val()}));
-        if(incoming.length<allLiveChs.length && allLiveChs.length>1) return;
-        allLiveChs=incoming;
-        const vip = allLiveChs.filter(c=>c.isVip).length;
-        $('#liveStatChannels').textContent = allLiveChs.length.toLocaleString('ar-EG');
-        $('#livePanelCount').textContent = `${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
-        $('#liveStatVip').textContent = vip.toLocaleString('ar-EG');
-        $('#statTotalLive').textContent = allLiveChs.length.toLocaleString('ar-EG');
-        renderLiveChannelsList();
-    });
-    // مزامنة كاملة مستقلة تمنع أي snapshot أولي ناقص من إخفاء بقية القنوات.
     const fullSync=async()=>{
         try{
             const snap=await db.ref('liveChannels').once('value');
             const incoming=[];
             if(snap.exists()) snap.forEach(c=>incoming.push({id:c.key,...c.val()}));
-            if(incoming.length>=allLiveChs.length || allLiveChs.length===0){
-                allLiveChs=incoming;
-                $('#liveStatChannels').textContent=allLiveChs.length.toLocaleString('ar-EG');
-                $('#livePanelCount').textContent=`${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
-                $('#liveStatVip').textContent=allLiveChs.filter(c=>c.isVip).length.toLocaleString('ar-EG');
-                $('#statTotalLive').textContent=allLiveChs.length.toLocaleString('ar-EG');
-                renderLiveChannelsList();
-            }
+            allLiveChs=incoming;
+            $('#liveStatChannels').textContent=allLiveChs.length.toLocaleString('ar-EG');
+            $('#livePanelCount').textContent=`${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
+            $('#liveStatVip').textContent=allLiveChs.filter(c=>c.isVip).length.toLocaleString('ar-EG');
+            $('#statTotalLive').textContent=allLiveChs.length.toLocaleString('ar-EG');
+            renderLiveChannelsList();
         }catch(e){console.warn('[admin liveChannels] full sync failed',e)}
     };
+    // لا نستخدم snapshot المستمع في الرسم؛ القراءة الكاملة هي المصدر الوحيد للجدول.
+    db.ref('liveChannels').on('value',fullSync);
     fullSync();
     setTimeout(fullSync,900);
 }
