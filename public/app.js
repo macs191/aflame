@@ -335,7 +335,9 @@ function fetchAll(){
     db.ref('liveChannels').on('value',snap=>{
         state.liveChannels=[];
         if(snap.exists()) snap.forEach(c=>state.liveChannels.push({id:c.key,...c.val()}));
+        renderLiveTabs();
         renderLive();
+        renderDynamicSections();
     });
     db.ref('liveCategories').on('value',snap=>{
         state.liveCategories=[];
@@ -476,15 +478,14 @@ function renderDynamicSections(){
 
 function buildLivePreview(){
     if(!state.liveChannels.length) return '';
-    const ch=state.liveChannels.slice().sort((a,b)=>(a.order||0)-(b.order||0)).slice(0,15);
-    const lockedCount=ch.filter(c=>c.isVip&&!isVip(state.userData)).length;
+    const ch=state.liveChannels.slice().sort((a,b)=>(a.order||0)-(b.order||0));
     return `<section class="content-row live-row">
         <div class="row-header">
             <div class="row-title"><span class="live-dot"></span><h2>قنوات البث المباشر</h2></div>
             <button class="row-action" onclick="setActiveView('live')"><span>كل القنوات (${state.liveChannels.length})</span><i class="fa-solid fa-chevron-left"></i></button>
         </div>
-        <div class="row-scroll">
-            ${ch.map(c=>liveCardHTML(c,'row-live-card')).join('')}
+        <div class="live-home-grid">
+            ${ch.map(c=>liveCardHTML(c,'live-grid-card')).join('')}
         </div>
     </section>`;
 }
@@ -603,7 +604,7 @@ function renderLive(){
     else if(state.activeLiveTab!=='all') ch=ch.filter(c=>c.category===state.activeLiveTab);
     ch.sort((a,b)=>(a.order||0)-(b.order||0));
     if(ch.length===0){g.innerHTML='<div class="empty-state"><i class="fa-solid fa-tower-broadcast"></i><h3>لا توجد قنوات</h3></div>';return;}
-    g.innerHTML=ch.map(c=>liveCardHTML(c)).join('');
+    g.innerHTML=ch.map(c=>liveCardHTML(c,'live-grid-card')).join('');
 }
 
 function liveCardHTML(c, extra=''){
@@ -614,6 +615,7 @@ function liveCardHTML(c, extra=''){
     return `<div class="card landscape ${c.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer('${esc(c.id)}','live')">
         <div class="card-thumb">
             <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy">
+            <div class="card-overlay"><div class="card-play"><i class="fa-solid fa-play"></i></div></div>
             <div class="card-badge live">مباشر</div>
             ${c.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i></div>':''}
             ${age}
