@@ -933,6 +933,7 @@ function renderUsers(){
         box.innerHTML = `<div class="empty"><i class="fa-solid fa-users"></i><p>لا يوجد مستخدمون</p></div>`;
         return;
     }
+    box.className='users-grid';
     box.innerHTML = list.map(u=>{
         const vip = userIsVipNow(u);
         const banned = userIsBanned(u);
@@ -946,20 +947,17 @@ function renderUsers(){
             days = diff > 0 ? diff + ' يوم' : 'منتهي';
         }
         return `
-        <div class="dl-row">
-            <div class="dl-cell"><span class="k">الاسم</span><span class="v">${esc(u.name||'مستخدم')}</span></div>
-            <div class="dl-cell"><span class="k">البريد</span><span class="v" style="font-size:.78rem;color:var(--text-2)">${esc(u.email||'—')}</span></div>
-            <div class="dl-cell"><span class="k">النوع</span>${vip?'<span class="badge vip"><i class="fa-solid fa-crown"></i> VIP</span>':'<span class="badge">عادي</span>'}</div>
-            <div class="dl-cell"><span class="k">الانتهاء</span><span class="v">${exp?fmtDate(exp):'—'}</span></div>
-            <div class="dl-cell"><span class="k">المتبقي</span><span class="v">${days}</span></div>
-            <div class="dl-cell"><span class="k">الحالة</span>${statusBadge}</div>
+        <article class="user-card ${vip?'is-vip':''} ${banned?'is-banned':''}">
+            <div class="user-card-head"><div class="user-avatar">${esc((u.name||u.email||'م').slice(0,1).toUpperCase())}</div><div><h3>${esc(u.name||'مستخدم')}</h3><small>${esc(u.email||'—')}</small></div>${vip?'<span class="badge vip"><i class="fa-solid fa-crown"></i> VIP</span>':'<span class="badge">عادي</span>'}</div>
+            <div class="user-card-meta"><span><b>UID</b>${esc(u.id)}</span><span><b>الهاتف</b>${esc(u.phone||'—')}</span><span><b>الانتهاء</b>${exp?fmtDate(exp):'—'}</span><span><b>الدخول</b>${u.lastLogin?fmtDate(u.lastLogin):'—'}</span></div>
+            <div class="user-card-status">${statusBadge}<span class="remaining">${days}</span></div>
             <div class="dl-actions">
                 <button class="btn info sm" onclick="showUserDetails('${esc(u.id)}')" title="كل البيانات والسجل"><i class="fa-solid fa-database"></i></button>
                 <button class="btn ghost sm" onclick="editUser('${esc(u.id)}')"><i class="fa-solid fa-user-pen"></i></button>
                 <button class="btn ${banned?'green':'gold'} sm" onclick="toggleBan('${esc(u.id)}',${!banned})"><i class="fa-solid ${banned?'fa-lock-open':'fa-ban'}"></i></button>
                 <button class="btn red sm" onclick="delUser('${esc(u.id)}','${esc(u.name||'')}')"><i class="fa-solid fa-trash"></i></button>
             </div>
-        </div>`;
+        </article>`;
     }).join('');
 }
 $('#qUser')?.addEventListener('input',debounce(renderUsers,220));
@@ -981,6 +979,9 @@ async function editUser(id){
     $('#userEmail').value = u.email || '';
     $('#userPhone').value = u.phone || '';
     $('#userIsVip').value = userIsVipNow(u) ? 'true' : 'false';
+    $('#userRole').value = u.role || 'user';
+    $('#userBlocked').value = userIsBanned(u) ? 'true' : 'false';
+    $('#userNote').value = u.note || '';
     $('#userModalTitle').textContent = 'تعديل المستخدم';
     openModal('mUser');
 }
@@ -1009,6 +1010,9 @@ $('#userForm')?.addEventListener('submit',async e=>{
     const email = $('#userEmail').value.trim();
     const phone = $('#userPhone').value.trim();
     const isVip = $('#userIsVip').value === 'true';
+    const role = $('#userRole').value || 'user';
+    const blocked = $('#userBlocked').value === 'true';
+    const note = $('#userNote').value.trim();
     const val = parseInt($('#subValue').value) || 1;
     const unit = $('#subUnit').value;
     let addMs = 0;
@@ -1024,7 +1028,7 @@ $('#userForm')?.addEventListener('submit',async e=>{
         if(prevExp > now) baseTime = prevExp;
     }
     const expireAt = baseTime + addMs;
-    const payload = {name, email, phone, isVip, expireAt, vipExpireDate: expireAt, updatedAt: now};
+    const payload = {name, email, phone, isVip, expireAt, vipExpireDate: expireAt, role, note, isBlocked:blocked, isBanned:blocked, updatedAt: now};
     try{
         if(id) await db.ref('users/'+id).update(payload);
         else await db.ref('users').push({...payload, isBlocked:false, isBanned:false, createdAt:now, note:'ملف إداري؛ يجب إنشاء الحساب من صفحة التسجيل'});

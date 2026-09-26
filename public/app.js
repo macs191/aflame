@@ -386,6 +386,10 @@ function fetchAll(){
         state.ads=snap.val()||{};
         renderAds();
     });
+    db.ref('adsCatalog').on('value',snap=>{
+        state.ads.catalog=[]; if(snap.exists()) snap.forEach(c=>state.ads.catalog.push({id:c.key,...c.val()}));
+        renderAds();
+    });
 }
 
 function applySettings(){
@@ -409,10 +413,22 @@ function applySettings(){
 
 function renderAds(){
     const ads=state.ads;
-    [['#adTop',ads.topBanner],['#adMid',ads.midBanner],['#adBottom',ads.bottomBanner]].forEach(([sel,html])=>{
+    const catalog=Array.isArray(ads.catalog)?ads.catalog:[];
+    const pick=placement=>catalog.find(a=>a.active!==false&&a.placement===placement);
+    const markup=ad=>ad?(ad.type==='link'?`<a href="${esc(ad.content)}" target="_blank" rel="noopener noreferrer">${esc(ad.name||'فتح الإعلان')}</a>`:ad.content):'';
+    [['#adTop',markup(pick('top'))||ads.topBanner,'top'],['#adMid',markup(pick('mid'))||ads.midBanner,'mid'],['#adBottom',markup(pick('bottom'))||ads.bottomBanner,'bottom']].forEach(([sel,html,slot])=>{
         const el=$(sel);
-        if(el&&html){el.innerHTML=html;el.classList.add('show');}
+        if(el){el.innerHTML=html||'';el.classList.toggle('show',!!html);if(html) trackAd(pick(slot)?.id||'legacy-'+slot,el);}
     });
+}
+
+function trackAd(id,element){
+    if(!id||!element||element.dataset.adTracked) return;
+    element.dataset.adTracked='1';
+    const ref=db.ref('adStats/'+id);
+    const ecpm=Number((state.ads.catalog||[]).find(a=>a.id===id)?.ecpm)||0;
+    ref.transaction(x=>{x=x||{};x.impressions=(Number(x.impressions)||0)+1;x.revenue=(Number(x.revenue)||0)+ecpm/1000;return x;});
+    element.addEventListener('click',()=>ref.transaction(x=>{x=x||{};x.clicks=(Number(x.clicks)||0)+1;return x;}),{once:true});
 }
 
 /* ---------- 9. HERO ---------- */
@@ -1142,7 +1158,9 @@ function attachProgressSaver(video){
 
 function startVideoAdCycle(video){
     stopVideoAdCycle();
-    const ads=state.ads||{}, html=ads.videoAd||'';
+    const ads=state.ads||{}, configured=(ads.catalog||[]).find(a=>a.active!==false&&a.placement==='video');
+    const html=configured?(configured.type==='link'?`<a href="${esc(configured.content)}" target="_blank" rel="noopener noreferrer">${esc(configured.name||'فتح الإعلان')}</a>`:configured.content):(ads.videoAd||'');
+    const adId=configured?.id||'legacy-video';
     if(!html) return;
     const delay=Math.max(0,Number(ads.videoAdDelay)||120)*1000;
     const interval=Math.max(30,Number(ads.videoAdInterval)||300)*1000;
@@ -1154,6 +1172,7 @@ function startVideoAdCycle(video){
         ad.className='video-ad-overlay';
         ad.innerHTML=`<button class="video-ad-close" aria-label="إغلاق الإعلان">×</button><span class="video-ad-label">إعلان</span><div class="video-ad-content">${html}</div>`;
         host.appendChild(ad);
+        trackAd(adId,ad);
         ad.querySelector('.video-ad-close').onclick=()=>ad.remove();
         const duration=Math.max(5,Number(ads.videoAdDuration)||10)*1000;
         setTimeout(()=>ad.remove(),duration);

@@ -879,7 +879,28 @@ function loadAds(){
     db.ref('settings/popupEnabled').on('value', snap=>{
         if($('#adPopupEnabled')) $('#adPopupEnabled').checked = snap.val() === true;
     });
+    db.ref('adsCatalog').on('value', snap=>{
+        const list=[]; if(snap.exists()) snap.forEach(c=>list.push({id:c.key,...c.val()}));
+        window.__adsCatalog=list;
+        const box=$('#adsCatalogList');
+        if($('#adStatActive')) $('#adStatActive').textContent=list.filter(a=>a.active!==false).length.toLocaleString('ar-EG');
+        if(box) box.innerHTML=list.length?list.map(ad=>`<div class="dl-row"><div class="dl-cell"><span class="k">الإعلان</span><span class="v">${esc(ad.name||'إعلان')}</span></div><div class="dl-cell"><span class="k">المكان</span><span class="v">${esc(ad.placement||'—')}</span></div><div class="dl-cell"><span class="k">النوع</span><span class="v">${ad.type==='link'?'رابط':'Script'}</span></div><div class="dl-cell"><span class="k">الحالة</span><span class="badge ${ad.active===false?'block':'ok'}">${ad.active===false?'متوقف':'نشط'}</span></div><div class="dl-actions"><button class="btn ${ad.active===false?'green':'gold'} sm" onclick="toggleAd('${ad.id}',${ad.active===false})"><i class="fa-solid ${ad.active===false?'fa-play':'fa-pause'}"></i></button><button class="btn red sm" onclick="deleteAd('${ad.id}')"><i class="fa-solid fa-trash"></i></button></div></div>`).join(''):'<div class="empty"><i class="fa-solid fa-rectangle-ad"></i><p>لا توجد إعلانات مضافة</p></div>';
+    });
+    db.ref('adStats').on('value', snap=>{
+        let impressions=0,clicks=0,revenue=0; if(snap.exists()) snap.forEach(c=>{const x=c.val()||{};impressions+=Number(x.impressions)||0;clicks+=Number(x.clicks)||0;revenue+=Number(x.revenue)||0;});
+        if($('#adStatImpressions')) $('#adStatImpressions').textContent=impressions.toLocaleString('ar-EG');
+        if($('#adStatClicks')) $('#adStatClicks').textContent=clicks.toLocaleString('ar-EG');
+        if($('#adStatRevenue')) $('#adStatRevenue').textContent='$'+revenue.toFixed(2);
+    });
 }
+
+$('#adCreateForm')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const payload={name:$('#newAdName').value.trim(),placement:$('#newAdPlacement').value,type:$('#newAdType').value,content:$('#newAdContent').value.trim(),ecpm:Number($('#newAdEcpm').value)||0,active:$('#newAdActive').checked,createdAt:Date.now()};
+    await db.ref('adsCatalog').push(payload); logActivity('إضافة إعلان: '+payload.name); e.target.reset(); $('#newAdActive').checked=true; toast('تمت إضافة الإعلان','','ok');
+});
+window.toggleAd=async(id,active)=>{await db.ref('adsCatalog/'+id+'/active').set(active);toast(active?'تم تفعيل الإعلان':'تم إيقاف الإعلان','','ok')};
+window.deleteAd=async id=>{if(await askConfirm({title:'حذف إعلان',msg:'سيتم حذف الإعلان وإعداداته نهائياً',ok:'حذف'})){await db.ref('adsCatalog/'+id).remove();toast('تم حذف الإعلان','','ok')}};
 
 $('#btnSaveAdTop')?.addEventListener('click',async()=>{
     await db.ref('ads').child('topBanner').set($('#adTopHtml').value);
