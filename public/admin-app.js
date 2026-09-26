@@ -713,7 +713,7 @@ function adminCardGrid(list, kind){
         const ph='https://via.placeholder.com/300x450/141826/6b7280?text='+encodeURIComponent(title);
         const vip=!!i.isVip;
         const meta = kind==='live'
-            ? `<i class="fa-solid fa-tv"></i> ${esc(i.category||'بث')}`
+            ? `<i class="fa-solid fa-tv"></i> ${esc(i.category||'بث')} · ${esc(i.network||'بدون شبكة')}`
             : `<i class="fa-regular fa-eye"></i> ${(i.views||0).toLocaleString('ar-EG')}`;
         const edit=kind==='live'?`editLiveChannel`:`editItem`;
         const del=kind==='live'?`delLiveChannel`:`delItem`;
@@ -725,6 +725,7 @@ function adminCardGrid(list, kind){
             <div class="agc-body">
                 <div class="agc-title" title="${esc(title)}">${esc(title)}</div>
                 <div class="agc-meta">${meta}</div>
+                ${kind==='live'?`<div class="agc-uid" title="${esc(i.id)}"><i class="fa-solid fa-fingerprint"></i> UID: ${esc(i.id)}</div>`:''}
             </div>
             <div class="agc-actions">
                 ${btn(edit,i.id,title,'fa-pen','ghost')}
@@ -739,7 +740,7 @@ function initViewToggles(){
     document.querySelectorAll('.view-toggle').forEach(t=>{
         const key=t.dataset.key;
         const render=t.dataset.render;
-        const saved=localStorage.getItem(key)||(key==='admin_live_view'?'grid':'list');
+        const saved=localStorage.getItem(key)||(key==='admin_live_view_v2'?'grid':'list');
         t.querySelectorAll('.vt-btn').forEach(b=>{
             b.classList.toggle('active',b.dataset.view===saved);
             b.onclick=()=>{

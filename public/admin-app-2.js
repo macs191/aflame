@@ -92,6 +92,7 @@ function loadLiveChannels(){
         if(snap.exists()) snap.forEach(c=>allLiveChs.push({id:c.key,...c.val()}));
         const vip = allLiveChs.filter(c=>c.isVip).length;
         $('#liveStatChannels').textContent = allLiveChs.length.toLocaleString('ar-EG');
+        $('#livePanelCount').textContent = `${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
         $('#liveStatVip').textContent = vip.toLocaleString('ar-EG');
         $('#statTotalLive').textContent = allLiveChs.length.toLocaleString('ar-EG');
         renderLiveChannelsList();
@@ -121,7 +122,7 @@ function renderLiveChannelsList(){
         box.innerHTML = `<div class="empty"><i class="fa-solid fa-tv"></i><p>لا توجد قنوات مطابقة</p></div>`;
         return;
     }
-    if((localStorage.getItem('admin_live_view')||'grid')==='grid'){
+    if((localStorage.getItem('admin_live_view_v2')||'grid')==='grid'){
         box.innerHTML = adminCardGrid(list,'live');
         return;
     }
