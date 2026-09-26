@@ -61,7 +61,9 @@ body.light-theme .bottom-nav{background:rgba(255,255,255,.96)}
 
 #loginOverlay{position:fixed;inset:0;z-index:99999;background:rgba(3,3,7,.97);backdrop-filter:blur(28px);display:flex;align-items:center;justify-content:center;padding:16px}
 #loginOverlay.hidden{display:none}
-.login-card{background:linear-gradient(160deg,rgba(26,26,36,.95),rgba(16,16,24,.95));border:1px solid var(--border-strong);border-radius:26px;padding:30px 20px;width:100%;max-width:420px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.9);position:relative;overflow:hidden;animation:zoomIn .5s cubic-bezier(.34,1.56,.64,1)}
+.login-card{background:linear-gradient(160deg,rgba(8,20,24,.98),rgba(8,10,16,.98));border:1px solid rgba(0,229,182,.36);border-radius:26px;padding:30px 20px;width:100%;max-width:420px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.9),0 0 50px rgba(0,229,182,.08);position:relative;overflow:hidden;animation:zoomIn .5s cubic-bezier(.34,1.56,.64,1)}
+.hacker-grid{position:absolute;inset:0;opacity:.15;pointer-events:none;background-image:linear-gradient(rgba(0,229,182,.2) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,182,.2) 1px,transparent 1px);background-size:24px 24px;mask-image:linear-gradient(to bottom,#000,transparent 75%);animation:gridDrift 12s linear infinite}.hacker-status,.terminal-line{position:relative;z-index:1;text-align:left;font-family:ui-monospace,SFMono-Regular,monospace;font-size:.58rem;letter-spacing:.8px;color:#58f5d1}.hacker-status{margin-bottom:18px;opacity:.8}.status-led{display:inline-block;width:7px;height:7px;border-radius:50%;background:#00e5b6;box-shadow:0 0 12px #00e5b6;margin-right:5px;animation:ledBlink 1.5s infinite}.terminal-line{margin:12px auto 0;max-width:260px;color:#6f8490}.terminal-line b{color:#00e5b6;float:right}
+@keyframes gridDrift{to{transform:translateY(24px)}}@keyframes ledBlink{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes zoomIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
 .login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent),var(--vip),transparent)}
 .login-logo{width:76px;height:76px;border-radius:22px;margin:0 auto 16px;background:linear-gradient(135deg,var(--accent),var(--vip));display:flex;align-items:center;justify-content:center;font-size:1.9rem;color:#fff;box-shadow:0 15px 40px var(--accent-glow)}
@@ -375,6 +377,10 @@ input[type="checkbox"]{width:auto;transform:scale(1.3);accent-color:var(--accent
 
 /* Admin card grid */
 .admin-grid{display:grid;width:100%;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.live-admin-grid-host{display:block!important;width:100%;min-width:0}.live-admin-grid-host>.admin-grid{display:grid!important;width:100%!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+@media (min-width:640px){.live-admin-grid-host>.admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media (min-width:960px){.live-admin-grid-host>.admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media (min-width:1280px){.live-admin-grid-host>.admin-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
 .admin-grid-card{background:#0b0b12;border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:var(--fast)}
 .admin-grid-card:hover{border-color:var(--border-strong);transform:translateY(-3px)}
 .admin-grid-card.is-vip{border-color:rgba(245,158,11,.4)}
@@ -402,9 +408,11 @@ body.light-theme .agc-thumb{background:#eef1f7}
 <!-- LOGIN -->
 <div id="loginOverlay">
     <div class="login-card">
+        <div class="hacker-grid"></div><div class="hacker-status"><span class="status-led"></span> SECURE CONSOLE // ACCESS GATE</div>
         <div class="login-logo"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 style="font-weight:900;margin-bottom:6px;font-size:1.2rem">لوحة إدارة سيرفر الوحش</h2>
         <p style="color:var(--text-3);font-size:.8rem">أدخل رمز الأمان للمتابعة</p>
+        <div class="terminal-line"><span>&gt; system.check</span><b> READY</b></div>
         <div class="pin-wrap" id="pinWrap">
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
@@ -683,7 +691,7 @@ body.light-theme .agc-thumb{background:#eef1f7}
                     <button type="button" class="vt-btn" data-view="grid" title="شبكة كروت"><i class="fa-solid fa-table-cells-large"></i></button>
                 </div>
             </div>
-            <div class="dl" id="liveChannelsList"></div>
+            <div id="liveChannelsList" class="live-admin-grid-host"></div>
         </div>
 
         <div class="card live-card-head">
