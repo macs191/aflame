@@ -633,12 +633,13 @@ function renderLive(){
 
 function liveCardHTML(c, extra=''){
     const name=c.name||c.title||'قناة';
-    const logo=c.logo||c.image||'https://via.placeholder.com/300x168/0f1117/ef4444?text='+encodeURIComponent(name);
+    const fallback='https://via.placeholder.com/300x168/0f1117/ef4444?text='+encodeURIComponent(name);
+    const logo=c.logo||c.image||fallback;
     const locked=c.isVip&&!isVip(state.userData);
     const age=c.ageRating&&c.ageRating!=='عام'?`<span class="age-badge">${esc(c.ageRating)}</span>`:'';
     return `<div class="card landscape ${c.isVip?'is-vip':''} ${locked?'locked':''} ${extra}" onclick="openPlayer('${esc(c.id)}','live')">
         <div class="card-thumb">
-            <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy">
+            <img src="${esc(logo)}" alt="${esc(name)}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'">
             <div class="card-overlay"><div class="card-play"><i class="fa-solid fa-play"></i></div></div>
             <div class="card-badge live">مباشر</div>
             ${c.isVip?'<div class="card-badge vip"><i class="fa-solid fa-crown"></i></div>':''}
@@ -767,8 +768,8 @@ const BROWSE_META={
 
 function browseItems(type){
     let items=state.videos.slice();
-    if(type==='movies') items=items.filter(x=>(x.category||'').includes('فيلم')||(x.type||'')==='movie');
-    else if(type==='series') items=items.filter(x=>(x.category||'').includes('مسلسل')||(x.type||'')==='series');
+    if(type==='movies') items=items.filter(x=>!((x.category||'').toLowerCase().includes('مسلسل')) && !x.seriesId && (x.type||'')!=='series');
+    else if(type==='series') items=items.filter(x=>(x.category||'').toLowerCase().includes('مسلسل')||(x.type||'')==='series'||!!x.seriesId||Number(x.episode)>0);
     else if(type==='vip') items=items.filter(x=>x.isVip);
     else if(type==='free') items=items.filter(x=>!x.isVip);
     return items;
@@ -1082,7 +1083,8 @@ function attachToolbar(container,video){
         <button class="player-tool" id="speedBtn" title="السرعة"><i class="fa-solid fa-gauge-high"></i></button>
         <button class="player-tool" id="sleepBtn" title="مؤقت النوم"><i class="fa-solid fa-moon"></i></button>
         <button class="player-tool" id="shotBtn" title="لقطة شاشة"><i class="fa-solid fa-camera"></i></button>`;
-    container.appendChild(tb);
+    const toolbarHost=container.parentElement||container;
+    toolbarHost.appendChild(tb);
 
     const sm=document.createElement('div');
     sm.className='speed-menu';
@@ -1098,7 +1100,7 @@ function attachToolbar(container,video){
         };
         sm.appendChild(b);
     });
-    container.appendChild(sm);
+    toolbarHost.appendChild(sm);
 
     tb.querySelector('#speedBtn').onclick=e=>{e.stopPropagation();sm.classList.toggle('show');};
 
@@ -1109,7 +1111,12 @@ function attachToolbar(container,video){
         }catch(e){toast('PiP غير مدعوم','warn');}
     };
 
-    tb.querySelector('#sleepBtn').onclick=()=>showSleepTimer(video);
+    const sleepMenu=document.createElement('div');
+    sleepMenu.className='sleep-menu';
+    sleepMenu.innerHTML='<button data-min="0">إلغاء</button><button data-min="15">15 دقيقة</button><button data-min="30">30 دقيقة</button><button data-min="60">60 دقيقة</button><button data-min="120">ساعتان</button>';
+    toolbarHost.appendChild(sleepMenu);
+    sleepMenu.querySelectorAll('button').forEach(b=>b.onclick=()=>{showSleepTimer(video,+b.dataset.min);sleepMenu.classList.remove('show');});
+    tb.querySelector('#sleepBtn').onclick=e=>{e.stopPropagation();sleepMenu.classList.toggle('show');sm.classList.remove('show');};
     tb.querySelector('#shotBtn').onclick=()=>captureScreenshot(video);
 
     document.addEventListener('click',()=>sm.classList.remove('show'),{once:true});
@@ -1132,17 +1139,15 @@ function attachProgressSaver(video){
     });
 }
 
-function showSleepTimer(video){
-    const mins=prompt('مؤقت النوم (دقائق):\n0 = إلغاء','30');
-    if(mins===null) return;
-    const m=parseInt(mins);
+function showSleepTimer(video,minutes){
+    const m=parseInt(minutes)||0;
     if(state.sleepTimer){clearTimeout(state.sleepTimer);state.sleepTimer=null;}
     if(!m||m<=0){toast('تم إلغاء المؤقت','ok');return;}
     state.sleepTimer=setTimeout(()=>{
         if(state.currentVideoEl) state.currentVideoEl.pause();
         toast(`انتهى مؤقت النوم (${m} دقيقة)`,'warn');
     },m*60000);
-    toast(`⏰ سيتم الإيقاف بعد ${m} دقيقة`,'ok');
+    toast(`سيتم إيقاف الفيديو بعد ${m} دقيقة`,'ok');
 }
 
 function captureScreenshot(video){
@@ -1208,6 +1213,24 @@ function playNextEpisode(){
     setTimeout(()=>openPlayer(next.id,'vod'),700);
 }
 
+function playAdjacent(offset){
+    const c=state.currentItem;
+    if(!c) return;
+    let items=[];
+    if(state.playerType==='live') items=state.liveChannels.slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    else if(state.playerType==='vod'&&c.seriesId) items=state.videos.filter(v=>v.seriesId===c.seriesId).sort((a,b)=>(parseInt(a.episode)||0)-(parseInt(b.episode)||0));
+    else if(state.playerType==='vod') items=state.videos.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    else if(state.playerType==='match') items=state.matches.slice();
+    const i=items.findIndex(x=>x.id===c.id), next=items[i+offset];
+    if(!next){toast(offset>0?'لا يوجد عنصر تالٍ':'لا يوجد عنصر سابق','info');return;}
+    closePlayer();
+    setTimeout(()=>openPlayer(next.id,state.playerType),250);
+}
+function playNextItem(){playAdjacent(1)}
+function playPreviousItem(){playAdjacent(-1)}
+window.playNextItem=playNextItem;
+window.playPreviousItem=playPreviousItem;
+
 function shareCurrent(){
     if(!state.currentItem) return;
     const t=state.currentItem.title||state.currentItem.name;
@@ -1220,15 +1243,16 @@ function shareCurrent(){
 /* ---------- 18. DOWNLOAD BUTTONS ---------- */
 function setupDownloadButtons(item){
     const fast=$('#dlFastBtn'), free=$('#dlAdsBtn');
-    const fastUrl=item.downloadFast||item.downloadUrl||'';
-    const adsUrl=item.downloadAds||item.downloadNormal||item.url||'';
+    const links=Array.isArray(item.downloads)?item.downloads:[];
+    const fastUrl=item.downloadFast||item.downloadVip||item.downloadUrl||links.find(x=>x&&(x.vip||x.type==='vip'))?.url||'';
+    const adsUrl=item.downloadAds||item.downloadNormal||item.adDownloadUrl||links.find(x=>x&&x.url)?.url||item.url||'';
 
     if(fast){
         fast.onclick=()=>{
             if(!isVip(state.userData)){openSubModal();toast('التحميل المباشر لـ VIP','warn');return;}
             if(!fastUrl){toast('رابط VIP غير متوفر','err');return;}
             toast('⚡ جاري التحميل...','ok');
-            window.open(fastUrl,'_blank');
+            openDownloadLink(fastUrl,item.title||'download');
         };
     }
     if(free){
@@ -1238,6 +1262,16 @@ function setupDownloadButtons(item){
         };
     }
 }
+
+function openDownloadLink(url,name){
+    const u=String(url||'').trim();
+    if(!/^https?:\/\//i.test(u)){toast('رابط التحميل غير صالح','err');return;}
+    const a=document.createElement('a');
+    a.href=u; a.target='_blank'; a.rel='noopener noreferrer';
+    a.download=name||'download';
+    document.body.appendChild(a); a.click(); a.remove();
+}
+window.openDownloadLink=openDownloadLink;
 
 function openFreeDownloadModal(item,url){
     const card=$('#dlModalCard');
@@ -1267,7 +1301,7 @@ function startFreeDownload(url){
         <button class="dl-ready-btn" id="dlReady"><i class="fa-solid fa-cloud-arrow-down"></i> اضغط للتحميل</button>`;
     const b=$('#dlReady');
     b.onclick=()=>{
-        window.open(url,'_blank');
+        openDownloadLink(url,'download');
         closeModal('dlModal');
     };
     const t=setInterval(()=>{
