@@ -311,6 +311,18 @@ function logout(){
 }
 
 /* ---------- 8. DATA FETCH ---------- */
+async function syncAllLiveChannels(){
+    try{
+        const snap=await db.ref('liveChannels').once('value');
+        const incoming=[];
+        if(snap.exists()) snap.forEach(c=>incoming.push({id:c.key,...c.val()}));
+        if(incoming.length>=state.liveChannels.length || state.liveChannels.length===0){
+            state.liveChannels=incoming;
+            renderLiveTabs(); renderLive(); renderDynamicSections();
+        }
+        return incoming.length;
+    }catch(e){ console.warn('[liveChannels] full sync failed',e); return state.liveChannels.length; }
+}
 function fetchAll(){
     db.ref('videos').on('value',snap=>{
         state.videos=[];
@@ -350,6 +362,9 @@ function fetchAll(){
         renderLive();
         renderDynamicSections();
     });
+    // القراءة الكاملة هي المصدر الموثوق، حتى لو وصل مستمع realtime بحالة أولية ناقصة.
+    syncAllLiveChannels();
+    setTimeout(syncAllLiveChannels,900);
     db.ref('liveCategories').on('value',snap=>{
         state.liveCategories=[];
         if(snap.exists()) snap.forEach(c=>state.liveCategories.push({id:c.key,...c.val()}));

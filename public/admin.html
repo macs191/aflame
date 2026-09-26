@@ -377,10 +377,7 @@ input[type="checkbox"]{width:auto;transform:scale(1.3);accent-color:var(--accent
 
 /* Admin card grid */
 .admin-grid{display:grid;width:100%;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
-.live-admin-grid-host{display:block!important;width:100%;min-width:0}.live-admin-grid-host>.admin-grid{display:grid!important;width:100%!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
-@media (min-width:640px){.live-admin-grid-host>.admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
-@media (min-width:960px){.live-admin-grid-host>.admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
-@media (min-width:1280px){.live-admin-grid-host>.admin-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
+.live-admin-grid-host{display:block!important;width:100%;min-width:0;overflow:visible!important}.live-admin-grid-host>.admin-grid{display:grid!important;width:100%!important;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))!important;grid-auto-flow:row!important;grid-auto-rows:max-content!important;gap:14px!important;overflow:visible!important}
 .admin-grid-card{background:#0b0b12;border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:var(--fast)}
 .admin-grid-card:hover{border-color:var(--border-strong);transform:translateY(-3px)}
 .admin-grid-card.is-vip{border-color:rgba(245,158,11,.4)}
@@ -1222,7 +1219,7 @@ body.light-theme .agc-thumb{background:#eef1f7}
 
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="admin-app.js?v=grid-20260926-3"></script>
-<script src="admin-app-2.js?v=grid-20260926-3"></script>
+<script src="admin-app.js?v=grid-20260926-4"></script>
+<script src="admin-app-2.js?v=grid-20260926-4"></script>
 </body>
 </html>

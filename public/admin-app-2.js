@@ -106,6 +106,24 @@ function loadLiveChannels(){
         $('#statTotalLive').textContent = allLiveChs.length.toLocaleString('ar-EG');
         renderLiveChannelsList();
     });
+    // مزامنة كاملة مستقلة تمنع أي snapshot أولي ناقص من إخفاء بقية القنوات.
+    const fullSync=async()=>{
+        try{
+            const snap=await db.ref('liveChannels').once('value');
+            const incoming=[];
+            if(snap.exists()) snap.forEach(c=>incoming.push({id:c.key,...c.val()}));
+            if(incoming.length>=allLiveChs.length || allLiveChs.length===0){
+                allLiveChs=incoming;
+                $('#liveStatChannels').textContent=allLiveChs.length.toLocaleString('ar-EG');
+                $('#livePanelCount').textContent=`${allLiveChs.length.toLocaleString('ar-EG')} قناة محفوظة بشكل مستقل`;
+                $('#liveStatVip').textContent=allLiveChs.filter(c=>c.isVip).length.toLocaleString('ar-EG');
+                $('#statTotalLive').textContent=allLiveChs.length.toLocaleString('ar-EG');
+                renderLiveChannelsList();
+            }
+        }catch(e){console.warn('[admin liveChannels] full sync failed',e)}
+    };
+    fullSync();
+    setTimeout(fullSync,900);
 }
 
 function renderLiveChannelsList(){
