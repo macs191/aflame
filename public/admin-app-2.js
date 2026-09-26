@@ -121,7 +121,7 @@ function renderLiveChannelsList(){
         box.innerHTML = `<div class="empty"><i class="fa-solid fa-tv"></i><p>لا توجد قنوات مطابقة</p></div>`;
         return;
     }
-    if((localStorage.getItem('admin_live_view')||'list')==='grid'){
+    if((localStorage.getItem('admin_live_view')||'grid')==='grid'){
         box.innerHTML = adminCardGrid(list,'live');
         return;
     }

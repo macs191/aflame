@@ -374,13 +374,13 @@ input[type="checkbox"]{width:auto;transform:scale(1.3);accent-color:var(--accent
 .vt-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 3px 10px var(--accent-glow)}
 
 /* Admin card grid */
-.admin-grid{display:grid;width:100%;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.admin-grid{display:grid;width:100%;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
 .admin-grid-card{background:#0b0b12;border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:var(--fast)}
 .admin-grid-card:hover{border-color:var(--border-strong);transform:translateY(-3px)}
 .admin-grid-card.is-vip{border-color:rgba(245,158,11,.4)}
 .agc-thumb{position:relative;aspect-ratio:2/3;background:#0f0f18;overflow:hidden}
 .agc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.admin-grid-card.live .agc-thumb{aspect-ratio:16/9}
+.admin-grid-card.live .agc-thumb{aspect-ratio:1/1}
 .admin-grid-card.live .agc-thumb img{object-fit:contain;background:#0a0a12}
 .agc-badge{position:absolute;top:7px;inset-inline-start:7px;font-size:.6rem;font-weight:900;padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;backdrop-filter:blur(6px)}
 .agc-badge.vip{background:linear-gradient(135deg,var(--vip),var(--vip-2));color:#111}
@@ -691,7 +691,7 @@ body.light-theme .agc-thumb{background:#eef1f7}
                     <option value="free">مجاني فقط</option>
                 </select>
                 <select id="filterLiveAge"><option value="all">كل الأعمار</option><option value="عام">عام</option><option value="+13">+13</option><option value="+16">+16</option><option value="18+">18+ للكبار</option></select>
-                <div class="view-toggle" data-key="admin_live_view" data-render="renderLiveChannelsList">
+                <div class="view-toggle" data-key="admin_live_view_v2" data-render="renderLiveChannelsList">
                     <button type="button" class="vt-btn active" data-view="list" title="قائمة"><i class="fa-solid fa-list"></i></button>
                     <button type="button" class="vt-btn" data-view="grid" title="شبكة كروت"><i class="fa-solid fa-table-cells-large"></i></button>
                 </div>

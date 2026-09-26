@@ -739,7 +739,7 @@ function initViewToggles(){
     document.querySelectorAll('.view-toggle').forEach(t=>{
         const key=t.dataset.key;
         const render=t.dataset.render;
-        const saved=localStorage.getItem(key)||'list';
+        const saved=localStorage.getItem(key)||(key==='admin_live_view'?'grid':'list');
         t.querySelectorAll('.vt-btn').forEach(b=>{
             b.classList.toggle('active',b.dataset.view===saved);
             b.onclick=()=>{
